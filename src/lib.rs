@@ -65,7 +65,7 @@ impl EtherCatController {
             *next_cycle = true;
             cvar.notify_all();
 
-            while let Ok((addr, length, value))  = rx.recv() {  
+            while let Ok((addr, length, value)) = rx.recv() {
                 data[addr..addr + length].copy_from_slice(&value);
             }
 
@@ -80,10 +80,9 @@ impl EtherCatController {
     }
 
     pub fn get_pdo_register(&self, addr: usize, length: usize) -> Option<Vec<u8>> {
-        match &*self.data_lock.read().unwrap() {
-            Some(data) => Some(data[addr..addr + length].to_vec()),
-            None => None,
-        }
+        (*self.data_lock.read().unwrap())
+            .as_ref()
+            .map(|data| data[addr..addr + length].to_vec())
     }
 
     pub fn set_pdo_register(&self, addr: usize, length: usize, value: Vec<u8>) {
@@ -154,7 +153,7 @@ fn init_master(
                     .map(|(i, e)| PdoEntryInfo {
                         entry_idx: e.entry_idx,
                         bit_len: e.bit_len as u8,
-                        name: e.name.clone().unwrap_or(String::new()),
+                        name: e.name.clone().unwrap_or_default(),
                         pos: PdoEntryPos::from(i as u8),
                     })
                     .collect(),
@@ -173,7 +172,7 @@ fn init_master(
                     .map(|(i, e)| PdoEntryInfo {
                         entry_idx: e.entry_idx,
                         bit_len: e.bit_len as u8,
-                        name: e.name.clone().unwrap_or(String::new()),
+                        name: e.name.clone().unwrap_or_default(),
                         pos: PdoEntryPos::from(i as u8),
                     })
                     .collect(),
