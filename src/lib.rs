@@ -1,59 +1,26 @@
 use std::{
     collections::HashMap,
-    convert::TryInto,
     fs::File,
-    io::{self, Read}, thread, sync::mpsc,
+    io::{self, Read},
+    sync::{
+        mpsc::{self, Sender},
+        Arc, Condvar, Mutex, RwLock,
+    },
+    thread,
 };
 
 use ethercat::{
-    Idx, Master, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, PdoIdx, SlaveAddr,
-    SlaveId, SlavePos, SmCfg, DomainIdx,
+    DomainIdx, Master, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, SlaveAddr, SlaveId,
+    SlavePos, SmCfg,
 };
 use ethercat_esi::EtherCatInfo;
 
 pub struct EtherCatController {
+    data_lock: Arc<RwLock<Option<Vec<u8>>>>,
+    cycle_condvar: Arc<(Mutex<bool>, Condvar)>,
+
+    cmd_buff: Sender<(usize, usize, Vec<u8>)>,
 }
-
-pub enum Slave {
-    Id0 = 0,
-    Id1 = 1,
-    Id2 = 2,
-}
-
-enum PdoRegister {
-    ControlWord,
-    ModeOfOperation,
-    TargetPosition,
-    VelocityOffset,
-    TargetTorque,
-
-    StatusWord,
-    ModeOfOperationDisplay,
-    PositionActualValue,
-    VelocityActualValue,
-    TorqueActualValue,
-    ErrorCode,
-}
-
-impl PdoRegister {
-    fn addr(&self) -> u16 {
-        match *self {
-            PdoRegister::ControlWord => todo!(),
-            PdoRegister::ModeOfOperation => todo!(),
-            PdoRegister::TargetPosition => todo!(),
-            PdoRegister::VelocityOffset => todo!(),
-            PdoRegister::TargetTorque => todo!(),
-            PdoRegister::StatusWord => todo!(),
-            PdoRegister::ModeOfOperationDisplay => todo!(),
-            PdoRegister::PositionActualValue => todo!(),
-            PdoRegister::VelocityActualValue => todo!(),
-            PdoRegister::TorqueActualValue => todo!(),
-            PdoRegister::ErrorCode => todo!(),
-        }
-    }
-}
-
-
 
 impl EtherCatController {
     pub fn open(filename: &String, master_id: u32) -> Result<Self, io::Error> {
@@ -75,37 +42,62 @@ impl EtherCatController {
             }
         }
 
-        let (tx, rx) = mpsc::channel();
+        let data_lock = Arc::new(RwLock::new(None));
+        let write_data_lock = Arc::clone(&data_lock);
 
-        thread::spawn(move || {
-            loop {
-                master.receive().unwrap();
-                master.domain(domain_idx).process().unwrap();
-                master.domain(domain_idx).queue().unwrap();
-    
-                let data = master.domain_data(domain_idx).unwrap();
-                tx.send(data.clone()).unwrap();
-                
-                master.send().unwrap();   
+        let cycle_condvar = Arc::new((Mutex::new(false), Condvar::new()));
+        let write_cycle_condvar = Arc::clone(&cycle_condvar);
+
+        let (tx, rx) = mpsc::channel::<(usize, usize, Vec<u8>)>();
+
+        thread::spawn(move || loop {
+            master.receive().unwrap();
+            master.domain(domain_idx).process().unwrap();
+            master.domain(domain_idx).queue().unwrap();
+
+            let data = master.domain_data(domain_idx).unwrap();
+            if let Ok(mut write_guard) = write_data_lock.write() {
+                *write_guard = Some(data.to_vec());
             }
+
+            let (lock, cvar) = &*write_cycle_condvar;
+            let mut next_cycle = lock.lock().unwrap();
+            *next_cycle = true;
+            cvar.notify_all();
+
+            while let Ok((addr, length, value))  = rx.recv() {  
+                data[addr..addr + length].copy_from_slice(&value);
+            }
+
+            master.send().unwrap();
         });
 
-        Ok(EtherCatController {})
+        Ok(EtherCatController {
+            data_lock,
+            cycle_condvar,
+            cmd_buff: tx,
+        })
     }
 
-    pub fn get_pdo_position_actual_value(&self, slave_id: Slave) -> u32 {
-        self.get_pdo_register(slave_id, PdoRegister::PositionActualValue)
+    pub fn get_pdo_register(&self, addr: usize, length: usize) -> Option<Vec<u8>> {
+        match &*self.data_lock.read().unwrap() {
+            Some(data) => Some(data[addr..addr + length].to_vec()),
+            None => None,
+        }
     }
 
-    fn get_pdo_register<T>(&self, slave_id: Slave, addr: PdoRegister) -> T {
-        todo!()
+    pub fn set_pdo_register(&self, addr: usize, length: usize, value: Vec<u8>) {
+        self.cmd_buff.send((addr, length, value)).unwrap();
     }
 
-    fn set_pdo_register<T>(&self, slave_id: Slave, addr: PdoRegister, value: T) {
-        todo!()
+    pub fn wait_for_next_cycle(&self) {
+        let (lock, cvar) = &*self.cycle_condvar;
+        let mut next_cycle = lock.lock().unwrap();
+        while !*next_cycle {
+            next_cycle = cvar.wait(next_cycle).unwrap();
+        }
     }
 }
-
 
 fn init_master(
     filename: &String,
