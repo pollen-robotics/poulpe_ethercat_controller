@@ -6,7 +6,8 @@ use std::{
         mpsc::{self, Sender},
         Arc, Condvar, Mutex, RwLock,
     },
-    thread, time::Duration,
+    thread,
+    time::Duration,
 };
 
 use ethercat::{
@@ -23,7 +24,11 @@ pub struct EtherCatController {
 }
 
 impl EtherCatController {
-    pub fn open(filename: &String, master_id: u32, cycle_period: Duration) -> Result<Self, io::Error> {
+    pub fn open(
+        filename: &String,
+        master_id: u32,
+        cycle_period: Duration,
+    ) -> Result<Self, io::Error> {
         let (mut master, domain_idx, offsets) = init_master(filename, master_id)?;
 
         master.activate()?;
@@ -63,10 +68,12 @@ impl EtherCatController {
                 *write_guard = Some(data.to_vec());
             }
 
-            let (lock, cvar) = &*write_cycle_condvar;
-            let mut next_cycle = lock.lock().unwrap();
-            *next_cycle = true;
-            cvar.notify_all();
+            {
+                let (lock, cvar) = &*write_cycle_condvar;
+                let mut next_cycle = lock.lock().unwrap();
+                *next_cycle = true;
+                cvar.notify_one();
+            }
 
             while let Ok((addr, length, value)) = rx.try_recv() {
                 data[addr..addr + length].copy_from_slice(&value);
@@ -99,14 +106,13 @@ impl EtherCatController {
         let mut next_cycle = lock.lock().unwrap();
 
         *next_cycle = false;
-
         while !*next_cycle {
             next_cycle = cvar.wait(next_cycle).unwrap();
         }
     }
 }
 
-fn init_master(
+pub fn init_master(
     filename: &String,
     idx: u32,
 ) -> Result<
