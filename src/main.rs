@@ -111,6 +111,15 @@ impl EposController {
         self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &value.to_le_bytes())
     }
 
+    fn get_velocity_offset(&self, slave_id: &Slave) -> u32 {
+        let bytes = self.get_pdo_register(slave_id, PdoRegister::VelocityOffset);
+        u32::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    fn set_velocity_offset(&self, slave_id: &Slave, value: u32) {
+        self.set_pdo_register(slave_id, PdoRegister::VelocityOffset, &value.to_le_bytes())
+    }
+
     fn get_position_actual_value(&self, slave_id: &Slave) -> u32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::PositionActualValue);
         u32::from_le_bytes(bytes.try_into().unwrap())
@@ -155,9 +164,9 @@ fn main() -> Result<(), io::Error> {
     // Wait for device initialisation
     thread::sleep(Duration::from_secs(2));
 
-    // Setup Modes of operation to Profile Position Mode
+    // Setup Modes of operation to Cyclic Synchronous Position Mode
     for slave in slaves.iter() {
-        epos_controller.set_mode_of_operation(&slave, 0x01);
+        epos_controller.set_mode_of_operation(&slave, 0x08);
     }
     thread::sleep(Duration::from_millis(10));
 
@@ -167,46 +176,36 @@ fn main() -> Result<(), io::Error> {
     }
     thread::sleep(Duration::from_millis(10));
 
-    // Switch On
-    for slave in slaves.iter() {
-        epos_controller.set_controlword(&slave, 0x07);
-    }
-    thread::sleep(Duration::from_millis(10));
-
     // Switch On & Enable
     for slave in slaves.iter() {
         epos_controller.set_controlword(&slave, 0x0F);
     }
     thread::sleep(Duration::from_millis(10));
 
-    let f = 0.5_f32;
-    let amp = 2000.0_f32;
-
     let t = SystemTime::now();
+
+    let mut traj = vec![];
+    for i in 0..2000 {
+        traj.push(i);
+    }
+    for i in 0..2000 {
+        traj.push(2000 - i);
+    }
+    let mut i = 0;
 
     loop {
         // let pos = epos_controller.get_position_actual_value(slave);
 
-        let dt = t.elapsed().unwrap().as_secs_f32();
-        let target_pos = amp * (2.0 * PI * f * dt).sin();
-        let target_pos: u32 = (target_pos as i32 + 5000) as u32;
-
-        // println!("Target: {} Current: {} Error: {}", target_pos, pos, pos as i32 - target_pos as i32);
-
-        // Set controlword to (Absolute pos, start immediatly)
         for slave in slaves.iter() {
-            epos_controller.set_controlword(&slave, 0x3F);
-            epos_controller.set_target_position(&slave, target_pos);
+            epos_controller.set_target_position(&slave, traj[i]);
         }
 
-        // WTF...
-        thread::sleep(Duration::from_millis(10));
+        // epos_controller.wait_for_next_cycle();
+        thread::sleep(Duration::from_millis(1));
 
-        // Set controlword (Absolute pos, start immediatly)
-        for slave in slaves.iter() {
-            epos_controller.set_controlword(&slave, 0x0F);
+        i += 1;
+        if i >= traj.len() {
+            i = 0;
         }
-
-        thread::sleep(Duration::from_millis(10));
     }
 }

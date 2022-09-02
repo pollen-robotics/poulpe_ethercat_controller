@@ -57,7 +57,7 @@ impl EtherCatController {
 
             let data = master.domain_data(domain_idx).unwrap();
 
-            log::debug!("{:?}", &data[..28]);
+            log::debug!("{:?}", &data);
 
             if let Ok(mut write_guard) = write_data_lock.write() {
                 *write_guard = Some(data.to_vec());
