@@ -150,7 +150,7 @@ fn main() -> Result<(), io::Error> {
 
     let epos_controller = EposController::new(filename, 0_u32)?;
 
-    let slaves = vec![Slave::Id0, Slave::Id1];
+    let slaves = vec![Slave::Id0, Slave::Id1, Slave::Id2];
 
     // Wait for device initialisation
     thread::sleep(Duration::from_secs(2));
@@ -159,25 +159,25 @@ fn main() -> Result<(), io::Error> {
     for slave in slaves.iter() {
         epos_controller.set_mode_of_operation(&slave, 0x01);
     }
-    thread::sleep(Duration::from_millis(1));
+    thread::sleep(Duration::from_millis(10));
 
     // Shutdown
     for slave in slaves.iter() {
         epos_controller.set_controlword(&slave, 0x06);
     }
-    thread::sleep(Duration::from_millis(1));
+    thread::sleep(Duration::from_millis(10));
 
     // Switch On
     for slave in slaves.iter() {
         epos_controller.set_controlword(&slave, 0x07);
     }
-    thread::sleep(Duration::from_millis(1));
+    thread::sleep(Duration::from_millis(10));
 
     // Switch On & Enable
     for slave in slaves.iter() {
         epos_controller.set_controlword(&slave, 0x0F);
     }
-    thread::sleep(Duration::from_millis(1));
+    thread::sleep(Duration::from_millis(10));
 
     let f = 0.5_f32;
     let amp = 2000.0_f32;
