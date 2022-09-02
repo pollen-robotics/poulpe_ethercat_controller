@@ -7,7 +7,7 @@ use std::{
         Arc, Condvar, Mutex, RwLock,
     },
     thread,
-    time::Duration,
+    time::Duration, ops::Range,
 };
 
 use ethercat::{
@@ -17,10 +17,12 @@ use ethercat::{
 use ethercat_esi::EtherCatInfo;
 
 pub struct EtherCatController {
+    offsets: HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>>,
+
     data_lock: Arc<RwLock<Option<Vec<u8>>>>,
     cycle_condvar: Arc<(Mutex<bool>, Condvar)>,
 
-    cmd_buff: Sender<(usize, usize, Vec<u8>)>,
+    cmd_buff: Sender<(Range<usize>, Vec<u8>)>,
 }
 
 impl EtherCatController {
@@ -53,7 +55,7 @@ impl EtherCatController {
         let cycle_condvar = Arc::new((Mutex::new(false), Condvar::new()));
         let write_cycle_condvar = Arc::clone(&cycle_condvar);
 
-        let (tx, rx) = mpsc::channel::<(usize, usize, Vec<u8>)>();
+        let (tx, rx) = mpsc::channel::<(Range<usize>, Vec<u8>)>();
 
         thread::spawn(move || loop {
             master.receive().unwrap();
@@ -75,8 +77,8 @@ impl EtherCatController {
                 cvar.notify_one();
             }
 
-            while let Ok((addr, length, value)) = rx.try_recv() {
-                data[addr..addr + length].copy_from_slice(&value);
+            while let Ok((reg_addr_range, value)) = rx.try_recv() {
+                data[reg_addr_range].copy_from_slice(&value);
             }
 
             master.send().unwrap();
@@ -85,20 +87,25 @@ impl EtherCatController {
         });
 
         Ok(EtherCatController {
+            offsets,
             data_lock,
             cycle_condvar,
             cmd_buff: tx,
         })
     }
 
-    pub fn get_pdo_register(&self, addr: usize, length: usize) -> Option<Vec<u8>> {
+    pub fn get_pdo_register(&self, slave_id: u16, register: &String) -> Option<Vec<u8>> {
+        let reg_addr_range = self.get_reg_addr_range(slave_id, register);
+
         (*self.data_lock.read().unwrap())
             .as_ref()
-            .map(|data| data[addr..addr + length].to_vec())
+            .map(|data| data[reg_addr_range].to_vec())
     }
 
-    pub fn set_pdo_register(&self, addr: usize, length: usize, value: Vec<u8>) {
-        self.cmd_buff.send((addr, length, value)).unwrap();
+    pub fn set_pdo_register(&self, slave_id: u16, register: &String, value: Vec<u8>) {
+        let reg_addr_range = self.get_reg_addr_range(slave_id, register);
+
+        self.cmd_buff.send((reg_addr_range, value)).unwrap();
     }
 
     pub fn wait_for_next_cycle(&self) {
@@ -109,6 +116,16 @@ impl EtherCatController {
         while !*next_cycle {
             next_cycle = cvar.wait(next_cycle).unwrap();
         }
+    }
+
+    fn get_reg_addr_range(&self, slave_id: u16, register: &String) -> Range<usize> {
+        let slave_pos = SlavePos::from(slave_id);
+
+        let (_pdo_entry_idx, bit_len, offset) = self.offsets[&slave_pos][register];
+        let addr = offset.byte;
+        let bytes_len = (bit_len / 8) as usize;
+
+        return addr..addr+bytes_len;
     }
 }
 

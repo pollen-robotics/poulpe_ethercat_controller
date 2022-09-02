@@ -40,48 +40,31 @@ enum PdoRegister {
 }
 
 impl PdoRegister {
-    fn addr(&self) -> usize {
+    fn name(&self) -> &'static str {
         match *self {
-            PdoRegister::ControlWord => 0,
-            PdoRegister::ModeOfOperation => 2,
-            PdoRegister::TargetPosition => 3,
-            PdoRegister::VelocityOffset => 7,
-            PdoRegister::TargetTorque => 11,
-            PdoRegister::StatusWord => 13,
-            PdoRegister::ModeOfOperationDisplay => 15,
-            PdoRegister::PositionActualValue => 16,
-            PdoRegister::VelocityActualValue => 20,
-            PdoRegister::TorqueActualValue => 24,
-            PdoRegister::ErrorCode => 26,
-        }
-    }
-    fn length(&self) -> usize {
-        match *self {
-            PdoRegister::ControlWord => 2,
-            PdoRegister::ModeOfOperation => 1,
-            PdoRegister::TargetPosition => 4,
-            PdoRegister::VelocityOffset => 4,
-            PdoRegister::TargetTorque => 2,
-            PdoRegister::StatusWord => 2,
-            PdoRegister::ModeOfOperationDisplay => 1,
-            PdoRegister::PositionActualValue => 4,
-            PdoRegister::VelocityActualValue => 4,
-            PdoRegister::TorqueActualValue => 2,
-            PdoRegister::ErrorCode => 2,
+            PdoRegister::ControlWord => "Controlword",
+            PdoRegister::ModeOfOperation => "Mode of operation",
+            PdoRegister::TargetPosition => "Target position",
+            PdoRegister::VelocityOffset => "Velocity offset",
+            PdoRegister::TargetTorque => "Target torque",
+            PdoRegister::StatusWord => "Statusword",
+            PdoRegister::ModeOfOperationDisplay => "Mode of operation display",
+            PdoRegister::PositionActualValue => "Position actual value",
+            PdoRegister::VelocityActualValue => "Velocity actual value",
+            PdoRegister::TorqueActualValue => "Torque actual value",
+            PdoRegister::ErrorCode => "Error code",
         }
     }
 }
 
 struct EposController {
     controller: EtherCatController,
-    offset: usize,
 }
 
 impl EposController {
     fn new(filename: &String, master_id: u32) -> Result<Self, io::Error> {
         Ok(Self {
             controller: EtherCatController::open(filename, master_id, Duration::from_millis(1))?,
-            offset: 28,
         })
     }
 
@@ -126,18 +109,14 @@ impl EposController {
     }
 
     fn get_pdo_register(&self, slave_id: &Slave, reg: PdoRegister) -> Vec<u8> {
-        let offset = slave_id.offset() * self.offset;
-
         self.controller
-            .get_pdo_register(offset + reg.addr(), reg.length())
+            .get_pdo_register(slave_id.offset() as u16, &reg.name().to_string())
             .unwrap()
     }
 
     fn set_pdo_register(&self, slave_id: &Slave, reg: PdoRegister, value: &[u8]) {
-        let offset = slave_id.offset() * self.offset;
-
         self.controller
-            .set_pdo_register(offset + reg.addr(), reg.length(), value.to_vec())
+            .set_pdo_register(slave_id.offset() as u16, &reg.name().to_string(), value.to_vec())
     }
 
     fn wait_for_next_cycle(&self) {
