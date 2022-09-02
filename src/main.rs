@@ -159,53 +159,31 @@ fn main() -> Result<(), io::Error> {
 
     let epos_controller = EposController::new(filename, 0_u32)?;
 
-    let slaves = vec![Slave::Id0, Slave::Id1, Slave::Id2];
-
     // Wait for device initialisation
     thread::sleep(Duration::from_secs(2));
 
     // Setup Modes of operation to Cyclic Synchronous Position Mode
-    for slave in slaves.iter() {
-        epos_controller.set_mode_of_operation(&slave, 0x08);
-    }
+    epos_controller.set_mode_of_operation(&Slave::Id1, 0x08);
+    epos_controller.set_mode_of_operation(&Slave::Id2, 0x08);
     thread::sleep(Duration::from_millis(10));
 
     // Shutdown
-    for slave in slaves.iter() {
-        epos_controller.set_controlword(&slave, 0x06);
-    }
+    epos_controller.set_controlword(&Slave::Id1, 0x06);
+    epos_controller.set_controlword(&Slave::Id2, 0x06);
+    
     thread::sleep(Duration::from_millis(10));
 
     // Switch On & Enable
-    for slave in slaves.iter() {
-        epos_controller.set_controlword(&slave, 0x0F);
-    }
+    epos_controller.set_controlword(&Slave::Id1, 0x0F);
+    epos_controller.set_controlword(&Slave::Id2, 0x0F);
     thread::sleep(Duration::from_millis(10));
 
-    let t = SystemTime::now();
-
-    let mut traj = vec![];
-    for i in 0..2000 {
-        traj.push(i);
-    }
-    for i in 0..2000 {
-        traj.push(2000 - i);
-    }
-    let mut i = 0;
-
     loop {
-        // let pos = epos_controller.get_position_actual_value(slave);
+        let pos = epos_controller.get_position_actual_value(&Slave::Id0);
 
-        for slave in slaves.iter() {
-            epos_controller.set_target_position(&slave, traj[i]);
-        }
+        epos_controller.set_target_position(&Slave::Id1, pos);
+        epos_controller.set_target_position(&Slave::Id2, pos);
 
-        // epos_controller.wait_for_next_cycle();
-        thread::sleep(Duration::from_millis(1));
-
-        i += 1;
-        if i >= traj.len() {
-            i = 0;
-        }
+        epos_controller.wait_for_next_cycle();
     }
 }
