@@ -3,4 +3,5 @@
 members = [
     "ethercat_controller",
     "epos_ethercat_controller",
+    "epos_ethercat_multiplexer",
 ]

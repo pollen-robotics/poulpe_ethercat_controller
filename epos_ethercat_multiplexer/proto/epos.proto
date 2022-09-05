@@ -1,0 +1,44 @@
+syntax = "proto3";
+package epos;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message EposIds {
+    repeated int32 ids = 1;
+}
+
+message StateStreamRequest {
+    repeated int32 ids = 1;
+    float update_period = 2;
+}
+
+message EposState {
+    int32 id = 1;
+
+    bool compliant = 2;
+
+    float actual_position = 3;
+    float actual_velocity = 4;
+    float actual_torque = 5;
+
+    float requested_target_position = 6;
+}
+
+message EposCommand {
+    int32 id = 1;
+
+    google.protobuf.BoolValue compliancy = 2;
+    google.protobuf.FloatValue target_position = 3;
+}
+
+message Commands {
+    repeated EposCommand commands = 1;
+}
+
+service EposMultiplexer {
+    rpc GetEposIds(google.protobuf.Empty) returns (EposIds);
+
+    rpc GetStates (StateStreamRequest) returns (stream EposState);
+    rpc GetCommands (stream Commands) returns (google.protobuf.Empty);
+}
