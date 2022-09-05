@@ -1,14 +1,20 @@
+extern crate num;
+#[macro_use]
+extern crate num_derive;
+
 use std::{io, time::Duration};
 
 use bitvec::prelude::*;
 
-use super::ethercat_controller::EtherCatController;
+use ethercat_controller::EtherCatController;
 
 enum PdoRegister {
     ControlWord,
     ModeOfOperation,
     TargetPosition,
+    #[allow(dead_code)]
     VelocityOffset,
+    #[allow(dead_code)]
     TargetTorque,
 
     StatusWord,
@@ -105,6 +111,7 @@ impl EposController {
         status.contains(&StatusBit::SwitchedOn)
     }
 
+    #[allow(dead_code)]
     fn get_controlworld(&self, slave_id: u16) -> u16 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::ControlWord);
         u16::from_le_bytes(bytes.try_into().unwrap())
@@ -144,20 +151,24 @@ impl EposController {
         self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &value.to_le_bytes())
     }
 
+    #[allow(dead_code)]
     fn get_velocity_offset(&self, slave_id: u16) -> u32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::VelocityOffset);
         u32::from_le_bytes(bytes.try_into().unwrap())
     }
 
+    #[allow(dead_code)]
     fn set_velocity_offset(&self, slave_id: u16, value: u32) {
         self.set_pdo_register(slave_id, PdoRegister::VelocityOffset, &value.to_le_bytes())
     }
 
+    #[allow(dead_code)]
     fn get_target_torque(&self, slave_id: u16) -> u16 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TargetTorque);
         u16::from_le_bytes(bytes.try_into().unwrap())
     }
 
+    #[allow(dead_code)]
     fn set_target_torque(&self, slave_id: u16, value: u16) {
         self.set_pdo_register(slave_id, PdoRegister::TargetTorque, &value.to_le_bytes())
     }

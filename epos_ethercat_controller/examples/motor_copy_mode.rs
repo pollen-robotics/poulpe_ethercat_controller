@@ -1,11 +1,6 @@
-use std::{
-    env,
-    f32::consts::PI,
-    io, thread,
-    time::{Duration, SystemTime},
-};
+use std::{env, io};
 
-use ethercat_controller::EposController;
+use epos_ethercat_controller::EposController;
 
 fn main() -> Result<(), io::Error> {
     env_logger::init();

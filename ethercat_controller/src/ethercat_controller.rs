@@ -161,21 +161,16 @@ impl EtherCatController {
         let addr = offset.byte;
         let bytes_len = (bit_len / 8) as usize;
 
-        return addr..addr + bytes_len;
+        addr..addr + bytes_len
     }
 }
+
+type SlaveOffsets = HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>>;
 
 pub fn init_master(
     filename: &String,
     idx: u32,
-) -> Result<
-    (
-        Master,
-        DomainIdx,
-        HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>>,
-    ),
-    io::Error,
-> {
+) -> Result<(Master, DomainIdx, SlaveOffsets), io::Error> {
     let mut esi_file = File::open(filename)?;
 
     let mut esi_xml_str = String::new();
