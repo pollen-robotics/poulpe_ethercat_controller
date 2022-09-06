@@ -25,6 +25,10 @@ message EposState {
     float requested_target_position = 6;
 }
 
+message EposStates {
+    repeated EposState states = 1;
+}
+
 message EposCommand {
     int32 id = 1;
 
@@ -32,13 +36,13 @@ message EposCommand {
     google.protobuf.FloatValue target_position = 3;
 }
 
-message Commands {
+message EposCommands {
     repeated EposCommand commands = 1;
 }
 
 service EposMultiplexer {
     rpc GetEposIds(google.protobuf.Empty) returns (EposIds);
 
-    rpc GetStates (StateStreamRequest) returns (stream EposState);
-    rpc GetCommands (stream Commands) returns (google.protobuf.Empty);
+    rpc GetStates (StateStreamRequest) returns (stream EposStates);
+    rpc GetCommands (stream EposCommands) returns (google.protobuf.Empty);
 }
