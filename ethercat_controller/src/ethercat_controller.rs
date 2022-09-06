@@ -4,7 +4,7 @@ use std::{
     io::{self, Read},
     ops::Range,
     sync::{
-        mpsc::{self, Sender},
+        mpsc::{sync_channel, SyncSender},
         Arc, Condvar, Mutex, RwLock,
     },
     thread,
@@ -24,7 +24,7 @@ pub struct EtherCatController {
     ready_condvar: Arc<(Mutex<bool>, Condvar)>,
     cycle_condvar: Arc<(Mutex<bool>, Condvar)>,
 
-    cmd_buff: Sender<(Range<usize>, Vec<u8>)>,
+    cmd_buff: SyncSender<(Range<usize>, Vec<u8>)>,
 }
 
 impl EtherCatController {
@@ -60,7 +60,7 @@ impl EtherCatController {
         let cycle_condvar = Arc::new((Mutex::new(false), Condvar::new()));
         let write_cycle_condvar = Arc::clone(&cycle_condvar);
 
-        let (tx, rx) = mpsc::channel::<(Range<usize>, Vec<u8>)>();
+        let (tx, rx) = sync_channel::<(Range<usize>, Vec<u8>)>(5);
 
         let mut is_ready = false;
 
