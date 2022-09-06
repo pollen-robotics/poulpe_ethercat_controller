@@ -117,6 +117,16 @@ impl EtherCatController {
         })
     }
 
+    pub fn get_slave_ids(&self) -> Vec<u16> {
+        let mut ids: Vec<u16> = self
+            .offsets
+            .keys()
+            .map(|slave_pos| u16::from(*slave_pos))
+            .collect();
+        ids.sort();
+        ids
+    }
+
     pub fn get_pdo_register(&self, slave_id: u16, register: &String) -> Option<Vec<u8>> {
         let reg_addr_range = self.get_reg_addr_range(slave_id, register);
 

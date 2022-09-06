@@ -75,6 +75,10 @@ impl EposController {
         Ok(Self { controller })
     }
 
+    pub fn get_slave_ids(&self) -> Vec<u16> {
+        self.controller.get_slave_ids()
+    }
+
     pub fn setup(&self, slave_id: u16) {
         self.wait_for_status_bit(slave_id, StatusBit::SwitchedOnDisabled);
 
