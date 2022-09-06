@@ -43,6 +43,7 @@ impl PdoRegister {
     }
 }
 
+#[derive(Debug)]
 pub struct EposController {
     controller: EtherCatController,
 }

@@ -17,6 +17,7 @@ use ethercat::{
 };
 use ethercat_esi::EtherCatInfo;
 
+#[derive(Debug)]
 pub struct EtherCatController {
     offsets: HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>>,
 
