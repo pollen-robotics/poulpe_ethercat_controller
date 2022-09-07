@@ -18,3 +18,6 @@ async-stream = "0.3.3"
 [build-dependencies]
 tonic-build = "0.8.0"
 
+[[bin]]
+name = "server"
+path = "src/server.rs"

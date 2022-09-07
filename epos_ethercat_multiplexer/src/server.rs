@@ -5,14 +5,10 @@ use tokio::{sync::mpsc, time::sleep};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 
-use pb::{
+use epos_ethercat_multiplexer::pb::{
     epos_multiplexer_server::{EposMultiplexer, EposMultiplexerServer},
     EposCommands, EposIds, EposState, EposStates, StateStreamRequest,
 };
-
-pub mod pb {
-    tonic::include_proto!("epos");
-}
 
 #[derive(Debug)]
 struct EposMultiplexerService {
