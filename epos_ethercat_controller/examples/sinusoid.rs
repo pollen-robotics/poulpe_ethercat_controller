@@ -45,7 +45,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let error = target as i32 - pos as i32;
 
-        log::info!("Pos: {} Vel: {} Torque: {} Error: {}", pos, vel, torque, error);
+        log::info!(
+            "Pos: {} Vel: {} Torque: {} Error: {}",
+            pos,
+            vel,
+            torque,
+            error
+        );
 
         epos_controller.wait_for_next_cycle();
     }
