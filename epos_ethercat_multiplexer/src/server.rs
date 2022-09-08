@@ -1,4 +1,8 @@
-use std::{env, sync::Arc, time::Duration};
+use std::{
+    env,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use epos_ethercat_controller::EposController;
 use tokio::{sync::mpsc, time::sleep};
@@ -82,7 +86,12 @@ impl EposMultiplexer for EposMultiplexerService {
     ) -> Result<Response<()>, Status> {
         let mut stream = request.into_inner();
 
+        let mut t = SystemTime::now();
+        let mut nb = 0;
+
         while let Some(Ok(req)) = stream.next().await {
+            log::debug!("Got commands {:?}", req);
+
             for cmd in req.commands {
                 let slave_id = cmd.id as u16;
 
@@ -97,6 +106,17 @@ impl EposMultiplexer for EposMultiplexerService {
                     self.controller
                         .set_target_position(slave_id, target_pos as u32);
                 }
+            }
+
+            nb += 1;
+
+            let dt = t.elapsed().unwrap().as_secs_f32();
+            if dt > 1.0 {
+                let f = nb as f32 / dt;
+                log::info!("Got {} req/s", f);
+
+                t = SystemTime::now();
+                nb = 0;
             }
         }
 
@@ -118,6 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let controller = EposController::connect(filename, 0_u32)?;
+
     for slave_id in controller.get_slave_ids() {
         log::info!("Setup Slave {}...", slave_id);
         controller.setup(slave_id);
