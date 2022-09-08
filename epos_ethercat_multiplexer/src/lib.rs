@@ -3,3 +3,4 @@ pub mod pb {
 }
 
 mod client;
+pub use client::EposRemoteClient;
