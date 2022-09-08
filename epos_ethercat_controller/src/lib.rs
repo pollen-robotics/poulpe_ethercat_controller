@@ -147,34 +147,34 @@ impl EposController {
         }
     }
 
-    pub fn get_target_position(&self, slave_id: u16) -> u32 {
+    pub fn get_target_position(&self, slave_id: u16) -> i32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TargetPosition);
-        u32::from_le_bytes(bytes.try_into().unwrap())
+        i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
-    pub fn set_target_position(&self, slave_id: u16, value: u32) {
+    pub fn set_target_position(&self, slave_id: u16, value: i32) {
         self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &value.to_le_bytes())
     }
 
     #[allow(dead_code)]
-    fn get_velocity_offset(&self, slave_id: u16) -> u32 {
+    fn get_velocity_offset(&self, slave_id: u16) -> i32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::VelocityOffset);
-        u32::from_le_bytes(bytes.try_into().unwrap())
+        i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
     #[allow(dead_code)]
-    fn set_velocity_offset(&self, slave_id: u16, value: u32) {
+    fn set_velocity_offset(&self, slave_id: u16, value: i32) {
         self.set_pdo_register(slave_id, PdoRegister::VelocityOffset, &value.to_le_bytes())
     }
 
     #[allow(dead_code)]
-    fn get_target_torque(&self, slave_id: u16) -> u16 {
+    fn get_target_torque(&self, slave_id: u16) -> i16 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TargetTorque);
-        u16::from_le_bytes(bytes.try_into().unwrap())
+        i16::from_le_bytes(bytes.try_into().unwrap())
     }
 
     #[allow(dead_code)]
-    fn set_target_torque(&self, slave_id: u16, value: u16) {
+    fn set_target_torque(&self, slave_id: u16, value: i16) {
         self.set_pdo_register(slave_id, PdoRegister::TargetTorque, &value.to_le_bytes())
     }
 
@@ -195,19 +195,19 @@ impl EposController {
         u8::from_le_bytes(bytes.try_into().unwrap())
     }
 
-    pub fn get_position_actual_value(&self, slave_id: u16) -> u32 {
+    pub fn get_position_actual_value(&self, slave_id: u16) -> i32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::PositionActualValue);
-        u32::from_le_bytes(bytes.try_into().unwrap())
+        i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
-    pub fn get_velocity_actual_value(&self, slave_id: u16) -> u32 {
+    pub fn get_velocity_actual_value(&self, slave_id: u16) -> i32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::VelocityActualValue);
-        u32::from_le_bytes(bytes.try_into().unwrap())
+        i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
-    pub fn get_torque_actual_value(&self, slave_id: u16) -> u16 {
+    pub fn get_torque_actual_value(&self, slave_id: u16) -> i16 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TorqueActualValue);
-        u16::from_le_bytes(bytes.try_into().unwrap())
+        i16::from_le_bytes(bytes.try_into().unwrap())
     }
 
     pub fn get_error_code(&self, slave_id: u16) -> u16 {

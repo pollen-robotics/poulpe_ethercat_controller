@@ -30,8 +30,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let t0 = SystemTime::now();
 
-    let offset = amp;
-
     loop {
         let t = t0.elapsed().unwrap().as_secs_f32();
 
@@ -39,8 +37,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let vel = epos_controller.get_velocity_actual_value(slave_id);
         let torque = epos_controller.get_torque_actual_value(slave_id);
 
-        let target = offset + amp * (2.0 * PI * freq * t).sin();
-        let target = target as u32;
+        let target = amp * (2.0 * PI * freq * t).sin();
+        let target = target as i32;
         epos_controller.set_target_position(slave_id, target);
 
         let error = target as i32 - pos as i32;

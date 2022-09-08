@@ -104,7 +104,7 @@ impl EposMultiplexer for EposMultiplexerService {
 
                 if let Some(target_pos) = cmd.target_position {
                     self.controller
-                        .set_target_position(slave_id, target_pos as u32);
+                        .set_target_position(slave_id, target_pos as i32);
                 }
             }
 

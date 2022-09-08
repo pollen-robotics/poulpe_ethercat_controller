@@ -14,7 +14,7 @@ use tonic::{transport::Uri, Request};
 #[derive(Debug)]
 enum Command {
     Compliancy(bool),
-    TargetPosition(u32),
+    TargetPosition(i32),
 }
 
 pub struct EposRemoteClient {
@@ -85,16 +85,16 @@ impl EposRemoteClient {
         }
     }
 
-    pub fn get_position_actual_value(&self, slave_id: u16) -> u32 {
-        self.rt.block_on(self.state.read())[&slave_id].actual_position as u32
+    pub fn get_position_actual_value(&self, slave_id: u16) -> i32 {
+        self.rt.block_on(self.state.read())[&slave_id].actual_position as i32
     }
 
-    pub fn get_velocity_actual_value(&self, slave_id: u16) -> u32 {
-        self.rt.block_on(self.state.read())[&slave_id].actual_velocity as u32
+    pub fn get_velocity_actual_value(&self, slave_id: u16) -> i32 {
+        self.rt.block_on(self.state.read())[&slave_id].actual_velocity as i32
     }
 
-    pub fn get_torque_actual_value(&self, slave_id: u16) -> u32 {
-        self.rt.block_on(self.state.read())[&slave_id].actual_torque as u32
+    pub fn get_torque_actual_value(&self, slave_id: u16) -> i16 {
+        self.rt.block_on(self.state.read())[&slave_id].actual_torque as i16
     }
 
     pub fn is_on(&self, slave_id: u16) -> bool {
@@ -121,7 +121,7 @@ impl EposRemoteClient {
             .push(Command::Compliancy(true))
     }
 
-    pub fn set_target_position(&mut self, slave_id: u16, target_position: u32) {
+    pub fn set_target_position(&mut self, slave_id: u16, target_position: i32) {
         self.rt
             .block_on(self.command_buff.write())
             .entry(slave_id)
