@@ -2,7 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use std::{io, time::Duration};
+use std::{io, time::Duration, f32::consts::PI};
 
 use bitvec::prelude::*;
 
@@ -66,6 +66,20 @@ enum StatusBit {
     OperatingModeSpecific13 = 13,
     Reserved14 = 14,
     PositionReferencedToHomePosition = 15,
+}
+
+const REDUCTION: f32 = 4.0;
+const ENCODER_RES: u32 = 4096;
+const RATIO: f32 = ENCODER_RES as f32 * REDUCTION;
+
+fn inc_to_rads(inc: i32) -> f32 {
+    let r: f32 = inc as f32 / RATIO as f32;
+    r * 2.0 * PI
+}
+
+fn rads_to_inc(rads: f32) -> i32 {
+    let inc = rads * RATIO / (2.0 * PI);
+    inc as i32
 }
 
 impl EposController {
@@ -147,13 +161,15 @@ impl EposController {
         }
     }
 
-    pub fn get_target_position(&self, slave_id: u16) -> i32 {
+    pub fn get_target_position(&self, slave_id: u16) -> f32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TargetPosition);
-        i32::from_le_bytes(bytes.try_into().unwrap())
+        let inc = i32::from_le_bytes(bytes.try_into().unwrap());
+        inc_to_rads(inc)
     }
 
-    pub fn set_target_position(&self, slave_id: u16, value: i32) {
-        self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &value.to_le_bytes())
+    pub fn set_target_position(&self, slave_id: u16, rads: f32) {
+        let inc = rads_to_inc(rads);
+        self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &inc.to_le_bytes())
     }
 
     #[allow(dead_code)]
@@ -195,9 +211,10 @@ impl EposController {
         u8::from_le_bytes(bytes.try_into().unwrap())
     }
 
-    pub fn get_position_actual_value(&self, slave_id: u16) -> i32 {
+    pub fn get_position_actual_value(&self, slave_id: u16) -> f32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::PositionActualValue);
-        i32::from_le_bytes(bytes.try_into().unwrap())
+        let inc = i32::from_le_bytes(bytes.try_into().unwrap());
+        inc_to_rads(inc)
     }
 
     pub fn get_velocity_actual_value(&self, slave_id: u16) -> i32 {
