@@ -255,6 +255,9 @@ pub fn init_master(
         let output = SmCfg::output(2.into());
         let input = SmCfg::input(3.into());
 
+        config.config_sm_pdos(output, &rx_pdos)?;
+        config.config_sm_pdos(input, &tx_pdos)?;
+
         for pdo in &rx_pdos {
             for entry in &pdo.entries {
                 let offset = config.register_pdo_entry(entry.entry_idx, domain_idx)?;
@@ -267,9 +270,6 @@ pub fn init_master(
                 entry_offsets.insert(entry.name.clone(), (entry.entry_idx, entry.bit_len, offset));
             }
         }
-
-        config.config_sm_pdos(output, &rx_pdos)?;
-        config.config_sm_pdos(input, &tx_pdos)?;
 
         let cfg_index = config.index();
         let cfg_info = master.get_config_info(cfg_index)?;
