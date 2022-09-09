@@ -2,7 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use std::{io, time::Duration};
+use std::{io, time::Duration, convert::TryInto};
 
 use bitvec::prelude::*;
 
@@ -23,6 +23,8 @@ enum PdoRegister {
     VelocityActualValue,
     TorqueActualValue,
     ErrorCode,
+    HallSensor,
+    AbsoluteEncoder,
 }
 
 impl PdoRegister {
@@ -39,6 +41,8 @@ impl PdoRegister {
             PdoRegister::VelocityActualValue => "Velocity actual value",
             PdoRegister::TorqueActualValue => "Torque actual value",
             PdoRegister::ErrorCode => "Error code",
+            PdoRegister::HallSensor => "Hall sensor",
+            PdoRegister::AbsoluteEncoder => "Absolute encoder",
         }
     }
 }
@@ -213,6 +217,16 @@ impl EposController {
     pub fn get_error_code(&self, slave_id: u16) -> u16 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::ErrorCode);
         u16::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    pub fn get_hall_sensor_value(&self, slave_id: u16) -> i32 {
+        let bytes = self.get_pdo_register(slave_id, PdoRegister::HallSensor);
+        i32::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    pub fn get_absolute_encoder_value(&self, slave_id: u16) -> i32 {
+        let bytes = self.get_pdo_register(slave_id, PdoRegister::AbsoluteEncoder);
+        i32::from_le_bytes(bytes.try_into().unwrap())
     }
 
     fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister) -> Vec<u8> {
