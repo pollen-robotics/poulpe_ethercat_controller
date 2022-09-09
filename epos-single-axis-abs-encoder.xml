@@ -1,0 +1,124 @@
+<?xml version="1.0" ?>
+<EtherCATInfo>
+  <Vendor>
+    <Id>251</Id>
+  </Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>  <!-- Slave 0 -->
+        <Type ProductCode="#x69500000" RevisionNo="#x01700000">EPOS4</Type>
+        <Name><![CDATA[EPOS4 Micro 24/5 EtherCAT]]></Name>
+        <Sm Enable="1" StartAddress="#x1000" ControlByte="#x26" DefaultSize="48" />
+        <Sm Enable="1" StartAddress="#x1030" ControlByte="#x22" DefaultSize="48" />
+        <Sm Enable="1" StartAddress="#x1060" ControlByte="#x64" DefaultSize="0" />
+        <Sm Enable="1" StartAddress="#x10f0" ControlByte="#x20" DefaultSize="0" />
+        <RxPdo Sm="2" Fixed="1" Mandatory="1">
+          <Index>#x1600</Index>
+          <Name></Name>
+          <Entry>
+            <Index>#x6040</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Controlword</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6060</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Mode of operation</Name>
+            <DataType>UINT8</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x607a</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Target position</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x60FF</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Target velocity</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x60b1</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Velocity offset</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6071</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Target torque</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+        </RxPdo>
+        <TxPdo Sm="3" Fixed="1" Mandatory="1">
+          <Index>#x1a00</Index>
+          <Name></Name>
+          <Entry>
+            <Index>#x6041</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Statusword</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6061</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Mode of operation display</Name>
+            <DataType>UINT8</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6064</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Position actual value</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x606c</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Velocity actual value</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6077</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Torque actual value</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x603f</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Error code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x60E4</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Hall sensor</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x60E4</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Absolute encoder</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+        </TxPdo>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
