@@ -23,6 +23,7 @@ enum Command {
 
 pub struct EposRemoteClient {
     rt: Runtime,
+    ids: Vec<u16>,
 
     ready_condvar: Arc<(Mutex<bool>, Condvar)>,
     state: Arc<RwLock<HashMap<u16, EposState>>>,
@@ -65,12 +66,13 @@ impl EposRemoteClient {
         });
 
         let url = addr.to_string();
+        let vids = ids.to_vec();
 
         rt.spawn(async move {
             let mut client = EposMultiplexerClient::connect(url).await.unwrap();
 
             let request = Request::new(StateStreamRequest {
-                ids: ids.iter().map(|&id| id as i32).collect(),
+                ids: vids.iter().map(|id| *id as i32).collect(),
                 update_period: update_period.as_secs_f32(),
             });
 
@@ -97,14 +99,18 @@ impl EposRemoteClient {
             }
         });
 
+        let ids = ids.to_vec();
+
         EposRemoteClient {
             rt,
+            ids,
             state,
             command_buff,
         }
     }
 
     pub fn get_position_actual_value(&self, slave_id: u16) -> f32 {
+        assert!(self.ids.contains(&slave_id));
         self.rt.block_on(self.state.read())[&slave_id].actual_position
     }
 
