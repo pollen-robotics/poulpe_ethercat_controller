@@ -102,13 +102,13 @@ impl EposController {
     }
 
     pub fn turn_on(&self, slave_id: u16, reset_target: bool) {
-        if reset_target {
-            // Set Target Position to Actual Pos
-            let actual_pos = self.get_position_actual_value(slave_id);
-            self.set_target_position(slave_id, actual_pos);
-        }
-
         if !self.is_on(slave_id) {
+            if reset_target {
+                // Set Target Position to Actual Pos
+                let actual_pos = self.get_position_actual_value(slave_id);
+                self.set_target_position(slave_id, actual_pos);
+            }
+
             // Shutdown
             self.set_controlword(slave_id, 0x06);
             self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn);
