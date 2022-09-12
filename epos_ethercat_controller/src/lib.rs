@@ -2,7 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use std::{f32::consts::PI, io, time::Duration};
+use std::{f32::consts::PI, io, time::Duration, convert::TryInto};
 
 use bitvec::prelude::*;
 
@@ -95,10 +95,18 @@ impl EposController {
     }
 
     pub fn setup(&self, slave_id: u16) {
+        self.wait_for_status_bit(slave_id, StatusBit::Remote);
+
+        if self.get_status_word(slave_id).contains(&StatusBit::Fault) {
+            self.clear_fault(slave_id);
+        }
+
         self.wait_for_status_bit(slave_id, StatusBit::SwitchedOnDisabled);
 
         // Setup Modes of operation to Cyclic Synchronous Position Mode
         self.set_mode_of_operation(slave_id, 0x08, true);
+
+        log::info!("Setup of slave {} done!", slave_id);
     }
 
     pub fn turn_on(&self, slave_id: u16, reset_target: bool) {
@@ -230,6 +238,7 @@ impl EposController {
     }
 
     pub fn get_error_code(&self, slave_id: u16) -> u16 {
+        // Please refer to EPOS4-Firmware specification 7.2 Device Errors
         let bytes = self.get_pdo_register(slave_id, PdoRegister::ErrorCode);
         u16::from_le_bytes(bytes.try_into().unwrap())
     }
@@ -250,11 +259,28 @@ impl EposController {
     }
 
     fn wait_for_status_bit(&self, slave_id: u16, bit: StatusBit) {
+        log::info!("Waiting for {:?} ({:?})", bit, self.get_status_word(slave_id));
         loop {
             if self.get_status_word(slave_id).contains(&bit) {
                 break;
             }
             self.wait_for_next_cycle();
         }
+    }
+
+    fn clear_fault(&self, slave_id: u16) {
+        log::warn!("Fault needed to be cleared: {}", self.get_error_code(slave_id));
+        self.set_controlword(slave_id, 0x0080);
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inc_vs_rads() {
+        assert_eq!(rads_to_inc(inc_to_rads(2000)), 2000);
     }
 }
