@@ -2,7 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use std::{io, time::Duration, f32::consts::PI};
+use std::{f32::consts::PI, io, time::Duration};
 
 use bitvec::prelude::*;
 
@@ -108,15 +108,17 @@ impl EposController {
             self.set_target_position(slave_id, actual_pos);
         }
 
-        // Shutdown
-        self.set_controlword(slave_id, 0x06);
-        self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn);
+        if !self.is_on(slave_id) {
+            // Shutdown
+            self.set_controlword(slave_id, 0x06);
+            self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn);
 
-        // Switch On & Enable
-        self.set_controlword(slave_id, 0x0F);
-        self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn);
-        self.wait_for_status_bit(slave_id, StatusBit::OperationEnabled);
-        self.wait_for_status_bit(slave_id, StatusBit::VoltageEnabled);
+            // Switch On & Enable
+            self.set_controlword(slave_id, 0x0F);
+            self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn);
+            self.wait_for_status_bit(slave_id, StatusBit::OperationEnabled);
+            self.wait_for_status_bit(slave_id, StatusBit::VoltageEnabled);
+        }
     }
 
     pub fn turn_off(&self, slave_id: u16) {
