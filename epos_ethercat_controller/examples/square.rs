@@ -1,4 +1,10 @@
-use std::{env, error::Error, f32::consts::PI, time::{SystemTime, Duration}, thread::sleep};
+use std::{
+    env,
+    error::Error,
+    f32::consts::PI,
+    thread::sleep,
+    time::{Duration, SystemTime},
+};
 
 use epos_ethercat_controller::EposController;
 
@@ -33,10 +39,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let offset = amp;
 
     loop {
-        epos_controller.set_target_position(slave_id, 0);
+        epos_controller.set_target_position(slave_id, 0.0);
         sleep(Duration::from_secs(2));
 
-        epos_controller.set_target_position(slave_id, 50);
+        epos_controller.set_target_position(slave_id, 90.0_f32.to_radians());
         sleep(Duration::from_secs(2));
     }
 }
