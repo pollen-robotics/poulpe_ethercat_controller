@@ -25,10 +25,10 @@ fn get_state_for_id(controller: &EposController, id: i32) -> EposState {
     EposState {
         id,
         compliant: controller.is_on(slave_id),
-        actual_position: controller.get_position_actual_value(slave_id) as f32,
+        actual_position: controller.get_position_actual_value(slave_id),
         actual_velocity: controller.get_velocity_actual_value(slave_id) as f32,
         actual_torque: controller.get_torque_actual_value(slave_id) as f32,
-        requested_target_position: controller.get_target_position(slave_id) as f32,
+        requested_target_position: controller.get_target_position(slave_id),
     }
 }
 
@@ -104,7 +104,7 @@ impl EposMultiplexer for EposMultiplexerService {
 
                 if let Some(target_pos) = cmd.target_position {
                     self.controller
-                        .set_target_position(slave_id, target_pos as i32);
+                        .set_target_position(slave_id, target_pos);
                 }
             }
 

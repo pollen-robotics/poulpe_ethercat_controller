@@ -25,22 +25,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Turn on slave {}", active_id);
     client.turn_on(active_id);
 
-    let t0 = SystemTime::now();
-
-    let offset = 1000.0;
-    let amp = 1000.0;
-    let freq = 0.5;
+    // let t0 = SystemTime::now();
+    // let amp = 45.0;
+    // let freq = 0.5;
 
     thread::sleep(Duration::from_secs(1));
 
     loop {
         let actual_position = client.get_position_actual_value(passiv_id);
+        log::info!("Pos: {} ", actual_position.to_degrees());
 
-        let t = t0.elapsed().unwrap().as_secs_f32();
-        let target_position = offset + amp * (2.0 * PI * freq * t).sin();
-        let target_position = target_position as u32;
-
-        log::info!("Pos: {} Target: {}", actual_position, target_position);
+        // let t = t0.elapsed().unwrap().as_secs_f32();
+        // let target_position = amp * (2.0 * PI * freq * t).sin();
+        // log::info!("Pos: {} Target: {}", actual_position.to_degrees(), target_position);
 
         client.set_target_position(active_id, actual_position);
         thread::sleep(Duration::from_millis(1));

@@ -14,7 +14,7 @@ use tonic::{transport::Uri, Request};
 #[derive(Debug)]
 enum Command {
     Compliancy(bool),
-    TargetPosition(i32),
+    TargetPosition(f32),
 }
 
 pub struct EposRemoteClient {
@@ -85,8 +85,8 @@ impl EposRemoteClient {
         }
     }
 
-    pub fn get_position_actual_value(&self, slave_id: u16) -> i32 {
-        self.rt.block_on(self.state.read())[&slave_id].actual_position as i32
+    pub fn get_position_actual_value(&self, slave_id: u16) -> f32 {
+        self.rt.block_on(self.state.read())[&slave_id].actual_position
     }
 
     pub fn get_velocity_actual_value(&self, slave_id: u16) -> i32 {
@@ -101,8 +101,8 @@ impl EposRemoteClient {
         self.rt.block_on(self.state.read())[&slave_id].compliant
     }
 
-    pub fn get_target_position(&self, slave_id: u16) -> u32 {
-        self.rt.block_on(self.state.read())[&slave_id].requested_target_position as u32
+    pub fn get_target_position(&self, slave_id: u16) -> f32 {
+        self.rt.block_on(self.state.read())[&slave_id].requested_target_position
     }
 
     pub fn turn_on(&mut self, slave_id: u16) {
@@ -121,7 +121,7 @@ impl EposRemoteClient {
             .push(Command::Compliancy(true))
     }
 
-    pub fn set_target_position(&mut self, slave_id: u16, target_position: i32) {
+    pub fn set_target_position(&mut self, slave_id: u16, target_position: f32) {
         self.rt
             .block_on(self.command_buff.write())
             .entry(slave_id)
@@ -146,7 +146,7 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<EposCommand
         for cmd in cmds {
             match cmd {
                 Command::Compliancy(comp) => epos_cmd.compliancy = Some(*comp),
-                Command::TargetPosition(pos) => epos_cmd.target_position = Some(*pos as f32),
+                Command::TargetPosition(pos) => epos_cmd.target_position = Some(*pos),
             }
         }
 
