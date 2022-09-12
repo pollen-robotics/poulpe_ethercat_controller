@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Condvar, Mutex},
+    time::Duration,
+};
 
 use super::pb::{
     epos_multiplexer_client::EposMultiplexerClient, EposCommand, EposCommands, EposState,
@@ -20,17 +24,22 @@ enum Command {
 pub struct EposRemoteClient {
     rt: Runtime,
 
+    ready_condvar: Arc<(Mutex<bool>, Condvar)>,
     state: Arc<RwLock<HashMap<u16, EposState>>>,
     command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>,
 }
 
 impl EposRemoteClient {
-    pub fn connect(addr: Uri, ids: Vec<u16>, update_period: Duration) -> Self {
+    pub fn connect(addr: Uri, ids: &[u16], update_period: Duration) -> Self {
         let state = Arc::new(RwLock::new(HashMap::new()));
         let state_lock = Arc::clone(&state);
 
         let command_buff = Arc::new(RwLock::new(HashMap::new()));
         let command_buff_lock = Arc::clone(&command_buff);
+
+        let ready_condvar = Arc::new((Mutex::new(false), Condvar::new()));
+        let write_ready_condvar = Arc::clone(&ready_condvar);
+        let mut is_ready = false;
 
         let rt = Builder::new_multi_thread().enable_all().build().unwrap();
 
@@ -74,6 +83,16 @@ impl EposRemoteClient {
                     for s in epos_state.states {
                         state_buff.insert(s.id as u16, s);
                     }
+                }
+
+                if !is_ready {
+                    let (lock, cvar) = &*write_ready_condvar;
+                    let mut ready = lock.lock().unwrap();
+                    *ready = true;
+                    cvar.notify_one();
+                    is_ready = true;
+
+                    log::info!("Client ready!");
                 }
             }
         });
