@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut client = EposRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,
-        vec![active_id, passiv_id],
+        &[active_id, passiv_id],
         Duration::from_millis(1),
     );
 
