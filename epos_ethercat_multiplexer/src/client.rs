@@ -104,9 +104,26 @@ impl EposRemoteClient {
         EposRemoteClient {
             rt,
             ids,
+            ready_condvar,
             state,
             command_buff,
         }
+    }
+
+    pub fn ready(self) -> Self {
+        {
+            let (lock, cvar) = &*self.ready_condvar;
+            let mut ready = lock.lock().unwrap();
+
+            while !*ready {
+                ready = cvar.wait(ready).unwrap();
+            }
+        }
+        self
+    }
+
+    pub fn get_ids(&self) -> Vec<u16> {
+        self.ids.clone()
     }
 
     pub fn get_position_actual_value(&self, slave_id: u16) -> f32 {
@@ -123,7 +140,7 @@ impl EposRemoteClient {
     }
 
     pub fn is_on(&self, slave_id: u16) -> bool {
-        self.rt.block_on(self.state.read())[&slave_id].compliant
+        !self.rt.block_on(self.state.read())[&slave_id].compliant
     }
 
     pub fn get_target_position(&self, slave_id: u16) -> f32 {
