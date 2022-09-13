@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // let hall_sensor = epos_controller.get_hall_sensor_value(slave_id);
         // log::info!("Pos: {} Abs: {} Hall: {}", pos, absolute_encoder, hall_sensor);
 
-        // log::info!("{} {}", target, pos.to_degrees());
+        log::info!("{} {}", target, pos.to_degrees());
 
         epos_controller.wait_for_next_cycle();
     }
