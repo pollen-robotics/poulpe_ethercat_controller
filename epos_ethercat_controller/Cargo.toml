@@ -13,4 +13,6 @@ num-derive = "0.3.3"
 ethercat_controller = { path = "../ethercat_controller" }
 log = "0.4.17"
 env_logger = "0.9.0"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_yaml = "0.9.11"
 

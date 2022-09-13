@@ -2,11 +2,15 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use std::{f32::consts::PI, io, time::Duration, convert::TryInto};
+use std::{collections::HashMap, convert::TryInto, f32::consts::PI, io, time::Duration};
 
 use bitvec::prelude::*;
 
+use epos_config::{EposKind, SlaveConfig};
 use ethercat_controller::EtherCatController;
+
+mod epos_config;
+pub use epos_config::Config;
 
 enum PdoRegister {
     ControlWord,
@@ -43,11 +47,6 @@ impl PdoRegister {
     }
 }
 
-#[derive(Debug)]
-pub struct EposController {
-    controller: EtherCatController,
-}
-
 #[derive(FromPrimitive, Debug, PartialEq)]
 enum StatusBit {
     ReadyToSwitchOn = 0,
@@ -68,26 +67,45 @@ enum StatusBit {
     PositionReferencedToHomePosition = 15,
 }
 
-const REDUCTION: f32 = 4.0;
-const ENCODER_RES: u32 = 4096;
-const RATIO: f32 = ENCODER_RES as f32 * REDUCTION;
-
-fn inc_to_rads(inc: i32) -> f32 {
-    let r: f32 = inc as f32 / RATIO as f32;
+fn inc_to_rads(inc: i32, motor_config: &EposKind) -> f32 {
+    let ratio = motor_config.reduction * motor_config.encoder_resolution as f32;
+    let r: f32 = inc as f32 / ratio;
     r * 2.0 * PI
 }
 
-fn rads_to_inc(rads: f32) -> i32 {
-    let inc = rads * RATIO / (2.0 * PI);
+fn rads_to_inc(rads: f32, motor_config: &EposKind) -> i32 {
+    let ratio = motor_config.reduction * motor_config.encoder_resolution as f32;
+    let inc = rads * ratio / (2.0 * PI);
     inc as i32
 }
 
-impl EposController {
-    pub fn connect(filename: &String, master_id: u32) -> Result<Self, io::Error> {
-        let controller = EtherCatController::open(filename, master_id, Duration::from_millis(1))?
-            .wait_for_ready();
+#[derive(Debug)]
+pub struct EposController {
+    controller: EtherCatController,
+    epos_config: HashMap<u16, EposKind>,
+}
 
-        Ok(Self { controller })
+impl EposController {
+    pub fn connect(config: Config) -> Result<Self, io::Error> {
+        let controller = EtherCatController::open(
+            &config.ethercat.esi,
+            config.ethercat.master_id,
+            Duration::from_millis(1),
+        )?
+        .wait_for_ready();
+
+        let mut epos_config = HashMap::new();
+
+        for slave in config.slaves {
+            if let SlaveConfig::Epos(epos) = slave {
+                epos_config.insert(epos.id, epos);
+            }
+        }
+
+        Ok(Self {
+            controller,
+            epos_config,
+        })
     }
 
     pub fn get_slave_ids(&self) -> Vec<u16> {
@@ -174,11 +192,11 @@ impl EposController {
     pub fn get_target_position(&self, slave_id: u16) -> f32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TargetPosition);
         let inc = i32::from_le_bytes(bytes.try_into().unwrap());
-        inc_to_rads(inc)
+        inc_to_rads(inc, &self.epos_config[&slave_id])
     }
 
     pub fn set_target_position(&self, slave_id: u16, rads: f32) {
-        let inc = rads_to_inc(rads);
+        let inc = rads_to_inc(rads, &self.epos_config[&slave_id]);
         self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &inc.to_le_bytes())
     }
 
@@ -224,7 +242,7 @@ impl EposController {
     pub fn get_position_actual_value(&self, slave_id: u16) -> f32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::PositionActualValue);
         let inc = i32::from_le_bytes(bytes.try_into().unwrap());
-        inc_to_rads(inc)
+        inc_to_rads(inc, &self.epos_config[&slave_id])
     }
 
     pub fn get_velocity_actual_value(&self, slave_id: u16) -> i32 {
@@ -259,7 +277,11 @@ impl EposController {
     }
 
     fn wait_for_status_bit(&self, slave_id: u16, bit: StatusBit) {
-        log::info!("Waiting for {:?} ({:?})", bit, self.get_status_word(slave_id));
+        log::info!(
+            "Waiting for {:?} ({:?})",
+            bit,
+            self.get_status_word(slave_id)
+        );
         loop {
             if self.get_status_word(slave_id).contains(&bit) {
                 break;
@@ -269,11 +291,13 @@ impl EposController {
     }
 
     fn clear_fault(&self, slave_id: u16) {
-        log::warn!("Fault needed to be cleared: {}", self.get_error_code(slave_id));
+        log::warn!(
+            "Fault needed to be cleared: {}",
+            self.get_error_code(slave_id)
+        );
         self.set_controlword(slave_id, 0x0080);
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -281,6 +305,12 @@ mod tests {
 
     #[test]
     fn inc_vs_rads() {
-        assert_eq!(rads_to_inc(inc_to_rads(2000)), 2000);
+        let config = EposKind {
+            id: 0,
+            encoder_resolution: 4096,
+            reduction: 2.0,
+        };
+
+        assert_eq!(rads_to_inc(inc_to_rads(2000, &config), &config), 2000);
     }
 }

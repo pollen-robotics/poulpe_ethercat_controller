@@ -1,6 +1,6 @@
 use std::{env, error::Error, f32::consts::PI, time::SystemTime};
 
-use epos_ethercat_controller::EposController;
+use epos_ethercat_controller::{Config, EposController};
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -8,14 +8,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args().collect();
 
     if args.len() != 3 {
-        println!("usage: {} ESI-FILE SLAVE_ID", env!("CARGO_PKG_NAME"));
+        println!("usage: {} CONFIG SLAVE_ID", env!("CARGO_PKG_NAME"));
         return Ok(());
     }
 
-    let filename = &args[1];
+    let config_path = &args[1];
     let slave_id: u16 = args[2].parse()?;
 
-    let epos_controller = EposController::connect(filename, 0_u32)?;
+    let config = Config::from_yaml(config_path)?;
+    let epos_controller = EposController::connect(config)?;
 
     log::info!("Setup slave {}", slave_id);
     epos_controller.setup(slave_id);
@@ -37,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // let hall_sensor = epos_controller.get_hall_sensor_value(slave_id);
         // log::info!("Pos: {} Abs: {} Hall: {}", pos, absolute_encoder, hall_sensor);
 
-        log::info!("{} {}", target, pos.to_degrees());
+        // log::info!("{} {}", target, pos.to_degrees());
 
         epos_controller.wait_for_next_cycle();
     }

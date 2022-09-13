@@ -4,7 +4,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use epos_ethercat_controller::EposController;
+use epos_ethercat_controller::{Config, EposController};
 use tokio::{sync::mpsc, time::sleep};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
@@ -128,15 +128,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     let args: Vec<_> = env::args().collect();
-    let filename = match args.len() {
+    let config_path = match args.len() {
         2 => &args[1],
         _ => {
-            println!("usage: {} ESI-FILE", env!("CARGO_PKG_NAME"));
+            println!("usage: {} CONFIG", env!("CARGO_PKG_NAME"));
             return Ok(());
         }
     };
 
-    let controller = EposController::connect(filename, 0_u32)?;
+    let config = Config::from_yaml(config_path)?;
+    let controller = EposController::connect(config)?;
 
     for slave_id in controller.get_slave_ids() {
         log::info!("Setup Slave {}...", slave_id);
