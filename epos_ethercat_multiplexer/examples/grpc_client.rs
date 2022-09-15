@@ -1,9 +1,4 @@
-use std::{
-    error::Error,
-    f32::consts::PI,
-    thread,
-    time::{Duration, SystemTime},
-};
+use std::{error::Error, thread, time::Duration};
 
 use epos_ethercat_multiplexer::EposRemoteClient;
 

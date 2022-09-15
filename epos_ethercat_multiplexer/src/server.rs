@@ -137,11 +137,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let config = Config::from_yaml(config_path)?;
-    let controller = EposController::connect(config)?;
+    let mut controller = EposController::connect(config)?;
 
     for slave_id in controller.get_slave_ids() {
         log::info!("Setup Slave {}...", slave_id);
-        controller.setup(slave_id);
+        controller.setup(slave_id, true);
         log::info!("Done!");
     }
 

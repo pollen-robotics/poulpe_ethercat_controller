@@ -19,11 +19,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let active_id: u16 = args[2].parse()?;
 
     let config = Config::from_yaml(config_path)?;
-    let epos_controller = EposController::connect(config)?;
+    let mut epos_controller = EposController::connect(config)?;
 
     for slave_id in vec![passive_id, active_id] {
         log::info!("Setup slave {}", slave_id);
-        epos_controller.setup(slave_id);
+        epos_controller.setup(slave_id, true);
     }
 
     epos_controller.turn_off(passive_id);

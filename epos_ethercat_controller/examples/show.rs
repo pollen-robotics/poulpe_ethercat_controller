@@ -16,10 +16,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let slave_id: u16 = args[2].parse()?;
 
     let config = Config::from_yaml(config_path)?;
-    let epos_controller = EposController::connect(config)?;
+    let mut epos_controller = EposController::connect(config)?;
 
     log::info!("Setup slave {}", slave_id);
-    epos_controller.setup(slave_id);
+    epos_controller.setup(slave_id, true);
 
     epos_controller.turn_on(slave_id, true);
 
@@ -34,6 +34,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         epos_controller.set_target_position(slave_id, target.to_radians());
 
         let pos = epos_controller.get_position_actual_value(slave_id);
+        log::info!("{:?}", pos.to_degrees());
+
         // let absolute_encoder = epos_controller.get_absolute_encoder_value(slave_id);
         // let hall_sensor = epos_controller.get_hall_sensor_value(slave_id);
         // log::info!("Pos: {} Abs: {} Hall: {}", pos, absolute_encoder, hall_sensor);

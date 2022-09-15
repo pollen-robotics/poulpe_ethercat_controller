@@ -83,6 +83,8 @@ fn rads_to_inc(rads: f32, motor_config: &EposKind) -> i32 {
 pub struct EposController {
     controller: EtherCatController,
     epos_config: HashMap<u16, EposKind>,
+
+    position_offset: f32,
 }
 
 impl EposController {
@@ -105,6 +107,7 @@ impl EposController {
         Ok(Self {
             controller,
             epos_config,
+            position_offset: 0.0,
         })
     }
 
@@ -112,7 +115,7 @@ impl EposController {
         self.controller.get_slave_ids()
     }
 
-    pub fn setup(&self, slave_id: u16) {
+    pub fn setup(&mut self, slave_id: u16, set_offset: bool) {
         self.wait_for_status_bit(slave_id, StatusBit::Remote);
 
         if self.get_status_word(slave_id).contains(&StatusBit::Fault) {
@@ -123,6 +126,10 @@ impl EposController {
 
         // Setup Modes of operation to Cyclic Synchronous Position Mode
         self.set_mode_of_operation(slave_id, 0x08, true);
+
+        if set_offset {
+            self.set_position_offset(self.get_position_actual_value(slave_id));
+        }
 
         log::info!("Setup of slave {} done!", slave_id);
     }
@@ -192,10 +199,13 @@ impl EposController {
     pub fn get_target_position(&self, slave_id: u16) -> f32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::TargetPosition);
         let inc = i32::from_le_bytes(bytes.try_into().unwrap());
-        inc_to_rads(inc, &self.epos_config[&slave_id])
+
+        let rads = inc_to_rads(inc, &self.epos_config[&slave_id]);
+        rads - self.position_offset
     }
 
     pub fn set_target_position(&self, slave_id: u16, rads: f32) {
+        let rads = rads + self.position_offset;
         let inc = rads_to_inc(rads, &self.epos_config[&slave_id]);
         self.set_pdo_register(slave_id, PdoRegister::TargetPosition, &inc.to_le_bytes())
     }
@@ -242,7 +252,9 @@ impl EposController {
     pub fn get_position_actual_value(&self, slave_id: u16) -> f32 {
         let bytes = self.get_pdo_register(slave_id, PdoRegister::PositionActualValue);
         let inc = i32::from_le_bytes(bytes.try_into().unwrap());
-        inc_to_rads(inc, &self.epos_config[&slave_id])
+
+        let rads = inc_to_rads(inc, &self.epos_config[&slave_id]);
+        rads - self.position_offset
     }
 
     pub fn get_velocity_actual_value(&self, slave_id: u16) -> i32 {
@@ -259,6 +271,14 @@ impl EposController {
         // Please refer to EPOS4-Firmware specification 7.2 Device Errors
         let bytes = self.get_pdo_register(slave_id, PdoRegister::ErrorCode);
         u16::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    pub fn get_position_offset(&self) -> f32 {
+        self.position_offset
+    }
+
+    pub fn set_position_offset(&mut self, offset: f32) {
+        self.position_offset = offset;
     }
 
     fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister) -> Vec<u8> {
