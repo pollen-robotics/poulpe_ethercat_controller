@@ -1,0 +1,17 @@
+ethercat:
+  master_id: 0
+  esi: /home/pierre/Dev/Ethercat/ethercat_controller/config/esi/epos-3axis.xml
+
+slaves:
+  - !Epos
+    id: 0
+    reduction: 4.267
+    encoder_resolution: 4096
+  - !Epos
+    id: 1
+    reduction: 4.267
+    encoder_resolution: 4096
+  - !Epos
+    id: 2
+    reduction: 4.267
+    encoder_resolution: 4096
