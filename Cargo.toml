@@ -9,3 +9,5 @@ edition = "2021"
 ethercat = "0.2.2"
 ethercat-esi = "0.2.0"
 log = "0.4.17"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_yaml = "0.9.11"
