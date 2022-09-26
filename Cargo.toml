@@ -1,7 +1,11 @@
-[workspace]
+[package]
+name = "ethercat_controller"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "ethercat_controller",
-    "epos_ethercat_controller",
-    "epos_ethercat_multiplexer",
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ethercat = "0.2.2"
+ethercat-esi = "0.2.0"
+log = "0.4.17"
