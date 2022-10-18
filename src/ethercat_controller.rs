@@ -39,9 +39,9 @@ impl EtherCatController {
         master.activate()?;
 
         for (s, o) in &offsets {
-            log::info!("PDO offsets of Slave {}:", u16::from(*s));
+            log::debug!("PDO offsets of Slave {}:", u16::from(*s));
             for (name, (pdo, bit_len, offset)) in o {
-                log::info!(
+                log::debug!(
                     " - \"{}\" : {:X}:{:X} - {:?}, bit length: {}",
                     name,
                     u16::from(pdo.idx),
@@ -203,7 +203,7 @@ pub fn init_master(
         master.request_state(slave_pos, ethercat::AlState::PreOp)?;
 
         let slave_info = master.get_slave_info(slave_pos)?;
-        log::info!("Found device {} : {:?}", dev.name, slave_info);
+        log::debug!("Found device {} : {:?}", dev.name, slave_info);
 
         let slave_addr = SlaveAddr::ByPos(dev_nr as u16);
         let slave_id = SlaveId {
@@ -273,7 +273,7 @@ pub fn init_master(
 
         let cfg_index = config.index();
         let cfg_info = master.get_config_info(cfg_index)?;
-        log::info!("Config info: {:#?}", cfg_info);
+        log::debug!("Config info: {:#?}", cfg_info);
         if cfg_info.slave_position.is_none() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
