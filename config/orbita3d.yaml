@@ -1,0 +1,8 @@
+ethercat:
+  master_id: 0
+  esi: esi/orbita3d.xml
+
+slaves:
+  - !Poulpe
+    id: 0
+    orbita_type: 3

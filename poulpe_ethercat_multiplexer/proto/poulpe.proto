@@ -1,0 +1,55 @@
+syntax = "proto3";
+package poulpe;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message PoulpeIds {
+    repeated int32 ids = 1;
+}
+
+message StateStreamRequest {
+    repeated int32 ids = 1;
+    float update_period = 2;
+}
+
+message PoulpeState {
+    int32 id = 1;
+
+    bool compliant = 2;
+
+    repeated float actual_position = 3;
+    repeated float actual_velocity = 4;
+    repeated float actual_torque = 5;
+
+    repeated float axis_sensors = 6;
+
+    repeated float requested_target_position = 7;
+
+    uint32 state = 8;
+    bool torque_state = 9;
+}
+
+message PoulpeStates {
+    repeated PoulpeState states = 1;
+}
+
+message PoulpeCommand {
+    int32 id = 1;
+
+    google.protobuf.BoolValue compliancy = 2;
+    repeated float target_position = 3;
+    repeated float velocity_limit = 4;
+    repeated float torque_limit = 5;
+}
+
+message PoulpeCommands {
+    repeated PoulpeCommand commands = 1;
+}
+
+service PoulpeMultiplexer {
+    rpc GetPoulpeIds(google.protobuf.Empty) returns (PoulpeIds);
+
+    rpc GetStates (StateStreamRequest) returns (stream PoulpeStates);
+    rpc GetCommands (stream PoulpeCommands) returns (google.protobuf.Empty);
+}

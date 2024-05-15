@@ -2,6 +2,7 @@
 
 members = [
     "ethercat_controller",
-    "epos_ethercat_controller",
-    "epos_ethercat_multiplexer",
+    "poulpe_ethercat_controller",
+    "poulpe_ethercat_multiplexer",
+    "python_client"
 ]

@@ -1,0 +1,82 @@
+use std::{env, error::Error, f32::consts::PI, time::SystemTime};
+
+use poulpe_ethercat_controller::PoulpeController;
+use ethercat_controller::Config;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
+
+    let args: Vec<_> = env::args().collect();
+
+    if args.len() != 5 {
+        println!(
+            "usage: {} ESI-FILE SLAVE_ID AMP FREQ",
+            env!("CARGO_PKG_NAME")
+        );
+        return Ok(());
+    }
+
+    let filename = &args[1];
+    let slave_id: u32 = args[2].parse()?;
+    let amp: f32 = args[3].parse()?;
+    let freq: f32 = args[4].parse()?;
+
+    let pouple_controller = PoulpeController::connect(filename)?;
+
+    log::info!("Setup slave {}", slave_id);
+    pouple_controller.setup(slave_id)?;
+
+    log::info!("Turn on slave {}", slave_id);
+    pouple_controller.set_torque(slave_id, true)?;
+
+    let no_axis = pouple_controller.get_type(slave_id) as usize;
+
+    log::info!("setup the torque and velocity limits");
+    pouple_controller.set_torque_limit(slave_id, vec![1.0; no_axis])?;
+    pouple_controller.set_velocity_limit(slave_id, vec![1.0; no_axis])?;
+
+
+    let t0 = SystemTime::now();
+
+    loop {
+        let t = t0.elapsed().unwrap().as_secs_f32();
+
+        let pos = match pouple_controller.get_current_position(slave_id){
+            Ok(Some(pos)) => pos,
+            _ => {
+                log::error!("Error getting position!");
+                vec![0.0; 2]
+            }
+        };
+        let vel = match pouple_controller.get_current_velocity(slave_id){
+            Ok(Some(vel)) => vel,
+            _ => {
+                log::error!("Error getting velocity!");
+                vec![0.0; 2]
+            }
+            
+        };
+        let torque = match pouple_controller.get_current_torque(slave_id){
+            Ok(Some(torque)) => torque,
+            _ => {
+                log::error!("Error getting torque!");
+                vec![0.0; 2]
+            }
+        };
+
+        let target = amp * (2.0 * PI * freq * t).sin();
+        pouple_controller.set_target_position(slave_id, vec![target; no_axis])?;
+
+        let error = [target - pos[0], target-pos[1]];
+
+        log::info!(
+            "Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",
+            pos,
+            vel,
+            torque,
+            error
+        );
+
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
