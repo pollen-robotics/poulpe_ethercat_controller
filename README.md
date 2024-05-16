@@ -2,6 +2,8 @@
 
 This is the code that manages the communication between the Poulpe and the ethercat master. The code is written in rust.
 
+It is intended to communicate with [poulpe boards](https://github.com/pollen-robotics/elec_Poulpe) running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe).
+
 There are four main crates in the code:
 - `ethercat_controller`: This is the main crate that does the heavy lifting of the communication with the ethercat master. It is a wrapper around the `ethercat-rs` crate. This crate enables to create the ethercat master form an ESI xml file.
 - `poulpe_ethercat_controller`: This is an abstraction layer on top of the `ethercat_controller` crate. It provides a more user friendly interface to the user with specific functions for poulpe boards.
