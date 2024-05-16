@@ -28,7 +28,7 @@ jobs:
           toolchain: stable
           profile: minimal
       - name: Install protc
-        run: apt install -y protobuf-compiler libprotobuf-dev
+        run: sudo apt install -y protobuf-compiler libprotobuf-dev
       - name: Install Mercurial
         run: sudo apt-get install -y mercurial
       - name: Set up IgH repo
