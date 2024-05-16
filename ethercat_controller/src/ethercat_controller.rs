@@ -12,14 +12,14 @@ use std::{
 };
 
 use ethercat::{
-    DomainIdx, Master, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, SlaveAddr, SlaveId,
+    AlState, DomainIdx, Master, Offset, PdoCfg, PdoEntryIdx, MasterAccess, PdoEntryInfo, PdoEntryPos, SlaveAddr, SlaveId,
     SlavePos, SmCfg,
 };
 use ethercat_esi::EtherCatInfo;
 
 #[derive(Debug)]
 pub struct EtherCatController {
-    offsets: HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>>,
+    offsets: SlaveOffsets,
 
     data_lock: Arc<RwLock<Option<Vec<u8>>>>,
     ready_condvar: Arc<(Mutex<bool>, Condvar)>,
@@ -40,15 +40,17 @@ impl EtherCatController {
 
         for (s, o) in &offsets {
             log::debug!("PDO offsets of Slave {}:", u16::from(*s));
-            for (name, (pdo, bit_len, offset)) in o {
-                log::debug!(
-                    " - \"{}\" : {:X}:{:X} - {:?}, bit length: {}",
-                    name,
-                    u16::from(pdo.idx),
-                    u8::from(pdo.sub_idx),
-                    offset,
-                    bit_len
-                );
+            for (name, pdos    ) in o {
+                for (pdo, bit_len, offset) in pdos {
+                    log::debug!(
+                        " - \"{}\" : {:X}:{:X} - {:?}, bit length: {}",
+                        name,
+                        u16::from(pdo.idx),
+                        u8::from(pdo.sub_idx),
+                        offset,
+                        bit_len
+                    );
+                }
             }
         }
 
@@ -95,7 +97,7 @@ impl EtherCatController {
                 let m_state = master.state().unwrap();
                 log::debug!("Current state {:?}", m_state);
 
-                if m_state.link_up {
+                if m_state.link_up  && m_state.al_states == 8 { 
                     let (lock, cvar) = &*write_ready_condvar;
                     let mut ready = lock.lock().unwrap();
                     *ready = true;
@@ -128,19 +130,48 @@ impl EtherCatController {
         ids
     }
 
-    pub fn get_pdo_register(&self, slave_id: u16, register: &String) -> Option<Vec<u8>> {
-        let reg_addr_range = self.get_reg_addr_range(slave_id, register);
+    pub fn get_pdo_register(&self, slave_id: u16, register: &String, index : usize) -> Option<Vec<u8>> {
+        let reg_addr_range = self.get_reg_addr_range(slave_id, register, index);
 
         (*self.data_lock.read().unwrap())
             .as_ref()
             .map(|data| data[reg_addr_range].to_vec())
     }
 
-    pub fn set_pdo_register(&self, slave_id: u16, register: &String, value: Vec<u8>) {
-        let reg_addr_range = self.get_reg_addr_range(slave_id, register);
+    pub fn set_pdo_register(&self, slave_id: u16, register: &String, index : usize, value: Vec<u8> ) {
+        let reg_addr_range = self.get_reg_addr_range(slave_id, register, index);
 
         self.cmd_buff.send((reg_addr_range, value)).unwrap();
     }
+
+
+    pub fn get_pdo_registers(&self, slave_id: u16, register: &String) -> Option<Vec<Vec<u8>>> {
+        let reg_addr_ranges = self.get_reg_addr_ranges(slave_id, register);
+
+        let vals = reg_addr_ranges
+            .iter()
+            .map(|reg_addr_range| {
+                (*self.data_lock.read().unwrap())
+                    .as_ref()
+                    .map(|data| data[reg_addr_range.clone()].to_vec())
+            })
+            .collect::<Option<Vec<Vec<u8>>>>()?;
+        Some(vals)
+    }
+
+    pub fn set_pdo_registers(&self, slave_id: u16, register: &String, values: Vec<Vec<u8>> ) {
+        let reg_addr_ranges = self.get_reg_addr_ranges(slave_id, register);
+
+        if values.len() != reg_addr_ranges.len() {
+            // log::error!("values: {:?}", values);
+            log::warn!("Values length does not match register count, using first {} elements!",reg_addr_ranges.len());
+        }
+
+        for (reg_addr_range, v) in reg_addr_ranges.iter().zip(values) {
+            self.cmd_buff.send((reg_addr_range.clone(), v)).unwrap();
+        }
+    }
+
 
     pub fn wait_for_next_cycle(&self) {
         let (lock, cvar) = &*self.cycle_condvar;
@@ -165,18 +196,34 @@ impl EtherCatController {
         self
     }
 
-    fn get_reg_addr_range(&self, slave_id: u16, register: &String) -> Range<usize> {
+    fn get_reg_addr_range(&self, slave_id: u16, register: &String, index: usize) -> Range<usize> {
         let slave_pos = SlavePos::from(slave_id);
 
-        let (_pdo_entry_idx, bit_len, offset) = self.offsets[&slave_pos][register];
+        let (_pdo_entry_idx, bit_len, offset) = self.offsets[&slave_pos][register][index];
         let addr = offset.byte;
         let bytes_len = (bit_len / 8) as usize;
 
         addr..addr + bytes_len
     }
+
+    fn get_reg_addr_ranges(&self, slave_id: u16, register: &String) -> Vec<Range<usize>> {
+        let slave_pos = SlavePos::from(slave_id);
+
+        let pdos = self.offsets[&slave_pos][register].clone();
+        
+        let mut ranges = Vec::new();
+        for (pdo, bit_len, offset) in pdos {
+            let addr = offset.byte;
+            let bytes_len = (bit_len / 8) as usize;
+            ranges.push(addr..addr + bytes_len);
+        }
+        ranges
+    }
 }
 
-type SlaveOffsets = HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>>;
+type PdoOffsets = HashMap<String, Vec<(PdoEntryIdx, u8, Offset)>>;
+type SlaveOffsets = HashMap<SlavePos, PdoOffsets>;
+
 
 pub fn init_master(
     filename: &String,
@@ -189,30 +236,55 @@ pub fn init_master(
 
     let esi = EtherCatInfo::from_xml_str(&esi_xml_str)?;
 
-    let mut master = Master::open(idx, ethercat::MasterAccess::ReadWrite)?;
+    let mut master = Master::open(idx, MasterAccess::ReadWrite)?;
+    log::debug!("Reserve master");
     master.reserve()?;
-
+    log::debug!("Create domain");
     let domain_idx = master.create_domain()?;
+    let mut offsets: SlaveOffsets = HashMap::new();
 
-    let mut offsets: HashMap<SlavePos, HashMap<String, (PdoEntryIdx, u8, Offset)>> = HashMap::new();
+
+    esi.description.devices.iter().for_each(|dev| {
+        log::debug!("Device: {}, Sync managers {:?}", dev.name, dev.sm);
+        dev.rx_pdo.iter().for_each(|pdo| {
+            log::debug!("  RxPDO: {:?}, SM: {:?}", pdo.idx, pdo.sm);
+            pdo.entries.iter().for_each(|entry| {
+                log::debug!("    Entry: {:?} - {}", entry.entry_idx, entry.name.as_ref().unwrap_or(&"".to_string()));
+            });
+        });
+        dev.tx_pdo.iter().for_each(|pdo| {
+            log::debug!("  TxPDO: {:?}, SM: {:?}", pdo.idx, pdo.sm);
+            pdo.entries.iter().for_each(|entry| {
+                log::debug!("    Entry: {:?} - {}", entry.entry_idx, entry.name.as_ref().unwrap_or(&"".to_string()));
+            });
+        });
+    });
 
     for (dev_nr, dev) in esi.description.devices.iter().enumerate() {
         let slave_pos = SlavePos::from(dev_nr as u16);
         log::debug!("Request PreOp state for {:?}", slave_pos);
-
-        master.request_state(slave_pos, ethercat::AlState::PreOp)?;
-
+        master.request_state(slave_pos, AlState::PreOp)?;
         let slave_info = master.get_slave_info(slave_pos)?;
-        log::debug!("Found device {} : {:?}", dev.name, slave_info);
-
+        log::info!("Found device {}:{:?}", dev.name, slave_info);
         let slave_addr = SlaveAddr::ByPos(dev_nr as u16);
         let slave_id = SlaveId {
             vendor_id: esi.vendor.id,
             product_code: dev.product_code,
         };
-
         let mut config = master.configure_slave(slave_addr, slave_id)?;
-        let mut entry_offsets: HashMap<String, (PdoEntryIdx, u8, Offset)> = HashMap::new();
+        let mut entry_offsets: PdoOffsets = HashMap::new();
+
+        // display syncs 
+        log::debug!("Device: {}, Sync managers {:?}", dev.name, dev.sm);
+
+        log::debug!("no rx_pdo: {}", dev.rx_pdo.len());
+        log::debug!("no tx_pdo: {}", dev.tx_pdo.len());
+        
+        let rx_smidxs = dev.rx_pdo.iter().map(|pdo| pdo.sm).collect::<Vec<_>>();
+        let tx_smidxs = dev.tx_pdo.iter().map(|pdo| pdo.sm).collect::<Vec<_>>();
+        log::debug!("RX SMIDX: {:?}", rx_smidxs);
+        log::debug!("TX SMIDX: {:?}", tx_smidxs);
+        
 
         let rx_pdos: Vec<PdoCfg> = dev
             .rx_pdo
@@ -252,28 +324,45 @@ pub fn init_master(
             })
             .collect();
 
-        let output = SmCfg::output(2.into());
-        let input = SmCfg::input(3.into());
-
-        config.config_sm_pdos(output, &rx_pdos)?;
-        config.config_sm_pdos(input, &tx_pdos)?;
-
-        for pdo in &rx_pdos {
+        let mut i = 0;
+        for  pdo in &rx_pdos {
+            config.config_sm_pdos(SmCfg::output(rx_smidxs[i]), &[pdo.clone()])?;
+            i += 1;
+            // Positions of RX PDO  
+            log::debug!("Positions of RX PDO 0x{:X}:", u16::from(pdo.idx));
             for entry in &pdo.entries {
                 let offset = config.register_pdo_entry(entry.entry_idx, domain_idx)?;
-                entry_offsets.insert(entry.name.clone(), (entry.entry_idx, entry.bit_len, offset));
+                let name = entry.name.clone();
+                if entry_offsets.contains_key(&name){
+                    entry_offsets.get_mut(&name).unwrap().push((entry.entry_idx, entry.bit_len, offset));
+                }else{
+                    entry_offsets.insert(name, vec!((entry.entry_idx, entry.bit_len, offset)));
+                }
             }
         }
+        i = 0;
         for pdo in &tx_pdos {
+            config.config_sm_pdos(SmCfg::input(tx_smidxs[i]), &[pdo.clone()])?;
+            i += 1;
+            // Positions of TX PDO
+            log::debug!("Positions of TX PDO 0x{:X}:", u16::from(pdo.idx));
             for entry in &pdo.entries {
                 let offset = config.register_pdo_entry(entry.entry_idx, domain_idx)?;
-                entry_offsets.insert(entry.name.clone(), (entry.entry_idx, entry.bit_len, offset));
+                let name = entry.name.clone();
+                if entry_offsets.contains_key(&name){
+                    entry_offsets.get_mut(&name).unwrap().push((entry.entry_idx, entry.bit_len, offset));
+                }else{
+                    entry_offsets.insert(name, vec!((entry.entry_idx, entry.bit_len, offset)));
+                }
             }
         }
 
         let cfg_index = config.index();
+
+
+
         let cfg_info = master.get_config_info(cfg_index)?;
-        log::debug!("Config info: {:#?}", cfg_info);
+        log::info!("Config info: {:#?}", cfg_info);
         if cfg_info.slave_position.is_none() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -282,6 +371,5 @@ pub fn init_master(
         }
         offsets.insert(slave_pos, entry_offsets);
     }
-
     Ok((master, domain_idx, offsets))
 }

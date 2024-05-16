@@ -16,16 +16,16 @@ pub struct EthercatConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SlaveConfig {
-    Epos(EposKind),
+    Poulpe(PoulpeKind),
     Unknown,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct EposKind {
+pub struct PoulpeKind {
     pub id: u16,
-    pub encoder_resolution: u32,
-    pub reduction: f32,
+    pub orbita_type: u32,
 }
+
 
 impl Config {
     pub fn from_yaml(path: &str) -> Result<Self, Box<dyn Error>> {
