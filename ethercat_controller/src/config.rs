@@ -26,7 +26,6 @@ pub struct PoulpeKind {
     pub orbita_type: u32,
 }
 
-
 impl Config {
     pub fn from_yaml(path: &str) -> Result<Self, Box<dyn Error>> {
         let yaml = fs::read_to_string(path)?;

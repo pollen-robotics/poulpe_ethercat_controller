@@ -35,7 +35,6 @@ impl PyPoulpeRemoteClient {
         self.client.turn_on(slave_id);
     }
 
-    
     pub fn turn_off(&mut self, slave_id: u16) {
         self.client.turn_off(slave_id);
     }
@@ -53,54 +52,53 @@ impl PyPoulpeRemoteClient {
     }
 
     pub fn get_position_actual_value(&mut self, slave_id: u16) -> Vec<f32> {
-        match self.client.get_position_actual_value(slave_id){
+        match self.client.get_position_actual_value(slave_id) {
             Ok(position) => position,
             _ => panic!("Error in getting position actual value"),
         }
     }
 
     pub fn get_target_position(&mut self, slave_id: u16) -> Vec<f32> {
-        match self.client.get_target_position(slave_id){
+        match self.client.get_target_position(slave_id) {
             Ok(position) => position,
-            _ => panic!("Error in getting target position")
+            _ => panic!("Error in getting target position"),
         }
     }
 
     pub fn get_velocity_actual_value(&mut self, slave_id: u16) -> Vec<f32> {
         match self.client.get_velocity_actual_value(slave_id) {
             Ok(velocity) => velocity,
-            _ => panic!("Error in getting velocity actual value")
+            _ => panic!("Error in getting velocity actual value"),
         }
     }
 
     pub fn get_torque_actual_value(&mut self, slave_id: u16) -> Vec<f32> {
         match self.client.get_torque_actual_value(slave_id) {
             Ok(torque) => torque,
-            _ => panic!("Error in getting torque actual value")
+            _ => panic!("Error in getting torque actual value"),
         }
     }
 
     pub fn get_axis_sensors(&mut self, slave_id: u16) -> Vec<f32> {
         match self.client.get_axis_sensors(slave_id) {
             Ok(sensors) => sensors,
-            _ => panic!("Error in getting axis sensors")
+            _ => panic!("Error in getting axis sensors"),
         }
     }
 
     pub fn get_torque_state(&mut self, slave_id: u16) -> bool {
-        match self.client.get_torque_state(slave_id){ 
+        match self.client.get_torque_state(slave_id) {
             Ok(state) => state,
-            _ => panic!("Error in getting torque state")
+            _ => panic!("Error in getting torque state"),
         }
     }
 
     pub fn get_state(&mut self, slave_id: u16) -> u32 {
         match self.client.get_state(slave_id) {
             Ok(state) => state,
-            _ => panic!("Error in getting state")
+            _ => panic!("Error in getting state"),
         }
     }
-
 
     // Define other methods similarly...
 }
