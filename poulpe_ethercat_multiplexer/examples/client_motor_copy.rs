@@ -45,9 +45,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         // let target_position = amp * (2.0 * PI * freq * t).sin();
         // let target_position = target_position as u32;
 
-        log::info!("P0: {:?}\tP1: {:?},\tErr {}", actual_position[0]*-15.0, actual_position_active[0], actual_position[0] - actual_position_active[0]/-15.0);
+        log::info!(
+            "P0: {:?}\tP1: {:?},\tErr {}",
+            actual_position[0] * -15.0,
+            actual_position_active[0],
+            actual_position[0] - actual_position_active[0] / -15.0
+        );
 
-        client.set_target_position(active_id, vec![(actual_position[0])*-15.0; actual_position_active.len()]);
+        client.set_target_position(
+            active_id,
+            vec![(actual_position[0]) * -15.0; actual_position_active.len()],
+        );
         thread::sleep(Duration::from_millis(5));
     }
     Ok(())

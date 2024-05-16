@@ -1,7 +1,7 @@
 pub(crate) enum PdoRegister {
     State,
     OrbitaType,
-    
+
     TroqueState,
     TargetPosition,
     VelocityLimit,

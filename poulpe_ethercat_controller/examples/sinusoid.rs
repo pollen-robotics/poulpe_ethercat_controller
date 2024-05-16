@@ -1,7 +1,7 @@
 use std::{env, error::Error, f32::consts::PI, time::SystemTime};
 
-use poulpe_ethercat_controller::PoulpeController;
 use ethercat_controller::Config;
+use poulpe_ethercat_controller::PoulpeController;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -35,28 +35,26 @@ fn main() -> Result<(), Box<dyn Error>> {
     pouple_controller.set_torque_limit(slave_id, vec![1.0; no_axis])?;
     pouple_controller.set_velocity_limit(slave_id, vec![1.0; no_axis])?;
 
-
     let t0 = SystemTime::now();
 
     loop {
         let t = t0.elapsed().unwrap().as_secs_f32();
 
-        let pos = match pouple_controller.get_current_position(slave_id){
+        let pos = match pouple_controller.get_current_position(slave_id) {
             Ok(Some(pos)) => pos,
             _ => {
                 log::error!("Error getting position!");
                 vec![0.0; 2]
             }
         };
-        let vel = match pouple_controller.get_current_velocity(slave_id){
+        let vel = match pouple_controller.get_current_velocity(slave_id) {
             Ok(Some(vel)) => vel,
             _ => {
                 log::error!("Error getting velocity!");
                 vec![0.0; 2]
             }
-            
         };
-        let torque = match pouple_controller.get_current_torque(slave_id){
+        let torque = match pouple_controller.get_current_torque(slave_id) {
             Ok(Some(torque)) => torque,
             _ => {
                 log::error!("Error getting torque!");
@@ -67,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let target = amp * (2.0 * PI * freq * t).sin();
         pouple_controller.set_target_position(slave_id, vec![target; no_axis])?;
 
-        let error = [target - pos[0], target-pos[1]];
+        let error = [target - pos[0], target - pos[1]];
 
         log::info!(
             "Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",

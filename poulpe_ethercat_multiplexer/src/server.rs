@@ -1,5 +1,9 @@
 use std::{
-    env, f32::consts::E, mem::take, sync::Arc, time::{Duration, SystemTime}
+    env,
+    f32::consts::E,
+    mem::take,
+    sync::Arc,
+    time::{Duration, SystemTime},
 };
 
 use poulpe_ethercat_controller::PoulpeController;
@@ -36,21 +40,21 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> PoulpeState {
                 vec![0.0; controller.get_orbita_type(slave_id) as usize]
             }
         },
-        actual_velocity: match controller.get_current_velocity(slave_id){
+        actual_velocity: match controller.get_current_velocity(slave_id) {
             Ok(Some(vel)) => vel,
             _ => {
                 log::error!("Failed to get actual velocity for slave {}", slave_id);
                 vec![0.0; controller.get_orbita_type(slave_id) as usize]
             }
         },
-        actual_torque: match controller.get_current_torque(slave_id){
+        actual_torque: match controller.get_current_torque(slave_id) {
             Ok(Some(torque)) => torque,
             _ => {
                 log::error!("Failed to get actual torque for slave {}", slave_id);
                 vec![0.0; controller.get_orbita_type(slave_id) as usize]
             }
         },
-        axis_sensors: match controller.get_current_axis_sensors(slave_id){
+        axis_sensors: match controller.get_current_axis_sensors(slave_id) {
             Ok(Some(sensor)) => sensor,
             _ => {
                 log::error!("Failed to get axis sensor for slave {}", slave_id);
@@ -60,18 +64,21 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> PoulpeState {
         requested_target_position: match controller.get_current_target_position(slave_id) {
             Ok(Some(pos)) => pos,
             _ => {
-                log::error!("Failed to get requested target position for slave {}", slave_id);
+                log::error!(
+                    "Failed to get requested target position for slave {}",
+                    slave_id
+                );
                 vec![0.0; controller.get_orbita_type(slave_id) as usize]
             }
         },
-        state : controller.get_status(slave_id) as u32,
-        torque_state : match controller.is_torque_on(slave_id){
+        state: controller.get_status(slave_id) as u32,
+        torque_state: match controller.is_torque_on(slave_id) {
             Ok(Some(state)) => state,
             _ => {
                 log::error!("Failed to get torque state for slave {}", slave_id);
                 false
             }
-        }
+        },
     }
 }
 
@@ -145,7 +152,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 }
 
                 let target_pos = cmd.target_position;
-                if target_pos.len() !=0 {
+                if target_pos.len() != 0 {
                     self.controller.set_target_position(slave_id, target_pos);
                 }
                 let velocity_limit = cmd.velocity_limit;
@@ -156,7 +163,6 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 if torque_limit.len() != 0 {
                     self.controller.set_torque_limit(slave_id, torque_limit);
                 }
-
             }
 
             nb += 1;

@@ -10,7 +10,7 @@ use poulpe_ethercat_multiplexer::PoulpeRemoteClient;
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    let id: u16= 0;
+    let id: u16 = 0;
 
     let mut client = PoulpeRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,
@@ -37,7 +37,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         let actual_torque = client.get_torque_actual_value(id).unwrap();
         let state = client.get_state(id);
 
-        log::info!("state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}", state, actual_position, actual_velocity, actual_torque);
+        log::info!(
+            "state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
+            state,
+            actual_position,
+            actual_velocity,
+            actual_torque
+        );
 
         let t = t0.elapsed().unwrap().as_secs_f32();
         let target_position = amp * (2.0 * PI * freq * t).sin();

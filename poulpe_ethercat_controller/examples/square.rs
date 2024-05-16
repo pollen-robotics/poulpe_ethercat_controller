@@ -1,7 +1,13 @@
-use std::{env, error::Error, f32::consts::PI, time::{SystemTime, Duration}, thread::sleep};
+use std::{
+    env,
+    error::Error,
+    f32::consts::PI,
+    thread::sleep,
+    time::{Duration, SystemTime},
+};
 
-use poulpe_ethercat_controller::PoulpeController;
 use ethercat_controller::Config;
+use poulpe_ethercat_controller::PoulpeController;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -41,11 +47,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         pouple_controller.set_target_position(slave_id, vec![0.0; no_axis])?;
         sleep(Duration::from_secs(2));
 
-        log::info!("Current position: {:?}", pouple_controller.get_current_position(slave_id)?);
+        log::info!(
+            "Current position: {:?}",
+            pouple_controller.get_current_position(slave_id)?
+        );
 
         pouple_controller.set_target_position(slave_id, vec![3.14; no_axis])?;
         sleep(Duration::from_secs(2));
-        log::info!("Current position: {:?}", pouple_controller.get_current_position(slave_id)?);
-
+        log::info!(
+            "Current position: {:?}",
+            pouple_controller.get_current_position(slave_id)?
+        );
     }
 }

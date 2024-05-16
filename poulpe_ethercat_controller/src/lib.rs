@@ -12,7 +12,7 @@ use ethercat_controller::{
 };
 
 mod register;
-use register::{PdoRegister, BoardStatus};
+use register::{BoardStatus, PdoRegister};
 
 #[derive(Debug)]
 pub struct PoulpeController {
@@ -21,20 +21,26 @@ pub struct PoulpeController {
 }
 
 impl PoulpeController {
-    pub fn connect(filename: &str ) -> Result<Self, Box<dyn Error>> {
+    pub fn connect(filename: &str) -> Result<Self, Box<dyn Error>> {
         let config = Config::from_yaml(filename)?;
-        
+
         // check if esi file exists
         let mut esi_filename = config.ethercat.esi;
         if !std::path::Path::new(&esi_filename).exists() {
             // try if local
-            let local_esi = std::path::Path::new(filename).parent().unwrap().join(&esi_filename);
-            log::warn!("ESI file does not exist: {:?}, trying local one.", esi_filename);
+            let local_esi = std::path::Path::new(filename)
+                .parent()
+                .unwrap()
+                .join(&esi_filename);
+            log::warn!(
+                "ESI file does not exist: {:?}, trying local one.",
+                esi_filename
+            );
             log::debug!("Local ESI file: {:?}", local_esi);
             if !local_esi.exists() {
                 log::error!("ESI file does not exist: {:?}", local_esi);
                 return Err("ESI file does not exist".into());
-            }else{
+            } else {
                 // use local
                 esi_filename = local_esi.to_str().unwrap().to_string();
             }
@@ -58,7 +64,7 @@ impl PoulpeController {
 
         Ok(Self {
             inner: controller,
-            poulpe_config
+            poulpe_config,
         })
     }
 
@@ -67,7 +73,11 @@ impl PoulpeController {
     }
 
     pub fn get_slave_ids(&self) -> Vec<u32> {
-        self.inner.get_slave_ids().iter().map(|&x| x as u32).collect()
+        self.inner
+            .get_slave_ids()
+            .iter()
+            .map(|&x| x as u32)
+            .collect()
     }
 
     // fn wait_for_status_bit(&self, slave_id: u16, satus: BoardStatus) {
@@ -110,7 +120,7 @@ impl PoulpeController {
             .get_pdo_registers(slave_id, &reg.name().to_string())
             .unwrap()
     }
-    fn set_pdo_registers(&self, slave_id: u16, reg: PdoRegister, values:  Vec<Vec<u8>>) {
+    fn set_pdo_registers(&self, slave_id: u16, reg: PdoRegister, values: Vec<Vec<u8>>) {
         self.inner
             .set_pdo_registers(slave_id, &reg.name().to_string(), values);
     }
@@ -121,10 +131,14 @@ impl PoulpeController {
         let slave_id = id as u16;
 
         let no_axes = self.poulpe_config[&slave_id].orbita_type;
-        let orbita_type = self.get_pdo_register(slave_id, PdoRegister::OrbitaType,0)[0] as u32;
+        let orbita_type = self.get_pdo_register(slave_id, PdoRegister::OrbitaType, 0)[0] as u32;
 
         if orbita_type != no_axes {
-            log::error!("Orbita type mismatch: expected {}, got {}", no_axes, orbita_type);
+            log::error!(
+                "Orbita type mismatch: expected {}, got {}",
+                no_axes,
+                orbita_type
+            );
             return Err("Orbita type mismatch".into());
         }
 
@@ -135,16 +149,21 @@ impl PoulpeController {
 
     pub fn is_torque_on(&self, id: u32) -> Result<Option<bool>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
-        let status = self.get_pdo_register(slave_id, PdoRegister::TroqueOn,0)[0];
+        let status = self.get_pdo_register(slave_id, PdoRegister::TroqueOn, 0)[0];
         let no_motors = self.poulpe_config[&slave_id].orbita_type;
         let mut torque_on = true;
-        log::info!("Checking torque on slave {} with status {}, {}", id, status, no_motors);
+        log::info!(
+            "Checking torque on slave {} with status {}, {}",
+            id,
+            status,
+            no_motors
+        );
         for i in 0..no_motors {
             if status & (1 << i) == 0 {
                 torque_on = false;
                 break;
             }
-        } 
+        }
         Ok(Some(torque_on))
     }
     pub fn set_torque(
@@ -154,10 +173,15 @@ impl PoulpeController {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let slave_id = id as u16;
         if let Some(actual_torque) = self.is_torque_on(id)? {
-            log::info!("Setting torque on slave {} to {} from {}", id, requested_torque, actual_torque);
+            log::info!(
+                "Setting torque on slave {} to {} from {}",
+                id,
+                requested_torque,
+                actual_torque
+            );
             if actual_torque == requested_torque {
                 return Ok(());
-            }else{
+            } else {
                 let no_motors = self.poulpe_config[&slave_id].orbita_type;
                 let mut torque_on: u8 = 0x0;
                 if requested_torque {
@@ -167,7 +191,6 @@ impl PoulpeController {
                 }
                 self.set_pdo_register(slave_id, PdoRegister::TroqueState, 0, &[torque_on]);
             }
-            
         }
 
         Ok(())
@@ -180,73 +203,108 @@ impl PoulpeController {
         Ok(())
     }
 
-    pub fn get_current_temperature(&self, _id: u32) -> Result<Option<f32>, Box<dyn std::error::Error>> {
+    pub fn get_current_temperature(
+        &self,
+        _id: u32,
+    ) -> Result<Option<f32>, Box<dyn std::error::Error>> {
         Ok(Some(42.0))
     }
 
-
     pub fn get_status(&self, slave_id: u32) -> BoardStatus {
-        let byte = self.get_pdo_register(slave_id as u16, PdoRegister::State , 0)[0];
-        BoardStatus::from_u8(byte)                
+        let byte = self.get_pdo_register(slave_id as u16, PdoRegister::State, 0)[0];
+        BoardStatus::from_u8(byte)
     }
 
     pub fn get_type(&self, slave_id: u32) -> u8 {
-        let byte = self.get_pdo_register(slave_id  as u16, PdoRegister::OrbitaType , 0)[0];
-        byte                   
+        let byte = self.get_pdo_register(slave_id as u16, PdoRegister::OrbitaType, 0)[0];
+        byte
     }
 
-
-    fn get_register_values(&self, id: u32, register: PdoRegister) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+    fn get_register_values(
+        &self,
+        id: u32,
+        register: PdoRegister,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
         let bytes = self.get_pdo_registers(slave_id, register);
-        let values = bytes.iter().map(|x| f32::from_le_bytes(x[0..4].try_into().unwrap())).collect::<Vec<f32>>();
+        let values = bytes
+            .iter()
+            .map(|x| f32::from_le_bytes(x[0..4].try_into().unwrap()))
+            .collect::<Vec<f32>>();
         Ok(Some(values))
     }
-    
-    pub fn get_current_position(&self, id: u32) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+
+    pub fn get_current_position(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         self.get_register_values(id, PdoRegister::PositionActualValue)
     }
-    
-    pub fn get_current_velocity(&self, id: u32) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+
+    pub fn get_current_velocity(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         self.get_register_values(id, PdoRegister::VelocityActualValue)
     }
-    
-    pub fn get_current_torque(&self, id: u32) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+
+    pub fn get_current_torque(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         self.get_register_values(id, PdoRegister::TorqueActualValue)
     }
-    
-    pub fn get_current_axis_sensors(&self, id: u32) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+
+    pub fn get_current_axis_sensors(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         self.get_register_values(id, PdoRegister::AxisSensorActualValue)
     }
-    
-    pub fn get_current_target_position(&self, id: u32) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+
+    pub fn get_current_target_position(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         self.get_register_values(id, PdoRegister::TargetPosition)
     }
 
-
-
-    fn set_register_values(&self, id: u32, register: PdoRegister, values: Vec<f32>) -> Result<(), Box<dyn std::error::Error>> {
+    fn set_register_values(
+        &self,
+        id: u32,
+        register: PdoRegister,
+        values: Vec<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let slave_id = id as u16;
         let values_bytes: Vec<Vec<u8>> = values.iter().map(|&x| x.to_le_bytes().to_vec()).collect();
         self.set_pdo_registers(slave_id, register, values_bytes);
         Ok(())
     }
-    
-    pub fn set_target_position(&self, id: u32, target_position: Vec<f32>) -> Result<(), Box<dyn std::error::Error>> {
+
+    pub fn set_target_position(
+        &self,
+        id: u32,
+        target_position: Vec<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::TargetPosition, target_position)
     }
-    
-    pub fn set_velocity_limit(&self, id: u32, velocity_limit: Vec<f32>) -> Result<(), Box<dyn std::error::Error>> {
+
+    pub fn set_velocity_limit(
+        &self,
+        id: u32,
+        velocity_limit: Vec<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::VelocityLimit, velocity_limit)
     }
-    
-    pub fn set_torque_limit(&self, id: u32, torque_limit: Vec<f32>) -> Result<(), Box<dyn std::error::Error>> {
+
+    pub fn set_torque_limit(
+        &self,
+        id: u32,
+        torque_limit: Vec<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::TorqueLimit, torque_limit)
     }
-
-
 }
-
 
 // #[cfg(test)]
 // mod tests {

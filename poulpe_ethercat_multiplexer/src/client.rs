@@ -38,17 +38,19 @@ impl PoulpeRemoteClient {
 
         let url = addr.to_string();
 
-
         rt.spawn(async move {
-            let mut client = match PoulpeMultiplexerClient::connect(url).await{
+            let mut client = match PoulpeMultiplexerClient::connect(url).await {
                 Ok(client) => client,
                 Err(e) => {
-                    log::error!("Error in connecting to the server! Check if server is up!!!\n  {:?}",e);
+                    log::error!(
+                        "Error in connecting to the server! Check if server is up!!!\n  {:?}",
+                        e
+                    );
                     return;
                 }
             };
 
-            let command_stream = async_stream::stream!{
+            let command_stream = async_stream::stream! {
                 loop {
                     {
                         let mut cmd_map = command_buff_lock.write().await;
@@ -61,19 +63,22 @@ impl PoulpeRemoteClient {
                 }
             };
             let request = Request::new(command_stream);
-            match client.get_commands(request).await{
+            match client.get_commands(request).await {
                 Ok(_) => log::info!("Command stream ended"),
-                Err(e) => log::error!("Error in command stream: {:?}", e)
+                Err(e) => log::error!("Error in command stream: {:?}", e),
             }
         });
 
         let url = addr.to_string();
 
         rt.spawn(async move {
-            let mut client = match PoulpeMultiplexerClient::connect(url).await{
+            let mut client = match PoulpeMultiplexerClient::connect(url).await {
                 Ok(client) => client,
                 Err(e) => {
-                    log::error!("Error in connecting to the server! Check if server is up!!!\n  {:?}",e);
+                    log::error!(
+                        "Error in connecting to the server! Check if server is up!!!\n  {:?}",
+                        e
+                    );
                     return;
                 }
             };
@@ -95,7 +100,7 @@ impl PoulpeRemoteClient {
                 }
             }
         });
-        
+
         PoulpeRemoteClient {
             rt,
             state,
@@ -103,7 +108,7 @@ impl PoulpeRemoteClient {
         }
     }
 
-    fn get_state_property<T, F>(&self, slave_id: u16, f: F, default: T) -> Result<T, ()> 
+    fn get_state_property<T, F>(&self, slave_id: u16, f: F, default: T) -> Result<T, ()>
     where
         F: Fn(&PoulpeState) -> T,
     {
@@ -135,10 +140,14 @@ impl PoulpeRemoteClient {
     }
 
     pub fn get_target_position(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
-        self.get_state_property(slave_id, |state| state.requested_target_position.clone(), vec![])
+        self.get_state_property(
+            slave_id,
+            |state| state.requested_target_position.clone(),
+            vec![],
+        )
     }
 
-    pub fn get_state(&self, slave_id: u16) -> Result<u32, ()>{
+    pub fn get_state(&self, slave_id: u16) -> Result<u32, ()> {
         self.get_state_property(slave_id, |state| state.state, 255)
     }
 
@@ -149,7 +158,6 @@ impl PoulpeRemoteClient {
     pub fn get_axis_sensors(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
     }
-
 
     fn push_command(&mut self, slave_id: u16, command: Command) {
         self.rt
@@ -176,8 +184,6 @@ impl PoulpeRemoteClient {
     pub fn set_torque_limit(&mut self, slave_id: u16, torque_limit: Vec<f32>) {
         self.push_command(slave_id, Command::TorqueLimit(torque_limit));
     }
-
-
 }
 
 fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeCommands> {
@@ -197,17 +203,17 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
             match cmd {
                 Command::Compliancy(comp) => poulpe_cmd.compliancy = Some(*comp),
                 Command::TargetPosition(pos) => {
-                    if pos.len()!=0 {
-                        poulpe_cmd.target_position.extend(pos.iter().cloned()); 
+                    if pos.len() != 0 {
+                        poulpe_cmd.target_position.extend(pos.iter().cloned());
                     }
-                },
+                }
                 Command::VelocityLimit(vel) => {
-                    if vel.len()!=0 {
+                    if vel.len() != 0 {
                         poulpe_cmd.velocity_limit.extend(vel.iter().cloned());
                     }
-                },
+                }
                 Command::TorqueLimit(torque) => {
-                    if torque.len()!=0 {
+                    if torque.len() != 0 {
                         poulpe_cmd.torque_limit.extend(torque.iter().cloned());
                     }
                 }
