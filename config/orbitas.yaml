@@ -1,0 +1,11 @@
+ethercat:
+  master_id: 0
+  esi: esi/orbitas.xml
+
+slaves:
+  - !Poulpe
+    id: 0
+    orbita_type: 3
+  - !Poulpe
+    id: 1
+    orbita_type: 2
