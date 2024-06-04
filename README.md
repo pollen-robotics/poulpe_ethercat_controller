@@ -18,9 +18,11 @@ See the notion: https://www.notion.so/pollen-robotics/Setup-EtherCAT-1ecce786847
 Installing the ehtercat master
 
 - Install the dependencies (on ubuntu):
-    - sudo apt install autoconf libtool
+    - `sudo apt install autoconf libtool`
 - Install the [ethercat master](https://etherlab.org/en/ethercat/)
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
+    - `cd ethercat`
+    - use the `stable-1.5` branch `git checkout stable-1.5`
     - `./bootstrap`
     - `./configure --enable-generic --disable-8139too`
     - `make all modules`
@@ -41,3 +43,11 @@ See the  for more info.
 - Use `ethercat` (installed with `make install` after the compilation) to veviry is the master is working
     - ex. `ethercat graph` (list of nodes connected)
     - ex. `ethercat slaves` (list of slaves connected)
+
+## Enabling the ethercat on poulpe
+
+Poulpe boards have LN9252 chip that allows for the communication with the ethercat master. The chip is connected to the STM32H7 microcontroller using SPI. The poulpe board's firmware is configured to communicate with the LN9252 chip and send and receive commands from the ethercat master.
+See more info in the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe). 
+
+In order to be able to communicate with the maser, the slave have to have proporly configured eeprom of the LN9252 chip. See the procedure in the `config` directory [here](config/README.md)
+
