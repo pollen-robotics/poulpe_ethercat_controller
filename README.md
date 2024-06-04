@@ -18,7 +18,7 @@ See the notion: https://www.notion.so/pollen-robotics/Setup-EtherCAT-1ecce786847
 Installing the ehtercat master
 
 - Install the dependencies (on ubuntu):
-    - sudo apt install autoconf libtool
+    - `sudo apt install autoconf libtool`
 - Install the [ethercat master](https://etherlab.org/en/ethercat/)
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
     - `./bootstrap`
