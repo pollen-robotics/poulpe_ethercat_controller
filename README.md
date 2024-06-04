@@ -21,6 +21,8 @@ Installing the ehtercat master
     - `sudo apt install autoconf libtool`
 - Install the [ethercat master](https://etherlab.org/en/ethercat/)
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
+    - `cd ethercat`
+    - use the `stable-1.5` branch `git checkout stable-1.5`
     - `./bootstrap`
     - `./configure --enable-generic --disable-8139too`
     - `make all modules`
