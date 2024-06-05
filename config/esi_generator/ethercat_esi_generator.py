@@ -24,7 +24,7 @@ def create_device(device_type):
     device = ET.Element("Device", Physics="YY")
     device.append(ET.Comment(f"Orbita {device_type}D Device"))
     ET.SubElement(device, "Type", ProductCode="#x1", RevisionNo="#x1", CheckRevisionNo="EQ_OR_G").text = f'Orbita{device_type}d'
-    ET.SubElement(device, "Name", LcId="1033").text = F"<![CDATA[Orbita{device_type}2d]]>"
+    ET.SubElement(device, "Name", LcId="1033").text = F"Orbita{device_type}d"
     ET.SubElement(device, "GroupType").text = "SSC_Device"
     for fmmu in ["Orbita", "MotorsIn", "MotorsOut"]:
         ET.SubElement(device, "Fmmu").text = fmmu

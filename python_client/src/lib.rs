@@ -9,7 +9,7 @@ use tokio::{
 };
 use tonic::{transport::Uri, Request};
 
-use poulpe_ethercat_multiplexer::client::PoulpeRemoteClient;
+use poulpe_ethercat_grpc::client::PoulpeRemoteClient;
 
 #[pyclass]
 pub struct PyPoulpeRemoteClient {

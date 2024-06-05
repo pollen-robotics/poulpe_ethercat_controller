@@ -35,11 +35,11 @@ The Orbita Poulpe slaves have an EEPROM that stores the configuration. If the EE
 
 for orbita2d
 ```bash
-siitool orbita2d.xml orbita2d.bin
+siitool orbita2d.xml -m -o orbita2d.bin
 ```
 or for 3d
 ```bash
-siitool orbita3d.xml orbita3d.bin
+siitool orbita3d.xml -m -o orbita3d.bin
 ```
 > You can install the `siitool` by following the instructions in the [siitool repository](https://github.com/synapticon/siitool)
 

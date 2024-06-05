@@ -35,8 +35,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     pouple_controller.set_torque_limit(slave_id, vec![1.0; no_axis])?;
     pouple_controller.set_velocity_limit(slave_id, vec![1.0; no_axis])?;
 
-    let t0 = SystemTime::now();
+    let mut t0 = SystemTime::now();
+    let mut t1 = SystemTime::now();
 
+
+    let mut max_t1 = 0.0;
     loop {
         let t = t0.elapsed().unwrap().as_secs_f32();
 
@@ -68,13 +71,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         let error = [target - pos[0], target - pos[1]];
 
         log::info!(
-            "Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",
+            "{:?}/{:?}\t Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",
+            t1.elapsed().unwrap(),
+            max_t1/1000.0,
             pos,
             vel,
             torque,
             error
         );
+        if t1.elapsed().unwrap().as_micros() as f32 > max_t1 {
+            max_t1 = t1.elapsed().unwrap().as_micros() as f32;
+        }
+        t1 = SystemTime::now();
 
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(std::time::Duration::from_millis(2));
     }
 }

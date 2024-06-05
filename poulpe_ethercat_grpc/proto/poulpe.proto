@@ -6,6 +6,7 @@ import "google/protobuf/wrappers.proto";
 
 message PoulpeIds {
     repeated int32 ids = 1;
+    repeated string names = 2;
 }
 
 message StateStreamRequest {

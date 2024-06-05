@@ -7,9 +7,16 @@ It is intended to communicate with [poulpe boards](https://github.com/pollen-rob
 There are four main crates in the code:
 - `ethercat_controller`: This is the main crate that does the heavy lifting of the communication with the ethercat master. It is a wrapper around the `ethercat-rs` crate. This crate enables to create the ethercat master form an ESI xml file.
 - `poulpe_ethercat_controller`: This is an abstraction layer on top of the `ethercat_controller` crate. It provides a more user friendly interface to the user with specific functions for poulpe boards.
-- `poulpe_ethercat_multiplexer`: This crate uses the `poulpe_ethercat_controller` to allow for reading assynchronously from multiple poulpe boards connected to the same ethercat master. It is based on the `grpc` protocol. It allows for creating a single server that can be accessed by multiple clients.
-- `python_client`: This is a python wrapper of the `poulpe_ethercat_multiplexer` crate's client side. It allows for reading from multiple poulpe boards connected to the same ethercat master from python and in that way enables quick prototyping.
+- `poulpe_ethercat_grpc`: This crate uses the `poulpe_ethercat_controller` to allow for reading assynchronously from multiple poulpe boards connected to the same ethercat master. It is based on the `grpc` protocol. It allows for creating a single server that can be accessed by multiple clients.
+- `python_client`: This is a python wrapper of the `poulpe_ethercat_grpc` crate's client side. It allows for reading from multiple poulpe boards connected to the same ethercat master from python and in that way enables quick prototyping.
 
+## Some sytem dependancies for `ethercat-rs`
+
+Ethercat-rs uses the `libclang` and `protobuf` libraries. To install them on ubuntu run:
+```
+sudo apt-get install libclang-dev
+sudo apt-get install -y protobuf-compiler libprotobuf-dev
+```
 
 ## Installing Ethercat on the PC
 
@@ -18,7 +25,7 @@ See the notion: https://www.notion.so/pollen-robotics/Setup-EtherCAT-1ecce786847
 Installing the ehtercat master
 
 - Install the dependencies (on ubuntu):
-    - `sudo apt install autoconf libtool`
+    - `sudo apt install autoconf libtool` 
 - Install the [ethercat master](https://etherlab.org/en/ethercat/)
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
     - `cd ethercat`
@@ -28,10 +35,15 @@ Installing the ehtercat master
     - `make all modules`
     - `sudo make modules_install install`
     - `sudo depmod`
+    - add the path to the `ethercat` binary to the `ETHERCAT_PATH` variable (ex. `export ETHERCAT_PATH=$HOME/ethercat`)
+
 
 See the  for more info.
 
-- See in the [ethercat docs](https://etherlab.org/download/ethercat/ethercat-1.5.2.pdf) hov to configure the dev rules for `/dev/EtherCAT0`(go to the mode 0666)
+- See in the [ethercat docs](https://etherlab.org/download/ethercat/ethercat-1.5.2.pdf) how to configure the dev rules for `/dev/EtherCAT0`(go to the mode `0666`). In short it is:
+    - create the ethercat rule: `sudo nano /etc/udev/rules.d/99-EtherCAT.rules`
+    - add the following line: `KERNEL == "EtherCAT[0-9]*" , MODE ="0666", GROUP ="users"`
+    - optionally reload the rules: `sudo udevadm control --reload-rules && sudo udevadm trigger`
 - Modify the file `/usr/local/etc/ethercat.conf`
     - `MASTER0_DEVICE` - set the mac address of the eth0 (can be found using `ip a`)
     - `DEVICE_MODULES` set to `”generic”`

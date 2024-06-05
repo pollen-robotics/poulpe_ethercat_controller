@@ -5,11 +5,10 @@ use std::time::Duration;
 fn main() {
     env_logger::init();
 
-    let id: u16 = 1;
+    let id: u16 = 0;
 
     log::info!("Loading the controller");
-    let filename = "../config/esi/orbitas.xml";
-    let ec = EtherCatController::open(&filename.into(), 0, Duration::from_millis(4)).unwrap();
+    let ec = EtherCatController::open( 0, Duration::from_millis(2)).unwrap();
 
     log::info!("Waiting for controller to be ready");
     let ec = ec.wait_for_ready();
@@ -65,9 +64,10 @@ fn main() {
         let sin_target = 0.5 * f32::sin(0.001 * time);
         log::debug!("{}, {}", time, sin_target);
         // enable the first motor (by setring 1 to the 0th bit of the torque_state register)
-        ec.set_pdo_register(id, &"torque_state".into(), 0, vec![0b1]);
+        ec.set_pdo_register(id, &"torque_state".into(), 0, vec![0b11]);
         // set the target position to the first motor (index 0)
         ec.set_pdo_register(id, &"target".into(), 0, sin_target.to_le_bytes().to_vec());
+        ec.set_pdo_register(id, &"target".into(), 1, sin_target.to_le_bytes().to_vec());
         // set the torque and velocity limit
         ec.set_pdo_register(
             id,
@@ -75,8 +75,16 @@ fn main() {
             0,
             1.0f32.to_le_bytes().to_vec(),
         );
+        // set the torque and velocity limit
+        ec.set_pdo_register(
+            id,
+            &"velocity_limit".into(),
+            1,
+            1.0f32.to_le_bytes().to_vec(),
+        );
         ec.set_pdo_register(id, &"torque_limit".into(), 0, 1.0f32.to_le_bytes().to_vec());
+        ec.set_pdo_register(id, &"torque_limit".into(), 1, 1.0f32.to_le_bytes().to_vec());
 
-        std::thread::sleep(Duration::from_millis(4));
+        // std::thread::sleep(Duration::from_millis(1));
     }
 }

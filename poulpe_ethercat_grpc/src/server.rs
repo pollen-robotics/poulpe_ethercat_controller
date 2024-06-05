@@ -11,9 +11,9 @@ use tokio::{sync::mpsc, time::sleep};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 
-use poulpe_ethercat_multiplexer::pb::{
+use poulpe_ethercat_grpc::pb::{
     poulpe_multiplexer_server::{PoulpeMultiplexer, PoulpeMultiplexerServer},
-    PoulpeCommands, PoulpeIds, PoulpeState, PoulpeStates, StateStreamRequest,
+    PoulpeCommands, PoulpeIds, PoulpeState, PoulpeStates, StateStreamRequest
 };
 
 #[derive(Debug)]
@@ -23,6 +23,21 @@ struct PoulpeMultiplexerService {
 
 fn get_state_for_id(controller: &PoulpeController, id: i32) -> PoulpeState {
     let slave_id = id as u32;
+
+    if controller.get_slave_ids().contains(&slave_id) == false{
+        log::error!("Invalid slave id {}", slave_id);
+        return PoulpeState {
+            id,
+            compliant: false,
+            actual_position: vec![],
+            actual_velocity: vec![],
+            actual_torque: vec![],
+            axis_sensors: vec![],
+            requested_target_position: vec![],
+            state: 0,
+            torque_state: false,
+        };
+    }
 
     PoulpeState {
         id,
@@ -92,6 +107,9 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 .iter()
                 .map(|&id| id as i32)
                 .collect(),
+            names: self
+                .controller
+                .get_slave_names()
         };
 
         Ok(Response::new(reply))
@@ -146,22 +164,32 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 
                 if let Some(compliancy) = cmd.compliancy {
                     match compliancy {
-                        false => self.controller.set_torque(slave_id, true).unwrap(),
-                        true => self.controller.set_torque(slave_id, false).unwrap(),
+                        false => self.controller.set_torque(slave_id, true).unwrap_or_else(
+                            |e| log::error!("Failed to set torque off for slave {}: {}", slave_id, e),
+                        ),
+                        true => self.controller.set_torque(slave_id, false).unwrap_or_else(
+                            |e| log::error!("Failed to set torque off for slave {}: {}", slave_id, e),
+                        ),
                     }
                 }
 
                 let target_pos = cmd.target_position;
                 if target_pos.len() != 0 {
-                    self.controller.set_target_position(slave_id, target_pos);
+                    self.controller.set_target_position(slave_id, target_pos).unwrap_or_else(|e| {
+                        log::error!("Failed to set target position for slave {}: {}", slave_id, e)
+                    });
                 }
                 let velocity_limit = cmd.velocity_limit;
                 if velocity_limit.len() != 0 {
-                    self.controller.set_velocity_limit(slave_id, velocity_limit);
+                    self.controller.set_velocity_limit(slave_id, velocity_limit).unwrap_or_else(|e| {
+                        log::error!("Failed to set velocity limit for slave {}: {}", slave_id, e)
+                    });
                 }
                 let torque_limit = cmd.torque_limit;
                 if torque_limit.len() != 0 {
-                    self.controller.set_torque_limit(slave_id, torque_limit);
+                    self.controller.set_torque_limit(slave_id, torque_limit).unwrap_or_else(|e| {
+                        log::error!("Failed to set torque limit for slave {}: {}", slave_id, e)
+                    });
                 }
             }
 
@@ -198,8 +226,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for slave_id in controller.get_slave_ids() {
         log::info!("Setup Slave {}...", slave_id);
-        controller.setup(slave_id);
-        log::info!("Done!");
+        match controller.setup(slave_id) {
+            Ok(_) => log::info!("Done!"),
+            Err(e) => {
+                log::error!("Failed to setup slave {}: {}", slave_id, e);
+                Err(e)?;
+            }
+        }
     }
 
     log::info!("POULPE controller ready!");

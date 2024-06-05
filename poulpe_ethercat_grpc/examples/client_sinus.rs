@@ -5,7 +5,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use poulpe_ethercat_multiplexer::PoulpeRemoteClient;
+use poulpe_ethercat_grpc::PoulpeRemoteClient;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut client = PoulpeRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,
         vec![id],
-        Duration::from_millis(5),
+        Duration::from_millis(2),
     );
 
     log::info!("Turn off slave {}", id);
@@ -26,10 +26,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let amp = 1.0;
     let freq = 0.2;
 
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::from_secs(2));
+
+    let ids = client.get_poulpe_ids_sync()?;
+    log::info!("ids: {:?}", ids);
 
     client.set_velocity_limit(id, vec![1.0; 3]);
     client.set_torque_limit(id, vec![1.0; 3]);
+
+    let mut t1 = SystemTime::now();
+    let mut max_t1 = 0.0;
 
     loop {
         let actual_position = client.get_position_actual_value(id).unwrap();
@@ -38,18 +44,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         let state = client.get_state(id);
 
         log::info!(
-            "state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
+            "{:?}/{:?} state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
+            t1.elapsed().unwrap(),
+            max_t1/1000.0,
             state,
             actual_position,
             actual_velocity,
             actual_torque
         );
+        if t1.elapsed().unwrap().as_micros() as f32 > max_t1 {
+            max_t1 = t1.elapsed().unwrap().as_micros() as f32;
+        }
+        t1 = SystemTime::now();
 
         let t = t0.elapsed().unwrap().as_secs_f32();
         let target_position = amp * (2.0 * PI * freq * t).sin();
 
         client.set_target_position(id, vec![target_position; actual_position.len()]);
-        thread::sleep(Duration::from_millis(5));
+        thread::sleep(Duration::from_millis(2));
     }
     Ok(())
 }

@@ -5,7 +5,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use poulpe_ethercat_multiplexer::PoulpeRemoteClient;
+use poulpe_ethercat_grpc::PoulpeRemoteClient;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();

@@ -24,6 +24,7 @@ pub enum SlaveConfig {
 pub struct PoulpeKind {
     pub id: u16,
     pub orbita_type: u32,
+    pub name: String
 }
 
 impl Config {

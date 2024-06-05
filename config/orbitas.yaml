@@ -6,6 +6,8 @@ slaves:
   - !Poulpe
     id: 0
     orbita_type: 3
+    name: "Orbita3d"
   - !Poulpe
     id: 1
     orbita_type: 2
+    name: "Orbita2d"

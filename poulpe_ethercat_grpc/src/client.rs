@@ -19,9 +19,10 @@ enum Command {
     TorqueLimit(Vec<f32>),
 }
 
+#[derive(Debug)]
 pub struct PoulpeRemoteClient {
     rt: Runtime,
-
+    addr : Uri,
     state: Arc<RwLock<HashMap<u16, PoulpeState>>>,
     command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>,
 }
@@ -103,9 +104,23 @@ impl PoulpeRemoteClient {
 
         PoulpeRemoteClient {
             rt,
+            addr,
             state,
             command_buff,
         }
+    }
+
+
+    pub fn get_poulpe_ids_sync(&self) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
+        self.rt.block_on(async {
+            let mut client = PoulpeMultiplexerClient::connect(self.addr.to_string()).await.unwrap();
+            get_poulpe_ids_async(&mut client).await
+        })
+    }
+
+
+    fn get_poulpe_ids(&self) -> Vec<u16> {
+        self.rt.block_on(self.state.read()).keys().cloned().collect()
     }
 
     fn get_state_property<T, F>(&self, slave_id: u16, f: F, default: T) -> Result<T, ()>
@@ -225,4 +240,12 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
     buff.clear();
 
     Some(PoulpeCommands { commands })
+}
+
+pub async fn get_poulpe_ids_async( client: &mut PoulpeMultiplexerClient<tonic::transport::Channel>) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
+    let response = client.get_poulpe_ids(Request::new(())).await?;
+    let response = response.into_inner();
+    let ids: Vec<u16> = response.ids.into_iter().map(|id| id as u16).collect();
+    let names: Vec<String> = response.names.into_iter().map(|name: String| name as String).collect();
+    Ok((ids, names))
 }

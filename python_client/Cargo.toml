@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 pyo3 = { version = "0.21.2", features = ["extension-module"] }
-poulpe_ethercat_multiplexer = { path = "../poulpe_ethercat_multiplexer" }
+poulpe_ethercat_grpc = { path = "../poulpe_ethercat_grpc" }
 log = "0.4.17"
 env_logger = "0.9.0"
 tonic = "0.8.0"

@@ -6,3 +6,4 @@ slaves:
   - !Poulpe
     id: 0
     orbita_type: 2
+    name: "Orbita2d"

@@ -17,7 +17,7 @@
       <Device Physics="YY">
         <!--Orbita 3D Device-->
         <Type ProductCode="#x1" RevisionNo="#x1" CheckRevisionNo="EQ_OR_G">Orbita3d</Type>
-        <Name LcId="1033">&lt;![CDATA[Orbita32d]]&gt;</Name>
+        <Name LcId="1033">Orbita3d</Name>
         <GroupType>SSC_Device</GroupType>
         <Fmmu>Orbita</Fmmu>
         <Fmmu>MotorsIn</Fmmu>
@@ -249,7 +249,7 @@
       <Device Physics="YY">
         <!--Orbita 2D Device-->
         <Type ProductCode="#x1" RevisionNo="#x1" CheckRevisionNo="EQ_OR_G">Orbita2d</Type>
-        <Name LcId="1033">&lt;![CDATA[Orbita22d]]&gt;</Name>
+        <Name LcId="1033">Orbita2d</Name>
         <GroupType>SSC_Device</GroupType>
         <Fmmu>Orbita</Fmmu>
         <Fmmu>MotorsIn</Fmmu>
