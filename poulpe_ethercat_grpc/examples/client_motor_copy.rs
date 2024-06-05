@@ -13,11 +13,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let passiv_id = 1;
     let active_id = 0;
 
-    let mut client = PoulpeRemoteClient::connect(
+    let mut client = match PoulpeRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,
         vec![active_id, passiv_id],
         Duration::from_millis(1),
-    );
+    ){
+        Ok(client) => client,
+        Err(e) => {
+            log::error!("Failed to connect to the server: {}", e);
+            return Err(e.into());
+        }
+    
+    };
 
     log::info!("Turn off slave {}", passiv_id);
     client.turn_off(passiv_id);

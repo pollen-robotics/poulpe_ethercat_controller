@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
+use poulpe_ethercat_grpc::client;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use tokio::{
@@ -26,9 +27,12 @@ impl PyPoulpeRemoteClient {
         };
         let duration = Duration::from_secs_f32(update_period);
 
-        PyPoulpeRemoteClient {
-            client: PoulpeRemoteClient::connect(addr_uri, ids, duration),
-        }
+        let client = match PoulpeRemoteClient::connect(addr_uri, ids, duration) {
+            Ok(client) => client,
+            Err(e) => panic!("Failed to connect to the server: {}", e),
+        };
+
+        PyPoulpeRemoteClient {client}
     }
 
     pub fn turn_on(&mut self, slave_id: u16) {
@@ -97,6 +101,13 @@ impl PyPoulpeRemoteClient {
         match self.client.get_state(slave_id) {
             Ok(state) => state,
             _ => panic!("Error in getting state"),
+        }
+    }
+
+    pub fn get_connected_devices(&mut self) -> (Vec<u16>, Vec<String>) {
+        match self.client.get_poulpe_ids_sync() {
+            Ok(ids) => ids,
+            _ => panic!("Error in getting connected devices"),
         }
     }
 

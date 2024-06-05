@@ -21,25 +21,15 @@ struct PoulpeMultiplexerService {
     controller: Arc<PoulpeController>,
 }
 
-fn get_state_for_id(controller: &PoulpeController, id: i32) -> PoulpeState {
+fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeState, Box<dyn std::error::Error>> {
     let slave_id = id as u32;
 
     if controller.get_slave_ids().contains(&slave_id) == false{
         log::error!("Invalid slave id {}", slave_id);
-        return PoulpeState {
-            id,
-            compliant: false,
-            actual_position: vec![],
-            actual_velocity: vec![],
-            actual_torque: vec![],
-            axis_sensors: vec![],
-            requested_target_position: vec![],
-            state: 0,
-            torque_state: false,
-        };
+        return Err(("Invalid slave id").into());
     }
 
-    PoulpeState {
+    Ok(PoulpeState {
         id,
         compliant: match controller.is_torque_on(slave_id) {
             Ok(Some(state)) => state,
@@ -94,7 +84,7 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> PoulpeState {
                 false
             }
         },
-    }
+    })
 }
 
 #[tonic::async_trait]
@@ -129,11 +119,31 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             let request = request.get_ref();
 
             loop {
+                
                 let states = PoulpeStates {
                     states: request
                         .ids
                         .iter()
-                        .map(|&id| get_state_for_id(&controller, id))
+                        .map(|&id| 
+                            match get_state_for_id(&controller, id){
+                                Ok(state) => state,
+                                Err(e) => {
+                                    log::error!("Failed to get state for slave {}: {}", id, e);
+                                    PoulpeState {
+                                        id,
+                                        compliant: false,
+                                        actual_position: vec![],
+                                        actual_velocity: vec![],
+                                        actual_torque: vec![],
+                                        axis_sensors: vec![],
+                                        requested_target_position: vec![],
+                                        state: 0,
+                                        torque_state: false,
+                                    }
+                                }
+                            }
+
+                        )
                         .collect(),
                 };
 

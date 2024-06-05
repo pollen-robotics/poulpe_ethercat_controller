@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{any::Any, collections::HashMap, f32::consts::E, sync::Arc, time::Duration};
 
 use super::pb::{
     poulpe_multiplexer_client::PoulpeMultiplexerClient, PoulpeCommand, PoulpeCommands, PoulpeState,
@@ -21,6 +21,7 @@ enum Command {
 
 #[derive(Debug)]
 pub struct PoulpeRemoteClient {
+    ids: Vec<u16>,
     rt: Runtime,
     addr : Uri,
     state: Arc<RwLock<HashMap<u16, PoulpeState>>>,
@@ -28,7 +29,7 @@ pub struct PoulpeRemoteClient {
 }
 
 impl PoulpeRemoteClient {
-    pub fn connect(addr: Uri, ids: Vec<u16>, update_period: Duration) -> Self {
+    pub fn connect(addr: Uri, poulpe_ids: Vec<u16>, update_period: Duration) -> Result<Self, std::io::Error> {
         let state = Arc::new(RwLock::new(HashMap::new()));
         let state_lock = Arc::clone(&state);
 
@@ -38,7 +39,33 @@ impl PoulpeRemoteClient {
         let rt = Builder::new_multi_thread().enable_all().build().unwrap();
 
         let url = addr.to_string();
+        let ids = poulpe_ids.clone();
+        // check if the id is valid and the server is up
+        // check if poulpe_ids are valid
+        match (PoulpeRemoteClient {
+            ids: poulpe_ids.clone(),
+            rt: Builder::new_multi_thread().enable_all().build().unwrap(),
+            addr: addr.clone(),
+            state: state.clone(),
+            command_buff: command_buff.clone(),
+        }).get_poulpe_ids_sync(){
+            Ok(available_ids) => {
+                let available_ids = available_ids.0;
+                let mut common_ids = available_ids.clone();
+                common_ids.retain(|id| poulpe_ids.contains(id));
+                if common_ids.len() != poulpe_ids.len(){
+                    log::error!("Invalid poulpe_ids: {:?}, available_ids: {:?}", poulpe_ids, available_ids);
+                    return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid poulpe_ids"));
+                }
+            },
+            Err(e) => {
+                log::error!("Error in connecting to the server! Check if server is up!!!\n  {:?}",
+                    e);
+                return Err(std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "Error in connecting to the server! Check if server is up!!!"));
+            }
+        }
 
+        // spawn the command stream
         rt.spawn(async move {
             let mut client = match PoulpeMultiplexerClient::connect(url).await {
                 Ok(client) => client,
@@ -72,6 +99,7 @@ impl PoulpeRemoteClient {
 
         let url = addr.to_string();
 
+        // spawn the state stream
         rt.spawn(async move {
             let mut client = match PoulpeMultiplexerClient::connect(url).await {
                 Ok(client) => client,
@@ -84,8 +112,9 @@ impl PoulpeRemoteClient {
                 }
             };
 
+
             let request = Request::new(StateStreamRequest {
-                ids: ids.iter().map(|&id| id as i32).collect(),
+                ids: poulpe_ids.iter().map(|&id| id as i32).collect(),
                 update_period: update_period.as_secs_f32(),
             });
 
@@ -102,12 +131,13 @@ impl PoulpeRemoteClient {
             }
         });
 
-        PoulpeRemoteClient {
+        Ok(PoulpeRemoteClient {
+            ids,
             rt,
             addr,
             state,
             command_buff,
-        }
+        })
     }
 
 
