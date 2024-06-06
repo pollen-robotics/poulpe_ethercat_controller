@@ -140,10 +140,9 @@ impl PoulpeRemoteClient {
         })
     }
 
-
     pub fn get_poulpe_ids_sync(&self) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
         self.rt.block_on(async {
-            let mut client = PoulpeMultiplexerClient::connect(self.addr.to_string()).await.unwrap();
+            let mut client = PoulpeMultiplexerClient::connect(self.addr.to_string()).await?;
             get_poulpe_ids_async(&mut client).await
         })
     }

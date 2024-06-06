@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    log::info!("Turn off slave {}", id);
+    log::info!("Turn on slave {}", id);
     client.turn_on(id);
 
     let t0 = SystemTime::now();

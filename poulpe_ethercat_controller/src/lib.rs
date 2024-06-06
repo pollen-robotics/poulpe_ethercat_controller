@@ -26,7 +26,7 @@ impl PoulpeController {
 
         let controller = EtherCatController::open(
             config.ethercat.master_id,
-            Duration::from_millis(2),
+            Duration::from_millis(config.ethercat.cycle_time_ms as u64),
         )?
         .wait_for_ready();
 

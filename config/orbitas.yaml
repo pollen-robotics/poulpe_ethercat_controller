@@ -1,6 +1,7 @@
 ethercat:
   master_id: 0
   esi: esi/orbitas.xml
+  cycle_time_ms: 5 # ms
 
 slaves:
   - !Poulpe
