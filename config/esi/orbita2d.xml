@@ -23,8 +23,8 @@
         <Fmmu>MotorsIn</Fmmu>
         <Fmmu>MotorsOut</Fmmu>
         <Sm StartAddress="#x1000" ControlByte="#x64" Enable="1">MotorsIn</Sm>
-        <Sm StartAddress="#x1200" ControlByte="#x20" Enable="1">Orbita</Sm>
-        <Sm StartAddress="#x1300" ControlByte="#x22" Enable="1">MotorsOut</Sm>
+        <Sm StartAddress="#x1200" ControlByte="#x22" Enable="1">Orbita</Sm>
+        <Sm StartAddress="#x1300" ControlByte="#x20" Enable="1">MotorsOut</Sm>
         <!--MotorIn PDOs-->
         <RxPdo Fixed="1" Mandatory="1" Sm="0">
           <Index>#x1600</Index>
@@ -176,7 +176,7 @@
             <Name>DC_Sync</Name>
             <Desc>DC_Sync</Desc>
             <AssignActivate>#x300</AssignActivate>
-            <CycleTimeSync0 Factor="1">0</CycleTimeSync0>
+            <CycleTimeSync0 Factor="1">0</CycleTimeSync0> <!-- 100 ms cycle time for 10 Hz -->
             <ShiftTimeSync0>2000200000</ShiftTimeSync0>
           </OpMode>
         </Dc>

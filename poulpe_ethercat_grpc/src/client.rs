@@ -4,6 +4,7 @@ use super::pb::{
     poulpe_multiplexer_client::PoulpeMultiplexerClient, PoulpeCommand, PoulpeCommands, PoulpeState,
     StateStreamRequest,
 };
+use prost_types::Timestamp;
 use tokio::{
     runtime::{Builder, Runtime},
     sync::RwLock,
@@ -16,7 +17,7 @@ enum Command {
     Compliancy(bool),
     TargetPosition(Vec<f32>),
     VelocityLimit(Vec<f32>),
-    TorqueLimit(Vec<f32>),
+    TorqueLimit(Vec<f32>)
 }
 
 #[derive(Debug)]
@@ -148,7 +149,7 @@ impl PoulpeRemoteClient {
     }
 
 
-    fn get_poulpe_ids(&self) -> Vec<u16> {
+    pub fn get_poulpe_ids(&self) -> Vec<u16> {
         self.rt.block_on(self.state.read()).keys().cloned().collect()
     }
 
@@ -242,7 +243,6 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
             id: id.into(),
             ..Default::default()
         };
-
         for cmd in cmds {
             match cmd {
                 Command::Compliancy(comp) => poulpe_cmd.compliancy = Some(*comp),
@@ -260,9 +260,10 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
                     if torque.len() != 0 {
                         poulpe_cmd.torque_limit.extend(torque.iter().cloned());
                     }
-                }
+                },
             }
         }
+        poulpe_cmd.published_timestamp = Some(Timestamp::from(std::time::SystemTime::now()));
         commands.push(poulpe_cmd);
     }
 
@@ -278,3 +279,4 @@ pub async fn get_poulpe_ids_async( client: &mut PoulpeMultiplexerClient<tonic::t
     let names: Vec<String> = response.names.into_iter().map(|name: String| name as String).collect();
     Ok((ids, names))
 }
+

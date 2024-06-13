@@ -7,7 +7,7 @@ use std::{
 };
 
 use poulpe_ethercat_controller::PoulpeController;
-use tokio::{sync::mpsc, time::sleep};
+use tokio::{sync::mpsc, time::{error::Elapsed, sleep}};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 
@@ -16,6 +16,7 @@ use poulpe_ethercat_grpc::pb::{
     PoulpeCommands, PoulpeIds, PoulpeState, PoulpeStates, StateStreamRequest
 };
 
+use prost_types::Timestamp;
 #[derive(Debug)]
 struct PoulpeMultiplexerService {
     controller: Arc<PoulpeController>,
@@ -166,51 +167,97 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 
         let mut t = SystemTime::now();
         let mut nb = 0;
+        let mut command_times:u128 = 0;
 
+        let mut elapsed_time = 0;
         while let Some(Ok(req)) = stream.next().await {
             log::debug!("Got commands {:?}", req);
             for cmd in req.commands {
                 let slave_id = cmd.id as u32;
 
-                if let Some(compliancy) = cmd.compliancy {
-                    match compliancy {
-                        false => self.controller.set_torque(slave_id, true).unwrap_or_else(
-                            |e| log::error!("Failed to set torque off for slave {}: {}", slave_id, e),
-                        ),
-                        true => self.controller.set_torque(slave_id, false).unwrap_or_else(
-                            |e| log::error!("Failed to set torque off for slave {}: {}", slave_id, e),
-                        ),
+                match cmd.published_timestamp{
+                    Some(published_time) => {
+                        let published_time = match SystemTime::try_from(published_time) {
+                            Ok(systime) => systime,
+                            Err(_) => {
+                                log::warn!("Cannot parse the timestamp, discarding message!");
+                                continue;
+                            }
+                        };
+                        // check if the message is older than 10 ms
+                        elapsed_time = published_time.elapsed().unwrap().as_millis();
+                        if elapsed_time > 5 {
+                            log::warn!("Message older than {} ms, discarding!", 5);
+                            continue;
+                        }
+                    }
+                    None => {
+                        log::warn!("No published timestamp, discarding message!");
+                        continue;
                     }
                 }
 
+                let no_axis = self.controller.get_orbita_type(slave_id) as usize;
+
+                let mut set_compliant = cmd.compliancy;
+
                 let target_pos = cmd.target_position;
                 if target_pos.len() != 0 {
-                    self.controller.set_target_position(slave_id, target_pos).unwrap_or_else(|e| {
-                        log::error!("Failed to set target position for slave {}: {}", slave_id, e)
+                    // set only last target command 
+                    self.controller.set_target_position(
+                        slave_id, 
+                        target_pos[(target_pos.len()-no_axis)..].to_vec()
+                    ).unwrap_or_else(|e| {
+                        log::error!("Failed to set target position for slave {}: {}", slave_id, e);
+                        set_compliant = Some(true); // disable the slave!
                     });
                 }
                 let velocity_limit = cmd.velocity_limit;
                 if velocity_limit.len() != 0 {
-                    self.controller.set_velocity_limit(slave_id, velocity_limit).unwrap_or_else(|e| {
-                        log::error!("Failed to set velocity limit for slave {}: {}", slave_id, e)
+                    // set only last target command 
+                    self.controller.set_velocity_limit(
+                        slave_id, 
+                        velocity_limit[(velocity_limit.len()-no_axis)..].to_vec()
+                    ).unwrap_or_else(|e| {
+                        log::error!("Failed to set velocity limit for slave {}: {}", slave_id, e);
+                        set_compliant = Some(true); // disable the slave!
                     });
                 }
                 let torque_limit = cmd.torque_limit;
                 if torque_limit.len() != 0 {
-                    self.controller.set_torque_limit(slave_id, torque_limit).unwrap_or_else(|e| {
-                        log::error!("Failed to set torque limit for slave {}: {}", slave_id, e)
+                    // set only last target command 
+                    self.controller.set_torque_limit(
+                        slave_id, 
+                        torque_limit[(torque_limit.len()-no_axis)..].to_vec()
+                    ).unwrap_or_else(|e| {
+                        log::error!("Failed to set torque limit for slave {}: {}", slave_id, e);
+                        set_compliant = Some(true); // disable the slave!
                     });
                 }
+
+                // check if the slave is compliant
+                match set_compliant { 
+                    Some(true) => self.controller.set_torque(slave_id, false).unwrap_or_else(
+                        |e| log::error!("Failed to set torque off for slave {}: {}", slave_id, e),
+                    ),
+                    Some(false) => self.controller.set_torque(slave_id, true).unwrap_or_else(
+                        |e| log::error!("Failed to set torque on for slave {}: {}", slave_id, e),
+                    ),
+                    None => (),
+                }
+
             }
 
             nb += 1;
-
+            command_times += elapsed_time;
             let dt = t.elapsed().unwrap().as_secs_f32();
             if dt > 1.0 {
                 let f = nb as f32 / dt;
-                log::info!("Got {} req/s", f);
+                let dt_c = (command_times as f32) / (nb as f32);
+                log::info!("Got {} req/s, average execution time: {} ms", f, dt_c);
 
                 t = SystemTime::now();
+                command_times = 0;
                 nb = 0;
             }
         }

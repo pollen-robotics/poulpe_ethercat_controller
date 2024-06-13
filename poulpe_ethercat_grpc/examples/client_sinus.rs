@@ -42,6 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut t1 = SystemTime::now();
     let mut max_t1 = 0.0;
+    client.set_target_position(id, vec![0.0; 3]);
 
     loop {
         let actual_position = client.get_position_actual_value(id).unwrap();
@@ -66,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let t = t0.elapsed().unwrap().as_secs_f32();
         let target_position = amp * (2.0 * PI * freq * t).sin();
 
-        client.set_target_position(id, vec![target_position; actual_position.len()]);
+        client.set_target_position(id, vec![target_position; 3]);
         thread::sleep(Duration::from_millis(2));
     }
     Ok(())
