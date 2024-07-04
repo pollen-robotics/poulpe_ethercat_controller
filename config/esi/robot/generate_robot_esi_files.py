@@ -63,11 +63,6 @@ def generate_orbita_esi(name, orbita_type):
     write_xml(tree, slave.name+".xml")
     print("XML file generated successfully: "+slave.name+".xml")
 
-    del esi
-    del tree
-    del pdos
-    del slave
-
 
 if __name__ == "__main__":
     for name, orbita_type in orbitas.items():
