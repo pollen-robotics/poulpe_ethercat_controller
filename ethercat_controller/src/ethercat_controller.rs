@@ -99,6 +99,9 @@ impl EtherCatController {
         let mut slave_is_mailbox_responding = vec![true; slave_number as usize];
         #[cfg(feature = "verify_mailboxes")]
         let mut slave_mailbox_data_buffer: Vec<Vec<Vec<u8>>> = vec![vec![]; slave_number as usize];
+
+
+        let mut last_call_timestamp = std::time::Instant::now();
         thread::spawn(move || loop {
             master.receive().unwrap();
             master.domain(domain_idx).process().unwrap();
@@ -128,6 +131,7 @@ impl EtherCatController {
                     for range in offset {
                         mailbox_data.push(data[range.clone()].to_vec());
                     }
+                    log::debug!("{:?}", mailbox_data);
                     //check if all zeros
                     let mut is_all_zero = true;
                     for d in mailbox_data.iter(){
@@ -206,7 +210,7 @@ impl EtherCatController {
                 }
             }else{
                 // check if all slaves are connected
-                // this will fail if a slave is disconnected
+                // thsis will fail if a lave is disconnected
                 // as well as if we connect more slaves than expected
                 if m_state.slaves_responding < slave_number {
                     log::error!("Not all slaves are connected! Expected: {}, Responding: {}", slave_number, m_state.slaves_responding);
@@ -258,7 +262,8 @@ impl EtherCatController {
                     cvar.notify_one();
                 }
             }
-            thread::sleep(cycle_period);
+            // sleep a small time
+            thread::sleep(Duration::from_secs_f32(0.0001));
         });
 
         Ok(EtherCatController {

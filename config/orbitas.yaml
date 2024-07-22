@@ -1,14 +1,14 @@
 ethercat:
   master_id: 0
   esi: esi/orbitas.xml
-  cycle_time_ms: 5 # ms
+  cycle_time_ms: 1 # ms
 
 slaves:
   - !Poulpe
     id: 0
     orbita_type: 3
-    name: "Orbita3d"
+    name: "RightWristOrbita3d"
   - !Poulpe
     id: 1
-    orbita_type: 2
-    name: "Orbita2d"
+    orbita_type: 3
+    name: "NeckOrbita3d"

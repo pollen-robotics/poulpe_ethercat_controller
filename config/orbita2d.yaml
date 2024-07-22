@@ -1,6 +1,5 @@
 ethercat:
   master_id: 0
-  esi: esi/orbita2d.xml
   cycle_time_ms: 2 
 
 slaves:

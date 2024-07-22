@@ -151,7 +151,6 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 if tx.send(Ok(states)).await.is_err() {
                     break;
                 }
-
                 sleep(Duration::from_secs_f32(request.update_period)).await;
             }
         });
@@ -170,7 +169,10 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
         let mut command_times:u128 = 0;
 
         let mut elapsed_time = 0;
+        let mut dt_max :f32 = 0.0 ;
+        let mut dropped_messages = 0;
         while let Some(Ok(req)) = stream.next().await {
+            let t_loop = SystemTime::now();
             log::debug!("Got commands {:?}", req);
             for cmd in req.commands {
                 let slave_id = cmd.id as u32;
@@ -184,10 +186,11 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                                 continue;
                             }
                         };
-                        // check if the message is older than 10 ms
+                        // check if the message is older than 5 ms
                         elapsed_time = published_time.elapsed().unwrap().as_millis();
                         if elapsed_time > 5 {
-                            log::warn!("Message older than {} ms, discarding!", 5);
+                            // log::warn!("Message older than {} ms, discarding!", 5);
+                            dropped_messages +=1;
                             continue;
                         }
                     }
@@ -251,14 +254,20 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             nb += 1;
             command_times += elapsed_time;
             let dt = t.elapsed().unwrap().as_secs_f32();
-            if dt > 1.0 {
-                let f = nb as f32 / dt;
+            let dt_loop =  t_loop.elapsed().unwrap().as_secs_f32();
+            if dt_max < dt_loop {
+                dt_max = dt_loop;
+            }
+            if dt > 2.0 {
+                let f = nb as f32 / dt ;
                 let dt_c = (command_times as f32) / (nb as f32);
-                log::info!("Got {} req/s, average execution time: {} ms", f, dt_c);
+                log::info!("Got {} req/s (dropped {}/ received {}) average transmission time: {} ms  (max {})", f, dropped_messages, nb, dt_c, dt_max*1000.0);
 
                 t = SystemTime::now();
                 command_times = 0;
                 nb = 0;
+                dropped_messages = 0;
+                dt_max = 0.0;
             }
         }
 
