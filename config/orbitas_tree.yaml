@@ -1,0 +1,18 @@
+ethercat:
+  master_id: 0
+  cycle_time_us: 1000 # us
+
+slaves:
+  # - !Poulpe
+  #   id: 1
+  #   orbita_type: 2
+  #   name: "RightShoulderOrbita2d"
+  - !Poulpe
+    id: 0
+    orbita_type: 3
+    name: "RightWristOrbita3d"
+  # - !Poulpe
+  #   id: 1
+  #   orbita_type: 3
+  #   name: "NeckOrbita3d"
+  

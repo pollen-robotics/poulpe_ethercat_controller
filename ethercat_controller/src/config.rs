@@ -11,8 +11,7 @@ pub struct Config {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct EthercatConfig {
     pub master_id: u32,
-    pub esi: String,
-    pub cycle_time_ms: u32,
+    pub cycle_time_us: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

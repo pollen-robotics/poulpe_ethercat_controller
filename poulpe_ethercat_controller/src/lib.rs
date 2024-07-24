@@ -26,9 +26,8 @@ impl PoulpeController {
 
         let controller = EtherCatController::open(
             config.ethercat.master_id,
-            Duration::from_millis(config.ethercat.cycle_time_ms as u64),
-        )?
-        .wait_for_ready();
+            Duration::from_micros(config.ethercat.cycle_time_us as u64),
+        )?.wait_for_ready();
 
         let mut poulpe_config = HashMap::new();
 
@@ -38,39 +37,43 @@ impl PoulpeController {
             }
         }
 
-        // check if all slaves are connected
-        // check if the names of the slaves are correct
-        let slave_ids = controller.get_slave_ids();
-        for slave_id in slave_ids {
-            if poulpe_config.get(&slave_id).is_none() {
-                log::error!("Slave {} with name {:?} not found in config, check config yaml file!", slave_id, controller.get_slave_name(slave_id).unwrap());
-                return Err("Slave not in yaml!".into());
+        // if the feature allow_partial_network is enabled, we do not check if the slave is in the config file
+        // if the feature is not enabled, we check if the slave is in the config file as the whole network should be defined in the config file
+        #[cfg(not(feature="allow_partial_network"))]
+        {
+            // check if all slaves are connected
+            // check if the names of the slaves are correct
+            let slave_ids = controller.get_slave_ids();
+            for slave_id in slave_ids {
+                if poulpe_config.get(&slave_id).is_none() {
+                    log::error!("Slave {} with name {:?} not found in config, check config yaml file!", slave_id, controller.get_slave_name(slave_id).unwrap());
+                    return Err("Slave not in yaml!".into());
+                } else if let Some(name) = controller.get_slave_name(slave_id) {
+                    if poulpe_config[&slave_id].name != name {
+                        log::error!("Slave {} Name mismatch: expected {:?}, got {:?}", slave_id, poulpe_config[&slave_id].name, name);
+                        return Err("Name mismatch".into());
+                    } else {
+                        log::error!("Slave {} with name {:?} name not found on EtherCAT network, check connection!", slave_id, poulpe_config[&slave_id].name);
+                        return Err("Name not found, check connection!".into());
+                    }
+                }
             }
-            else if let Some(name) = controller.get_slave_name(slave_id) {
-                if poulpe_config[&slave_id].name != name {
-                    log::error!("Slave {} Name mismatch: expected {:?}, got {:?}", slave_id, poulpe_config[&slave_id].name, name);
-                    return Err("Name mismatch".into());
-                }
-                } else {
-                    log::error!("Slave {} with name {:?} name not found, check connection!", slave_id, poulpe_config[&slave_id].name);
-                    return Err("Name not found, check connection!".into());
-                }
-        }
 
-        //check if the number of slaves is correct
-        let slave_ids = controller.get_slave_ids();
-        let mut all_connected = true;
-        if slave_ids.len() != poulpe_config.len() {
-            for p in poulpe_config.keys(){
-                let name = controller.get_slave_name(*p);
-                if name.is_none() {
-                    log::error!("Slave {} with name {:?} not found in Ethercat network, check connection!", p, poulpe_config[p].name);
-                    all_connected = false;
+            // check if the number of slaves is correct
+            let slave_ids = controller.get_slave_ids();
+            let mut all_connected = true;
+            if slave_ids.len() != poulpe_config.len() {
+                for p in poulpe_config.keys(){
+                    let name = controller.get_slave_name(*p);
+                    if name.is_none() {
+                        log::error!("Slave {} with name {:?} not found in Ethercat network, check connection!", p, poulpe_config[p].name);
+                        all_connected = false;
+                    }
                 }
             }
-        }
-        if all_connected == false{
-            return Err("Number of slaves in config and in network do not match!".into());
+            if all_connected == false{
+                return Err("Number of slaves in config and in network do not match!".into());
+            }
         }
         
         Ok(Self {
@@ -137,7 +140,7 @@ impl PoulpeController {
     fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize) -> Vec<u8> {
         if !self.is_slave_ready(slave_id) {
             // slave not ready
-            log::warn!("Reading the slave {:?} (pos: {}), which is not operational!", self.get_slave_name(slave_id).unwrap(), slave_id);
+            // log::warn!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
         }
         self.inner
             .get_pdo_register(slave_id, &reg.name().to_string(), index)
@@ -160,13 +163,14 @@ impl PoulpeController {
     fn get_pdo_registers(&self, slave_id: u16, reg: PdoRegister) -> Vec<Vec<u8>> {
         if !self.is_slave_ready(slave_id) {
             // slave not ready
-            log::warn!("Reading slave {:?} (pos: {:?}), which is not operational!", self.get_slave_name(slave_id).unwrap(), slave_id);
+            // log::warn!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
         }
         self.inner
             .get_pdo_registers(slave_id, &reg.name().to_string())
             .unwrap()
     }
     fn set_pdo_registers(&self, slave_id: u16, reg: PdoRegister, values: Vec<Vec<u8>>) -> Result<(), Box<dyn Error>>{
+        // log::error!("Writing slave {:?} (pos: {}), operational {:?}", self.get_slave_name(slave_id).unwrap(), slave_id, self.is_slave_ready(slave_id));
         if !self.is_slave_ready(slave_id) {
             // set value to 0 if slave not ready
             log::error!("Writing slave {:?} (pos: {:?}), which is not operational! Writing zeros instead!", self.get_slave_name(slave_id).unwrap(), slave_id);
@@ -189,11 +193,14 @@ impl PoulpeController {
             log::error!("Slave {} with name {:?} not found in Ethercat network, check connection!", id, self.poulpe_config[&slave_id].name);
             return Err("Slave not connected!".into());
         }
-        
-        // check if slave_id exists in config
-        if !self.get_slave_ids().contains(&id) {
-            log::error!("Slave {} with name {:?} not found in config, check config yaml file!", id, self.get_slave_name(slave_id).unwrap());
-            return Err("Slave not in yaml!".into());
+
+        #[cfg(not(feature="allow_partial_network"))]
+        {
+            // check if slave_id exists in config
+            if !self.get_slave_ids().contains(&id) {
+                log::error!("Slave {} with name {:?} not found in config, check config yaml file!", id, self.get_slave_name(slave_id).unwrap());
+                return Err("Slave not in yaml!".into());
+            }
         }
 
         match self.inner.get_slave_name(slave_id){
@@ -209,29 +216,34 @@ impl PoulpeController {
             }
         }
 
-        let no_axes = self.poulpe_config[&slave_id].orbita_type;
-        
-        let current_time = std::time::SystemTime::now();
-        let orbita_type = loop {
-            match self.get_pdo_register(slave_id, PdoRegister::OrbitaType, 0)[0]{
-                0 => std::thread::sleep(std::time::Duration::from_millis(100)),
-                n => break n
+        // verify that the orbita type is the same as in the config file
+        // orbita type is the number of axes
+        // - orbita2s has 2 axes
+        // - orbita3s has 3 axes
+        #[cfg(feature="verify_orbita_type")]
+        {
+            let no_axes = self.poulpe_config[&slave_id].orbita_type;
+            let current_time = std::time::SystemTime::now();
+            let orbita_type = loop {
+                match self.get_pdo_register(slave_id, PdoRegister::OrbitaType, 0)[0]{
+                    0 => std::thread::sleep(std::time::Duration::from_millis(100)),
+                    n => break n
+                }
+                if current_time.elapsed().unwrap().as_millis() > 1000 {
+                    log::error!("Slave {} Orbita type not set!", id);
+                    return Err("Orbita type not set!".into());
+                }
+            };
+            if orbita_type != (no_axes as u8) {
+                log::error!(
+                    "Slave {} Orbita type mismatch: expected {}, got {}",
+                    slave_id,
+                    no_axes,
+                    orbita_type
+                );
+                return Err("Orbita type mismatch".into());
             }
-            if current_time.elapsed().unwrap().as_secs() > 1 {
-                log::error!("Slave {} Orbita type not set!", id);
-                return Err("Orbita type not set!".into());
-            }
-        };
-        if orbita_type != (no_axes as u8) {
-            log::error!(
-                "Slave {} Orbita type mismatch: expected {}, got {}",
-                slave_id,
-                no_axes,
-                orbita_type
-            );
-            return Err("Orbita type mismatch".into());
         }
-
 
         log::info!("Setup of slave {} done!", id);
 

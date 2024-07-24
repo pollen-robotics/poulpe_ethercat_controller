@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut client = match PoulpeRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,
         vec![id],
-        Duration::from_millis(2),
+        Duration::from_secs_f32(0.001),
     ){
         Ok(client) => client,
         Err(e) => {
@@ -50,15 +50,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         let actual_torque = client.get_torque_actual_value(id).unwrap();
         let state = client.get_state(id);
 
-        log::info!(
-            "{:?}/{:?} state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
-            t1.elapsed().unwrap(),
-            max_t1/1000.0,
-            state,
-            actual_position,
-            actual_velocity,
-            actual_torque
-        );
+        // log::info!(
+        //     "{:?}/{:?} state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
+        //     t1.elapsed().unwrap(),
+        //     max_t1/1000.0,
+        //     state,
+        //     actual_position,
+        //     actual_velocity,
+        //     actual_torque
+        // );
         if t1.elapsed().unwrap().as_micros() as f32 > max_t1 {
             max_t1 = t1.elapsed().unwrap().as_micros() as f32;
         }
@@ -68,7 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let target_position = amp * (2.0 * PI * freq * t).sin();
 
         client.set_target_position(id, vec![target_position; 3]);
-        thread::sleep(Duration::from_millis(2));
+        thread::sleep(Duration::from_secs_f32(0.001));
     }
     Ok(())
 }

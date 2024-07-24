@@ -30,6 +30,7 @@ message PoulpeState {
 
     uint32 state = 8;
     bool torque_state = 9;
+    google.protobuf.Timestamp published_timestamp = 10;
 }
 
 message PoulpeStates {

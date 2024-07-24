@@ -6,7 +6,7 @@ use super::pb::{
 };
 use prost_types::Timestamp;
 use tokio::{
-    runtime::{Builder, Runtime},
+    runtime::{Builder, Runtime, Handle},
     sync::RwLock,
     time::sleep,
 };
@@ -26,7 +26,7 @@ pub struct PoulpeRemoteClient {
     rt: Runtime,
     addr : Uri,
     state: Arc<RwLock<HashMap<u16, PoulpeState>>>,
-    command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>,
+    command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>
 }
 
 impl PoulpeRemoteClient {
@@ -87,8 +87,6 @@ impl PoulpeRemoteClient {
                             yield commands;
                         }
                     }
-
-                    sleep(update_period).await;
                 }
             };
             let request = Request::new(command_stream);
@@ -137,7 +135,7 @@ impl PoulpeRemoteClient {
             rt,
             addr,
             state,
-            command_buff,
+            command_buff
         })
     }
 
@@ -153,17 +151,32 @@ impl PoulpeRemoteClient {
         self.rt.block_on(self.state.read()).keys().cloned().collect()
     }
 
-    fn get_state_property<T, F>(&self, slave_id: u16, f: F, default: T) -> Result<T, ()>
+    // get the state property
+    // check if the state is older than 1s
+    fn get_state_property<T, F>(&self, slave_id: u16, f: F, _default: T) -> Result<T, ()>
     where
         F: Fn(&PoulpeState) -> T,
     {
-        match self.rt.block_on(self.state.read()).get(&slave_id) {
-            Some(state) => Ok(f(state)),
-            None => {
-                log::error!("No state found for slave {}", slave_id);
-                Err(())
+        let state = self.rt.block_on(self.state.read());
+        let state = state.get(&slave_id).ok_or_else(|| {
+            log::error!("No state found for slave {}", slave_id);
+        })?;
+    
+        if let Some(ts) = &state.published_timestamp {
+            if let Ok(systime) = std::time::SystemTime::try_from(ts.clone()) {
+                if systime.elapsed().unwrap().as_millis() > 1000 {
+                    log::error!("State is older than 1s for slave {}, server maybe down!", slave_id);
+                    return Err(());
+                }
+            } else {
+                log::warn!("Cannot parse the timestamp, discarding message!");
+                return Err(());
             }
+        } else {
+            log::warn!("No timestamp found for slave {}", slave_id);
         }
+    
+        Ok(f(state))
     }
 
     // adding the state properties to the client
@@ -204,12 +217,13 @@ impl PoulpeRemoteClient {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
     }
 
-    fn push_command(&mut self, slave_id: u16, command: Command) {
+    fn push_command(&mut self, slave_id: u16, command: Command) -> Result<(), ()> {
         self.rt
             .block_on(self.command_buff.write())
             .entry(slave_id)
             .or_insert_with(Vec::new)
             .push(command);
+        Ok(())
     }
 
     pub fn turn_on(&mut self, slave_id: u16) {

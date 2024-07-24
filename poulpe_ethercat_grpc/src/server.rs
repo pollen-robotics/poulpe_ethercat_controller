@@ -85,6 +85,7 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
                 false
             }
         },
+        published_timestamp: Some(Timestamp::from(std::time::SystemTime::now())), 
     })
 }
 
@@ -116,11 +117,17 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 
         let controller = self.controller.clone();
 
+        log::info!("New client - update period of {}s", request.get_ref().update_period);
+
         tokio::spawn(async move {
             let request = request.get_ref();
-
+            let mut loop_timestamp = SystemTime::now();
             loop {
-                
+                let dt = request.update_period  - loop_timestamp.elapsed().unwrap().as_secs_f32() ;
+                if dt > 0.0 {
+                    sleep(Duration::from_secs_f32(dt)).await;
+                }
+                loop_timestamp = SystemTime::now();
                 let states = PoulpeStates {
                     states: request
                         .ids
@@ -140,6 +147,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                                         requested_target_position: vec![],
                                         state: 0,
                                         torque_state: false,
+                                        published_timestamp: Some(Timestamp::from(std::time::SystemTime::now())),
                                     }
                                 }
                             }
@@ -151,7 +159,6 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 if tx.send(Ok(states)).await.is_err() {
                     break;
                 }
-                sleep(Duration::from_secs_f32(request.update_period)).await;
             }
         });
 
@@ -176,7 +183,6 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             log::debug!("Got commands {:?}", req);
             for cmd in req.commands {
                 let slave_id = cmd.id as u32;
-
                 match cmd.published_timestamp{
                     Some(published_time) => {
                         let published_time = match SystemTime::try_from(published_time) {
@@ -248,8 +254,11 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     ),
                     None => (),
                 }
-
+                
             }
+            // wait for the next cycle  
+            // to make sure the commands are executed
+            // self.controller.inner.wait_for_next_cycle();
 
             nb += 1;
             command_times += elapsed_time;
@@ -261,7 +270,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             if dt > 2.0 {
                 let f = nb as f32 / dt ;
                 let dt_c = (command_times as f32) / (nb as f32);
-                log::info!("Got {} req/s (dropped {}/ received {}) average transmission time: {} ms  (max {})", f, dropped_messages, nb, dt_c, dt_max*1000.0);
+                log::info!("GRPC EtherCAT: Got {} req/s (dropped {}/ received {}) average transmission time: {} ms  (max {})", f, dropped_messages, nb, dt_c, dt_max*1000.0);
 
                 t = SystemTime::now();
                 command_times = 0;
