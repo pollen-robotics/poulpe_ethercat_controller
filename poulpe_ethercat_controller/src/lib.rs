@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, f32::consts::PI, sync::RwLock, time::Duration};
+use std::{collections::HashMap, error::Error, f32::consts::{E, PI}, sync::RwLock, time::Duration};
 
 extern crate num;
 #[macro_use]
@@ -137,14 +137,15 @@ impl PoulpeController {
     //     }
     // }
 
-    fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize) -> Vec<u8> {
+    fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize) -> Result<Vec<u8>, Box<dyn Error>> {
         if !self.is_slave_ready(slave_id) {
             // slave not ready
-            // log::warn!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
+            log::error!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
+            return Err("Slave not ready!".into());
         }
-        self.inner
+        Ok(self.inner
             .get_pdo_register(slave_id, &reg.name().to_string(), index)
-            .unwrap()
+            .unwrap())
     }
     fn set_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize, value: &[u8]) -> Result<(), Box<dyn Error>> {
         if !self.is_slave_ready(slave_id) {
@@ -160,14 +161,15 @@ impl PoulpeController {
         
     }
 
-    fn get_pdo_registers(&self, slave_id: u16, reg: PdoRegister) -> Vec<Vec<u8>> {
+    fn get_pdo_registers(&self, slave_id: u16, reg: PdoRegister) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
         if !self.is_slave_ready(slave_id) {
             // slave not ready
-            // log::warn!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
+            log::error!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
+            return Err("Slave not ready!".into());
         }
-        self.inner
+        Ok(self.inner
             .get_pdo_registers(slave_id, &reg.name().to_string())
-            .unwrap()
+            .unwrap())
     }
     fn set_pdo_registers(&self, slave_id: u16, reg: PdoRegister, values: Vec<Vec<u8>>) -> Result<(), Box<dyn Error>>{
         // log::error!("Writing slave {:?} (pos: {}), operational {:?}", self.get_slave_name(slave_id).unwrap(), slave_id, self.is_slave_ready(slave_id));
@@ -225,7 +227,7 @@ impl PoulpeController {
             let no_axes = self.poulpe_config[&slave_id].orbita_type;
             let current_time = std::time::SystemTime::now();
             let orbita_type = loop {
-                match self.get_pdo_register(slave_id, PdoRegister::OrbitaType, 0)[0]{
+                match self.get_type(slave_id as u32) {
                     0 => std::thread::sleep(std::time::Duration::from_millis(100)),
                     n => break n
                 }
@@ -252,7 +254,14 @@ impl PoulpeController {
 
     pub fn is_torque_on(&self, id: u32) -> Result<Option<bool>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
-        let status = self.get_pdo_register(slave_id, PdoRegister::TroqueOn, 0)[0];
+        let mut status;
+        match self.get_pdo_register(slave_id, PdoRegister::TroqueOn, 0){
+            Ok(b) => status = b[0],
+            Err(_) => {
+                log::error!("Error reading torque state!");
+                return Err("Error reading torque state!".into());
+            }
+        };
         let no_motors = self.poulpe_config[&slave_id].orbita_type;
         let mut torque_on = true;
         log::debug!(
@@ -318,12 +327,19 @@ impl PoulpeController {
     }
 
     pub fn get_status(&self, slave_id: u32) -> BoardStatus {
-        let byte = self.get_pdo_register(slave_id as u16, PdoRegister::State, 0)[0];
+        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::State, 0) {
+            Ok(b) => b[0],
+            Err(_) => 255,
+        };
         BoardStatus::from_u8(byte)
     }
 
     pub fn get_type(&self, slave_id: u32) -> u8 {
-        let byte = self.get_pdo_register(slave_id as u16, PdoRegister::OrbitaType, 0)[0];
+        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::OrbitaType, 0)
+        {
+            Ok(b) => b[0],
+            Err(_) => 255,
+        };
         byte
     }
 
@@ -333,12 +349,16 @@ impl PoulpeController {
         register: PdoRegister,
     ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
-        let bytes = self.get_pdo_registers(slave_id, register);
-        let values = bytes
-            .iter()
-            .map(|x| f32::from_le_bytes(x[0..4].try_into().unwrap()))
-            .collect::<Vec<f32>>();
-        Ok(Some(values))
+        match self.get_pdo_registers(slave_id, register){
+            Ok(bytes) => {
+                let values = bytes
+                    .iter()
+                    .map(|x| f32::from_le_bytes(x[0..4].try_into().unwrap()))
+                    .collect::<Vec<f32>>();
+                Ok(Some(values))
+            },
+            Err(_) =>  Err("Error reading register!".into())
+        }
     }
 
     pub fn get_current_position(

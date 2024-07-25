@@ -36,35 +36,35 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
             Ok(Some(state)) => state,
             _ => {
                 log::error!("Failed to get compliant state for slave {}", slave_id);
-                false
+                return Err("Failed to get compliant state".into());
             }
         },
         actual_position: match controller.get_current_position(slave_id) {
             Ok(Some(pos)) => pos,
             _ => {
                 log::error!("Failed to get actual position for slave {}", slave_id);
-                vec![0.0; controller.get_orbita_type(slave_id) as usize]
+                return Err("Failed to get actual position".into());
             }
         },
         actual_velocity: match controller.get_current_velocity(slave_id) {
             Ok(Some(vel)) => vel,
             _ => {
                 log::error!("Failed to get actual velocity for slave {}", slave_id);
-                vec![0.0; controller.get_orbita_type(slave_id) as usize]
+                return Err("Failed to get actual velocity".into());
             }
         },
         actual_torque: match controller.get_current_torque(slave_id) {
             Ok(Some(torque)) => torque,
             _ => {
                 log::error!("Failed to get actual torque for slave {}", slave_id);
-                vec![0.0; controller.get_orbita_type(slave_id) as usize]
+                return Err("Failed to get actual torque".into());
             }
         },
         axis_sensors: match controller.get_current_axis_sensors(slave_id) {
             Ok(Some(sensor)) => sensor,
             _ => {
                 log::error!("Failed to get axis sensor for slave {}", slave_id);
-                vec![0.0; controller.get_orbita_type(slave_id) as usize]
+                return Err("Failed to get axis sensor".into());
             }
         },
         requested_target_position: match controller.get_current_target_position(slave_id) {
@@ -74,7 +74,7 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
                     "Failed to get requested target position for slave {}",
                     slave_id
                 );
-                vec![0.0; controller.get_orbita_type(slave_id) as usize]
+                return Err("Failed to get requested target position".into());
             }
         },
         state: controller.get_status(slave_id) as u32,
@@ -82,7 +82,7 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
             Ok(Some(state)) => state,
             _ => {
                 log::error!("Failed to get torque state for slave {}", slave_id);
-                false
+                return Err("Failed to get torque state".into());
             }
         },
         published_timestamp: Some(Timestamp::from(std::time::SystemTime::now())), 
@@ -122,6 +122,9 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
         tokio::spawn(async move {
             let request = request.get_ref();
             let mut loop_timestamp = SystemTime::now();
+            // state to be sent if no state is available
+            // this is to avoid sending empty states
+            let mut last_state = poule_empty_state();
             loop {
                 let dt = request.update_period  - loop_timestamp.elapsed().unwrap().as_secs_f32() ;
                 if dt > 0.0 {
@@ -134,21 +137,13 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                         .iter()
                         .map(|&id| 
                             match get_state_for_id(&controller, id){
-                                Ok(state) => state,
+                                Ok(state) => {
+                                    last_state = state.clone();
+                                    state
+                                },
                                 Err(e) => {
-                                    log::error!("Failed to get state for slave {}: {}", id, e);
-                                    PoulpeState {
-                                        id,
-                                        compliant: false,
-                                        actual_position: vec![],
-                                        actual_velocity: vec![],
-                                        actual_torque: vec![],
-                                        axis_sensors: vec![],
-                                        requested_target_position: vec![],
-                                        state: 0,
-                                        torque_state: false,
-                                        published_timestamp: Some(Timestamp::from(std::time::SystemTime::now())),
-                                    }
+                                    log::error!("Faile  d to get state for slave {}: {}", id, e);
+                                    last_state.clone()
                                 }
                             }
 
@@ -267,7 +262,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             if dt_max < dt_loop {
                 dt_max = dt_loop;
             }
-            if dt > 2.0 {
+            if dt > 5.0 {
                 let f = nb as f32 / dt ;
                 let dt_c = (command_times as f32) / (nb as f32);
                 log::info!("GRPC EtherCAT: Got {} req/s (dropped {}/ received {}) average transmission time: {} ms  (max {})", f, dropped_messages, nb, dt_c, dt_max*1000.0);
@@ -323,4 +318,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     Ok(())
+}
+
+
+fn poule_empty_state() -> PoulpeState {
+    PoulpeState {
+        id: 0,
+        compliant: false,
+        actual_position: vec![],
+        actual_velocity: vec![],
+        actual_torque: vec![],
+        axis_sensors: vec![],
+        requested_target_position: vec![],
+        state: 0,
+        torque_state: false,
+        published_timestamp: None,
+    }
 }

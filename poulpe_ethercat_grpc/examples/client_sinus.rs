@@ -10,7 +10,7 @@ use poulpe_ethercat_grpc::PoulpeRemoteClient;
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    let id: u16 = 0;
+    let id: u16 = 1;
 
     let mut client = match PoulpeRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,

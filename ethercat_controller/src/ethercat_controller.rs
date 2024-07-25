@@ -88,10 +88,11 @@ impl EtherCatController {
                 continue;
             }
 
+            // debugging output
             debug_loop_counter += 1;
-            if debug_loop_timestamp.elapsed().as_millis() > 2000 {
+            if debug_loop_timestamp.elapsed().as_millis() > 5000 {
                 debug_loop_timestamp = std::time::Instant::now();
-                log::info!("Ethercat master loop Freq: {} Hz", debug_loop_counter as f32 / 2.0);
+                log::info!("Ethercat master loop Freq: {} Hz", debug_loop_counter as f32 / 5.0);
                 debug_loop_counter = 0;
             }
 
@@ -211,6 +212,22 @@ impl EtherCatController {
                         _ if m_state.slaves_responding > slave_number => log::error!("New slaves are connected! Inintially: {}, Now: {}", slave_number, m_state.slaves_responding),
                         _ => {}
                     }
+
+                    // update the slave states 
+                    // with mailbox verification
+                    #[cfg(feature = "verify_mailboxes")]
+                    let slave_current_state = (0..slave_number)
+                    .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id, slave_is_mailbox_responding[i as usize]))
+                    .collect::<Vec<_>>();
+                    // without mailbox verification
+                    #[cfg(not(feature = "verify_mailboxes"))]
+                    let slave_current_state = (0..slave_number)
+                    .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id))
+                    .collect::<Vec<_>>();
+
+                    // notify the operational state for the slaves
+                    notify_slave_state(&sstate_condvar, slave_current_state);
+
                     set_ready_flag(&write_ready_condvar, false);
                     master_operational = false;
                 }
