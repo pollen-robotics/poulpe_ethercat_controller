@@ -265,7 +265,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             if dt > 5.0 {
                 let f = nb as f32 / dt ;
                 let dt_c = (command_times as f32) / (nb as f32);
-                log::info!("GRPC EtherCAT: Got {} req/s (dropped {}/ received {}) average transmission time: {} ms  (max {})", f, dropped_messages, nb, dt_c, dt_max*1000.0);
+                log::info!("GRPC EtherCAT: {} req/s, dropped {:0.2} req/s, avg time: {} ms,  max {} ms", f, dropped_messages as f32/dt, dt_c, dt_max*1000.0);
 
                 t = SystemTime::now();
                 command_times = 0;

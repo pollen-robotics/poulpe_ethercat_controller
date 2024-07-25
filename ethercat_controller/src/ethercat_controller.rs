@@ -92,7 +92,7 @@ impl EtherCatController {
             debug_loop_counter += 1;
             if debug_loop_timestamp.elapsed().as_millis() > 5000 {
                 debug_loop_timestamp = std::time::Instant::now();
-                log::info!("Ethercat master loop Freq: {} Hz", debug_loop_counter as f32 / 5.0);
+                log::info!("EtherCAT loop: {} Hz", debug_loop_counter as f32 / 5.0);
                 debug_loop_counter = 0;
             }
 

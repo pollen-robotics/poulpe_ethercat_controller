@@ -7,10 +7,20 @@ use std::{
 
 use poulpe_ethercat_grpc::PoulpeRemoteClient;
 
+
+// takes the salve id as argument
+// and moves the motor in a sinusoidal motion
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    let id: u16 = 1;
+    // args
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 2 {
+        log::error!("Usage: {}  <id>", args[0]);
+        return Err("Invalid number of arguments".into());
+    }
+    let id: u16 = args[1].parse()?;
+    log::info!("Slave id: {}", id);
 
     let mut client = match PoulpeRemoteClient::connect(
         "http://127.0.0.1:50098".parse()?,
@@ -35,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     thread::sleep(Duration::from_secs(2));
 
     let ids = client.get_poulpe_ids_sync()?;
-    log::info!("ids: {:?}", ids);
+    log::info!("Slave ids in network: {:?}", ids);
 
     client.set_velocity_limit(id, vec![1.0; 3]);
     client.set_torque_limit(id, vec![1.0; 3]);
