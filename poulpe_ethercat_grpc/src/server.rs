@@ -178,6 +178,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             log::debug!("Got commands {:?}", req);
             for cmd in req.commands {
                 let slave_id = cmd.id as u32;
+                let mut target_pos = cmd.target_position;
                 match cmd.published_timestamp{
                     Some(published_time) => {
                         let published_time = match SystemTime::try_from(published_time) {
@@ -192,7 +193,11 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                         if elapsed_time > 5 {
                             // log::warn!("Message older than {} ms, discarding!", 5);
                             dropped_messages +=1;
-                            continue;
+                            if cmd.compliancy.is_none() && cmd.velocity_limit.len()  == 0  && cmd.torque_limit.len() == 0 {
+                                continue;
+                            }
+                            // target pos 
+                            target_pos = vec!();
                         }
                     }
                     None => {
@@ -205,7 +210,6 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 
                 let mut set_compliant = cmd.compliancy;
 
-                let target_pos = cmd.target_position;
                 if target_pos.len() != 0 {
                     // set only last target command 
                     self.controller.set_target_position(
