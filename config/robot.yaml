@@ -1,16 +1,16 @@
 ethercat:
   master_id: 0
-  cycle_time_us: 1000 # us
+  cycle_time_us: 300 # us
 
 slaves:
   - !Poulpe
     id: 0
-    orbita_type: 2
-    name: "LeftShoulderOrbita2d"
+    orbita_type: 3
+    name: "NeckOrbita3d"
   - !Poulpe
     id: 1
     orbita_type: 2
-    name: "LeftElbowOrbita2d"
+    name: "LeftShoulderOrbita2d"
   - !Poulpe
     id: 2
     orbita_type: 3
@@ -18,16 +18,16 @@ slaves:
   - !Poulpe
     id: 3
     orbita_type: 2
-    name: "RightShoulderOrbita2d"
+    name: "LeftElbowOrbita2d"
   - !Poulpe
     id: 4
     orbita_type: 2
-    name: "RightElbowOrbita2d"
+    name: "RightShoulderOrbita2d"
   - !Poulpe
     id: 5
     orbita_type: 3
     name: "RightWristOrbita3d"
   - !Poulpe
     id: 6
-    orbita_type: 3
-    name: "NeckOrbita3d"
+    orbita_type: 2
+    name: "RightElbowOrbita2d"

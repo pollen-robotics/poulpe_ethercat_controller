@@ -82,8 +82,9 @@ impl PoulpeRemoteClient {
             let command_stream = async_stream::stream! {
                 let mut loop_timestamp = std::time::SystemTime::now();
                 loop {
-                    if update_period > loop_timestamp.elapsed().unwrap() {
-                        sleep(update_period - loop_timestamp.elapsed().unwrap()).await;
+                    let dt = update_period.as_secs_f32() - loop_timestamp.elapsed().unwrap().as_secs_f32();
+                    if dt > 0.0 {
+                        sleep(Duration::from_secs_f32(dt)).await;
                     }
                     loop_timestamp = std::time::SystemTime::now();
                     let mut cmd_map = command_buff_lock.write().await;

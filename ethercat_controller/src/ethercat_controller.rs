@@ -84,15 +84,19 @@ impl EtherCatController {
 
             // check the loop period
             // make it approximately equal to the cycle period
-            if loop_period_timestamp.elapsed() < cycle_period {
-                continue;
+            // make sure that the subtraction does not return a negative value
+            let dt_sleep = cycle_period.as_secs_f32() - loop_period_timestamp.elapsed().as_secs_f32();
+            if dt_sleep > 0.0 {
+                thread::sleep(Duration::from_secs_f32(dt_sleep));
             }
-
+            // set the loop period timestamp
+            loop_period_timestamp = std::time::Instant::now();
+            
             // debugging output
             debug_loop_counter += 1;
             if debug_loop_timestamp.elapsed().as_millis() > 5000 {
+                log::info!("EtherCAT loop: {:.02} Hz", debug_loop_counter as f32 / debug_loop_timestamp.elapsed().as_secs_f32());
                 debug_loop_timestamp = std::time::Instant::now();
-                log::info!("EtherCAT loop: {} Hz", debug_loop_counter as f32 / 5.0);
                 debug_loop_counter = 0;
             }
 
@@ -265,8 +269,6 @@ impl EtherCatController {
                 }
             }
             
-            // set the loop period timestamp
-            loop_period_timestamp = std::time::Instant::now();
 
         });
 
