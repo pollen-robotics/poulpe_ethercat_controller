@@ -193,11 +193,13 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                         if elapsed_time > 5 {
                             // log::warn!("Message older than {} ms, discarding!", 5);
                             dropped_messages +=1;
-                            if cmd.compliancy.is_none() && cmd.velocity_limit.len()  == 0  && cmd.torque_limit.len() == 0 {
-                                continue;
-                            }
-                            // target pos 
-                            target_pos = vec!();
+                            continue;
+                            
+                            // if cmd.compliancy.is_none() && cmd.velocity_limit.len()  == 0  && cmd.torque_limit.len() == 0 {
+                            //     continue;
+                            // }
+                            // // target pos 
+                            // target_pos = vec!();
                         }
                     }
                     None => {
@@ -254,12 +256,12 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     None => (),
                 }
                 
+                nb += 1;
             }
             // wait for the next cycle  
             // to make sure the commands are executed
             // self.controller.inner.wait_for_next_cycle();
 
-            nb += 1;
             command_times += elapsed_time;
             let dt = t.elapsed().unwrap().as_secs_f32();
             let dt_loop =  t_loop.elapsed().unwrap().as_secs_f32();

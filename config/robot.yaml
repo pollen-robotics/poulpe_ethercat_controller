@@ -1,6 +1,6 @@
 ethercat:
   master_id: 0
-  cycle_time_us: 300 # us
+  cycle_time_us: 200 # us
 
 slaves:
   - !Poulpe
