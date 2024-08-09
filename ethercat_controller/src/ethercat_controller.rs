@@ -27,12 +27,16 @@ pub struct EtherCatController {
     slave_states_condvar: Arc<(Mutex<Vec<u8>>, Condvar)>,
 
     cmd_buff: SyncSender<(Range<usize>, Vec<u8>)>,
+
+    pub command_drop_time_us: u32
 }
 
 impl EtherCatController {
     pub fn open(
         master_id: u32,
         cycle_period: Duration,
+        command_drop_time_us: u32,
+        mailbox_wait_time_ms: u32
     ) -> Result<Self, io::Error> {
         let (mut master, domain_idx, offsets, slave_names, mailbox_entries) = init_master(master_id)?;
 
@@ -58,218 +62,219 @@ impl EtherCatController {
         let slave_states_condvar = Arc::new((Mutex::new(vec![0]), Condvar::new()));
         let sstate_condvar = Arc::clone(&slave_states_condvar);
 
-        // create a channel to send data to the master
-        let (tx, rx) = sync_channel::<(Range<usize>, Vec<u8>)>(5); // TODO: make buffer size configurable
-
         // get the slave number
         let slave_number = slave_names.len() as u32;
-        // is master operational flag
-        let mut master_operational = false;
-
         // create a function to map slave id to slave name
         let slave_name_from_id = create_slave_name_mapper(slave_names.clone()); 
 
+        // create a channel to send data to the master
+        let (tx, rx) = sync_channel::<(Range<usize>, Vec<u8>)>((slave_number*10) as usize); // Buffer size dependanto on the slave number
+        
         #[cfg(feature = "verify_mailboxes")]
         // initialize the mailbox verification 
         let (mut slave_mailbox_offsets, mut slave_mailbox_timestamps, mut slave_is_mailbox_responding, mut slave_mailbox_data_buffer) = init_mailbox_verification(slave_number, &mailbox_entries, &offsets);
 
-        // timestamp to say from when the master is not operational
-        let mut display_not_operational_timestamp = std::time::Instant::now();
-        // timestap used to establish the loop period
-        let mut loop_period_timestamp = std::time::Instant::now();
-        let mut debug_loop_timestamp = std::time::Instant::now();
-        let mut debug_loop_counter = 0;
-        // spawn a thread to handle the master
-        thread::spawn(move || loop {
 
-            // check the loop period
-            // make it approximately equal to the cycle period
-            // make sure that the subtraction does not return a negative value
-            let dt_sleep = cycle_period.as_secs_f32() - loop_period_timestamp.elapsed().as_secs_f32();
-            if dt_sleep > 0.0 {
-                thread::sleep(Duration::from_secs_f32(dt_sleep));
-            }
-            // set the loop period timestamp
-            loop_period_timestamp = std::time::Instant::now();
-            
-            // debugging output
-            debug_loop_counter += 1;
-            if debug_loop_timestamp.elapsed().as_millis() > 5000 {
-                log::info!("EtherCAT loop: {:.02} Hz", debug_loop_counter as f32 / debug_loop_timestamp.elapsed().as_secs_f32());
-                debug_loop_timestamp = std::time::Instant::now();
-                debug_loop_counter = 0;
-            }
+        thread::spawn(move || {
+            // is master operational flag
+            let mut master_operational = false;
+            // timestamp to say from when the master is not operational
+            let mut display_not_operational_timestamp = std::time::Instant::now();
+            // timestap used to establish the loop period
+            let mut loop_period_timestamp = std::time::Instant::now();
+            let mut debug_loop_timestamp = std::time::Instant::now();
+            let mut debug_loop_counter = 0;
+            // spawn a thread to handle the master
+            loop {
 
-            // get the master data
-            master.receive().unwrap();
-            master.domain(domain_idx).process().unwrap();
-            master.domain(domain_idx).queue().unwrap();
-
-            // get the domain data
-            let mut data = master.domain_data(domain_idx).unwrap();
-
-            // verify that the poulpes are still writing
-            // for each slave check if the mailbox mailbox entries are updated 
-            // the mailbox data is being written by slaves at arounf 10Hz
-            // if the mailbox data is not updated for more than 1s
-            // the slave is considered not as responding
-            // 
-            // if at least one slave is not responding function will return false
-            //
-            // if the slaves are responding it will update the data buffer
-            // with the mailbox data (which might have been read some time ago (but less than 1s ago))
-            #[cfg(feature = "verify_mailboxes")]
-            let all_slaves_responding = verify_mailboxes(
-                slave_number,
-                &mut data,
-                &mut slave_mailbox_offsets,
-                &mut slave_mailbox_timestamps,
-                &mut slave_is_mailbox_responding,
-                &mut slave_mailbox_data_buffer,
-                &write_ready_condvar,
-                &slave_name_from_id,
-            );
-
-            // write the data to the data lock
-            if let Ok(mut write_guard) = write_data_lock.write() {
-                *write_guard = Some(data.to_vec());
-            }
-
-            // notify the next cycle
-            notify_next_cycle(&write_cycle_condvar);
-
-            // check if the master is operational
-            // and only if operational update the data buffer with the new data to send to the slaves
-            if master_operational{
-                // update the data buffer with the new data to send 
-                while let Ok((reg_addr_range, value)) = rx.try_recv() {
-                    data[reg_addr_range].copy_from_slice(&value);
+                // check the loop period
+                // make it approximately equal to the cycle period
+                // make sure that the subtraction does not return a negative value
+                let dt_sleep = cycle_period.as_secs_f32() - loop_period_timestamp.elapsed().as_secs_f32();
+                if dt_sleep > 0.0 {
+                    thread::sleep(Duration::from_secs_f32(dt_sleep));
                 }
-            }
+                // set the loop period timestamp
+                loop_period_timestamp = std::time::Instant::now();
+                
+                // debugging output
+                debug_loop_counter += 1;
+                if debug_loop_timestamp.elapsed().as_secs_f32() > 10.0 {
+                    log::info!("EtherCAT loop: {:.02} Hz", debug_loop_counter as f32 / debug_loop_timestamp.elapsed().as_secs_f32());
+                    debug_loop_timestamp = std::time::Instant::now();
+                    debug_loop_counter = 0;
+                }
 
-            // send the data to the slaves
-            master.send().unwrap();
+                // get the master data
+                master.receive().unwrap();
+                master.domain(domain_idx).process().unwrap();
+                master.domain(domain_idx).queue().unwrap();
 
-            // get the master state
-            let m_state = master.state().unwrap();
-            #[cfg(not(feature = "verify_mailboxes"))]
-            // get the slave states without mailbox verification
-            let all_slaves_responding = m_state.slaves_responding == slave_number;
+                // get the domain data
+                let mut data = master.domain_data(domain_idx).unwrap();
+
+                // verify that the poulpes are still writing
+                // for each slave check if the mailbox mailbox entries are updated 
+                // the mailbox data is being written by slaves at arounf 10Hz
+                // if the mailbox data is not updated for more than 1s
+                // the slave is considered not as responding
+                // 
+                // if at least one slave is not responding function will return false
+                //
+                // if the slaves are responding it will update the data buffer
+                // with the mailbox data (which might have been read some time ago (but less than 1s ago))
+                #[cfg(feature = "verify_mailboxes")]
+                let all_slaves_responding = verify_mailboxes(
+                    slave_number,
+                    &mut data,
+                    &mut slave_mailbox_offsets,
+                    &mut slave_mailbox_timestamps,
+                    &mut slave_is_mailbox_responding,
+                    &mut slave_mailbox_data_buffer,
+                    &write_ready_condvar,
+                    &slave_name_from_id,
+                    mailbox_wait_time_ms
+                );
+
+                // write the data to the data lock
+                if let Ok(mut write_guard) = write_data_lock.write() {
+                    *write_guard = Some(data.to_vec());
+                }
+
+                // notify the next cycle
+                notify_next_cycle(&write_cycle_condvar);
+
+                // check if the master is operational
+                // and only if operational update the data buffer with the new data to send to the slaves
+                if master_operational{
+                    // update the data buffer with the new data to send 
+                    while let Ok((reg_addr_range, value)) = rx.try_recv() {
+                        data[reg_addr_range].copy_from_slice(&value);
+                    }
+                }
+
+                // send the data to the slaves
+                master.send().unwrap();
+
+                // get the master state
+                let m_state = master.state().unwrap();
+                #[cfg(not(feature = "verify_mailboxes"))]
+                // get the slave states without mailbox verification
+                let all_slaves_responding = m_state.slaves_responding == slave_number;
 
 
-            // master opration state machine
-            // if the master is not operational
-            //  - check if all slaves are responding
-            //  - check if the link is up
-            //  - check if the master is in operational state
-            //  - check if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
-            //  -> if all the conditions are met notify the operational state to the master and the slaves
-            // 
-            // if the master is operational
-            //  - check if the master is still operational
-            //  - check if all slaves are connected
-            //  - check if all slaves are responding
-            //  - check if the master is in operational state
-            //  - check if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
-            //  -> if any of the conditions are not met notify the operational state to the slaves and set the ready flag to false
-            if !master_operational { // master is not operational 
+                // master opration state machine
+                // if the master is not operational
+                //  - check if all slaves are responding
+                //  - check if the link is up
+                //  - check if the master is in operational state
+                //  - check if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
+                //  -> if all the conditions are met notify the operational state to the master and the slaves
+                // 
+                // if the master is operational
+                //  - check if the master is still operational
+                //  - check if all slaves are connected
+                //  - check if all slaves are responding
+                //  - check if the master is in operational state
+                //  - check if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
+                //  -> if any of the conditions are not met notify the operational state to the slaves and set the ready flag to false
+                if !master_operational { // master is not operational 
 
-                // To go to the operational state 
-                // - if all slaves are responding
-                // - if the link is up 
-                // - if the master is in operational state
-                // - if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
-                if all_slaves_responding 
-                    && m_state.link_up 
-                    && m_state.al_states == AlState::Op as u8 // OP = 8 is operational
-                    && m_state.slaves_responding == slave_number { 
-                    // notify the operational state to the master
-                    set_ready_flag(&write_ready_condvar, true);
-                    master_operational = true;
-                    // notify the operational state to the slaves
-                    notify_slave_state(&sstate_condvar, vec![AlState::Op as u8; slave_number as usize]);
-                    log::info!("Master and all slaves operational!");
-                }else{
-                    // check each second
-                    if display_not_operational_timestamp.elapsed().as_secs() > 1 {
-                        display_not_operational_timestamp = std::time::Instant::now();
-                        log::warn!("Master cannot go to operational!");
-                        // display the master state
-                        // if the master is not operational
+                    // To go to the operational state 
+                    // - if all slaves are responding
+                    // - if the link is up 
+                    // - if the master is in operational state
+                    // - if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
+                    if all_slaves_responding 
+                        && m_state.link_up 
+                        && m_state.al_states == AlState::Op as u8 // OP = 8 is operational
+                        && m_state.slaves_responding == slave_number { 
+                        // notify the operational state to the master
+                        set_ready_flag(&write_ready_condvar, true);
+                        master_operational = true;
+                        // notify the operational state to the slaves
+                        notify_slave_state(&sstate_condvar, vec![AlState::Op as u8; slave_number as usize]);
+                        log::info!("Master and all slaves operational!");
+                    }else{
+                        // check each second
+                        if display_not_operational_timestamp.elapsed().as_secs() > 1 {
+                            display_not_operational_timestamp = std::time::Instant::now();
+                            log::warn!("Master cannot go to operational!");
+                            // display the master state
+                            // if the master is not operational
+                            #[cfg(feature = "verify_mailboxes")]
+                            log_master_state(&master, slave_number, &slave_name_from_id, &slave_is_mailbox_responding);
+                            #[cfg(not(feature = "verify_mailboxes"))]
+                            log_master_state(&master, slave_number, &slave_name_from_id);
+                        }
+                    }
+                } else {
+
+                    // check if the master is still operational
+
+                    // check if all slaves are connected
+                    // thsis will fail if a slave is disconnected
+                    // or if a new slave is connected
+                    if m_state.slaves_responding != slave_number {
+                        match m_state.slaves_responding {
+                            0 => log::error!("No slaves are connected!"),
+                            _ if m_state.slaves_responding < slave_number => log::error!("Not all slaves are connected! Expected: {}, Responding: {}", slave_number, m_state.slaves_responding),
+                            _ if m_state.slaves_responding > slave_number => log::error!("New slaves are connected! Inintially: {}, Now: {}", slave_number, m_state.slaves_responding),
+                            _ => {}
+                        }
+
+                        // update the slave states 
+                        // with mailbox verification
                         #[cfg(feature = "verify_mailboxes")]
-                        log_master_state(&master, slave_number, &slave_name_from_id, &slave_is_mailbox_responding);
+                        let slave_current_state = (0..slave_number)
+                        .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id, slave_is_mailbox_responding[i as usize]))
+                        .collect::<Vec<_>>();
+                        // without mailbox verification
                         #[cfg(not(feature = "verify_mailboxes"))]
-                        log_master_state(&master, slave_number, &slave_name_from_id);
-                    }
-                }
-            } else {
+                        let slave_current_state = (0..slave_number)
+                        .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id))
+                        .collect::<Vec<_>>();
 
-                // check if the master is still operational
+                        // notify the operational state for the slaves
+                        notify_slave_state(&sstate_condvar, slave_current_state);
 
-                // check if all slaves are connected
-                // thsis will fail if a slave is disconnected
-                // or if a new slave is connected
-                if m_state.slaves_responding != slave_number {
-                    match m_state.slaves_responding {
-                        0 => log::error!("No slaves are connected!"),
-                        _ if m_state.slaves_responding < slave_number => log::error!("Not all slaves are connected! Expected: {}, Responding: {}", slave_number, m_state.slaves_responding),
-                        _ if m_state.slaves_responding > slave_number => log::error!("New slaves are connected! Inintially: {}, Now: {}", slave_number, m_state.slaves_responding),
-                        _ => {}
+                        set_ready_flag(&write_ready_condvar, false);
+                        master_operational = false;
                     }
 
-                    // update the slave states 
-                    // with mailbox verification
-                    #[cfg(feature = "verify_mailboxes")]
-                    let slave_current_state = (0..slave_number)
-                    .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id, slave_is_mailbox_responding[i as usize]))
-                    .collect::<Vec<_>>();
-                    // without mailbox verification
-                    #[cfg(not(feature = "verify_mailboxes"))]
-                    let slave_current_state = (0..slave_number)
-                    .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id))
-                    .collect::<Vec<_>>();
+                    // if master state has changed or not all slaves are responding
+                    if m_state.al_states != AlState::Op as u8 || !all_slaves_responding {
+                        // master state has changed
+                        if m_state.al_states != AlState::Op as u8 {
+                            log::error!("Master is not operational! State: {:?}", m_state.al_states);
+                        }
+                        if !all_slaves_responding {
+                            // not all slaves are responding
+                            log::error!("Not all slaves are responding!");
+                        }
 
-                    // notify the operational state for the slaves
-                    notify_slave_state(&sstate_condvar, slave_current_state);
+                        // update the slave states 
+                        // with mailbox verification
+                        #[cfg(feature = "verify_mailboxes")]
+                        let slave_current_state = (0..slave_number)
+                        .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id, slave_is_mailbox_responding[i as usize]))
+                        .collect::<Vec<_>>();
+                        // without mailbox verification
+                        #[cfg(not(feature = "verify_mailboxes"))]
+                        let slave_current_state = (0..slave_number)
+                        .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id))
+                        .collect::<Vec<_>>();
 
-                    set_ready_flag(&write_ready_condvar, false);
-                    master_operational = false;
-                }
+                        // notify the operational state for the slaves
+                        notify_slave_state(&sstate_condvar, slave_current_state);
 
-                // if master state has changed or not all slaves are responding
-                if m_state.al_states != AlState::Op as u8 || !all_slaves_responding {
-                    // master state has changed
-                    if m_state.al_states != AlState::Op as u8 {
-                        log::error!("Master is not operational! State: {:?}", m_state.al_states);
+                        // set the ready flag to false
+                        set_ready_flag(&write_ready_condvar, false);
+                        // master is not operational
+                        master_operational = false;
                     }
-                    if !all_slaves_responding {
-                        // not all slaves are responding
-                        log::error!("Not all slaves are responding!");
-                    }
-
-                    // update the slave states 
-                    // with mailbox verification
-                    #[cfg(feature = "verify_mailboxes")]
-                    let slave_current_state = (0..slave_number)
-                    .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id, slave_is_mailbox_responding[i as usize]))
-                    .collect::<Vec<_>>();
-                    // without mailbox verification
-                    #[cfg(not(feature = "verify_mailboxes"))]
-                    let slave_current_state = (0..slave_number)
-                    .map(|i| get_slave_current_state(&master, SlavePos::from(i as u16), &slave_name_from_id))
-                    .collect::<Vec<_>>();
-
-                    // notify the operational state for the slaves
-                    notify_slave_state(&sstate_condvar, slave_current_state);
-
-                    // set the ready flag to false
-                    set_ready_flag(&write_ready_condvar, false);
-                    // master is not operational
-                    master_operational = false;
                 }
             }
-            
-
         });
 
         Ok(EtherCatController {
@@ -280,6 +285,7 @@ impl EtherCatController {
             cycle_condvar,
             slave_states_condvar,
             cmd_buff: tx,
+            command_drop_time_us
         })
     }
 
@@ -394,11 +400,11 @@ impl EtherCatController {
     }
 
     fn get_reg_addr_range(&self, slave_id: u16, register: &String, index: usize) -> Range<usize> {
-        get_reg_addr_range(self.offsets.clone(), slave_id, register, index)
+        get_reg_addr_range(&self.offsets, slave_id, register, index)
     }
 
     fn get_reg_addr_ranges(&self, slave_id: u16, register: &String) -> Vec<Range<usize>> {
-        get_reg_addr_ranges(self.offsets.clone(), slave_id, register)
+        get_reg_addr_ranges(&self.offsets, slave_id, register)
     }
 
     pub fn get_slave_name(&self, slave_id: u16) -> Option<String> {
@@ -413,7 +419,7 @@ impl EtherCatController {
     }
 }
 
-pub fn get_reg_addr_range(offsets: SlaveOffsets, slave_id: u16, register: &String, index: usize) -> Range<usize> {
+pub fn get_reg_addr_range(offsets: &SlaveOffsets, slave_id: u16, register: &String, index: usize) -> Range<usize> {
     let slave_pos = SlavePos::from(slave_id);
 
     let (_pdo_entry_idx, bit_len, offset) = offsets[&slave_pos][register][index];
@@ -423,12 +429,15 @@ pub fn get_reg_addr_range(offsets: SlaveOffsets, slave_id: u16, register: &Strin
     addr..addr + bytes_len
 }
 
-fn get_reg_addr_ranges(offsets: SlaveOffsets, slave_id: u16, register: &String) -> Vec<Range<usize>> {
+fn get_reg_addr_ranges(offsets: &SlaveOffsets, slave_id: u16, register: &String) -> Vec<Range<usize>> {
     let slave_pos = SlavePos::from(slave_id);
 
-    let mut ranges = vec![];
-    for i in  0..offsets[&slave_pos][register].len(){
-        ranges.push(get_reg_addr_range(offsets.clone(), slave_id, register, i));
+    // Fetch data once to minimize locking time
+    let register_data = &offsets[&slave_pos][register];
+
+    let mut ranges = Vec::with_capacity(register_data.len());
+    for i in 0..register_data.len() {
+        ranges.push(get_reg_addr_range(offsets, slave_id, register, i));
     }
     ranges
 }
@@ -656,7 +665,7 @@ pub fn init_master(
         for i in 0..slave_number {
             let mut mailbox_offsets = vec![];
             for m in mailbox_entries.get(&SlavePos::from(i as u16)).unwrap() {
-                mailbox_offsets.append(&mut get_reg_addr_ranges(offsets.clone(), i as u16, m));
+                mailbox_offsets.append(&mut get_reg_addr_ranges(&offsets, i as u16, m));
             }
             slave_mailbox_offsets.push(mailbox_offsets);
         }
@@ -683,6 +692,7 @@ pub fn init_master(
         slave_mailbox_data_buffer: &mut Vec<Vec<Vec<u8>>>,
         write_ready_condvar: &Arc<(Mutex<bool>, Condvar)>,
         slave_name_from_id: &impl Fn(u16) -> String,
+        mailbox_wait_time_ms: u32
     ) -> bool{
         // return if all slaves responding 
         let mut all_slaves_responding = true;
@@ -700,7 +710,7 @@ pub fn init_master(
             slave_is_mailbox_responding[i as usize] = true;
             // if all the values are zero for more than 1s
             if is_all_zeros{ 
-                if slave_mailbox_timestamps[i as usize].elapsed().as_millis() > 1000 {
+                if slave_mailbox_timestamps[i as usize].elapsed().as_millis() as u32 > mailbox_wait_time_ms {
                     all_slaves_responding &= false; // set the all slaves responding flag to false
                     slave_is_mailbox_responding[i as usize] = false;
                 }

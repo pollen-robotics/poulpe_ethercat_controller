@@ -23,7 +23,7 @@ enum Command {
 #[derive(Debug)]
 pub struct PoulpeRemoteClient {
     ids: Vec<u16>,
-    rt: Runtime,
+    rt: Arc<Runtime>,
     addr : Uri,
     state: Arc<RwLock<HashMap<u16, PoulpeState>>>,
     command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>
@@ -37,19 +37,24 @@ impl PoulpeRemoteClient {
         let command_buff = Arc::new(RwLock::new(HashMap::new()));
         let command_buff_lock = Arc::clone(&command_buff);
 
-        let rt = Builder::new_multi_thread().enable_all().build().unwrap();
+        // let rt = Builder::new_multi_thread().enable_all().build().unwrap();
+        let rt = Arc::new(Builder::new_multi_thread().enable_all().build().unwrap());
+
+        
+        // Validate poulpe_ids
+        let client = PoulpeRemoteClient {
+            ids: poulpe_ids.clone(),
+            rt: rt.clone(),
+            addr: addr.clone(),
+            state: state.clone(),
+            command_buff: command_buff.clone(),
+        };
 
         let url = addr.to_string();
         let ids = poulpe_ids.clone();
         // check if the id is valid and the server is up
         // check if poulpe_ids are valid
-        match (PoulpeRemoteClient {
-            ids: poulpe_ids.clone(),
-            rt: Builder::new_multi_thread().enable_all().build().unwrap(),
-            addr: addr.clone(),
-            state: state.clone(),
-            command_buff: command_buff.clone(),
-        }).get_poulpe_ids_sync(){
+        match client.get_poulpe_ids_sync() {
             Ok(available_ids) => {
                 let available_ids = available_ids.0;
                 let mut common_ids = available_ids.clone();
@@ -66,8 +71,77 @@ impl PoulpeRemoteClient {
             }
         }
 
-        // spawn the command stream
+        // // spawn the command stream
+        // rt.spawn(async move {
+        //     let mut client = match PoulpeMultiplexerClient::connect(url).await {
+        //         Ok(client) => client,
+        //         Err(e) => {
+        //             log::error!(
+        //                 "Error in connecting to the server! Check if server is up!!!\n  {:?}",
+        //                 e
+        //             );
+        //             return;
+        //         }
+        //     };
+
+        //     let command_stream = async_stream::stream! {
+        //         let mut loop_timestamp = std::time::SystemTime::now();
+        //         loop {
+        //             let dt = 0.0001;//update_period.as_secs_f32() - loop_timestamp.elapsed().unwrap().as_secs_f32();
+        //             if dt > 0.0 {
+        //                 sleep(Duration::from_secs_f32(dt)).await;
+        //             }
+        //             loop_timestamp = std::time::SystemTime::now();
+        //             let mut cmd_map = command_buff_lock.write().await;
+        //             if let Some(commands) = extract_commands(&mut cmd_map) {
+        //                 yield commands;
+        //             }
+        //         }
+        //     };
+        //     let request = Request::new(command_stream);
+        //     match client.get_commands(request).await {
+        //         Ok(_) => log::info!("Command stream ended"),
+        //         Err(e) => log::error!("Error in command stream: {:?}", e),
+        //     }
+        // });
+
+        // let url = addr.to_string();
+
+        // // spawn the state stream
+        // rt.spawn(async move {
+        //     let mut client = match PoulpeMultiplexerClient::connect(url).await {
+        //         Ok(client) => client,
+        //         Err(e) => {
+        //             log::error!(
+        //                 "Error in connecting to the server! Check if server is up!!!\n  {:?}",
+        //                 e
+        //             );
+        //             return;
+        //         }
+        //     };
+
+
+        //     let request = Request::new(StateStreamRequest {
+        //         ids: poulpe_ids.iter().map(|&id| id as i32).collect(),
+        //         update_period: update_period.as_secs_f32(),
+        //     });
+
+        //     let mut stream = client.get_states(request).await.unwrap().into_inner();
+        //     while let Some(poulpe_state) = stream.message().await.unwrap() {
+        //         log::debug!("Update state with {:?}", poulpe_state);
+        //         {
+        //             let mut state_buff = state_lock.write().await;
+        //             for s in poulpe_state.states {
+        //                 state_buff.insert(s.id as u16, s);
+        //             }
+        //         }
+        //     }
+        // });
+
+        
+        // spawn a single thread to handle both the state stream and command stream
         rt.spawn(async move {
+            // Connect to the server
             let mut client = match PoulpeMultiplexerClient::connect(url).await {
                 Ok(client) => client,
                 Err(e) => {
@@ -79,58 +153,50 @@ impl PoulpeRemoteClient {
                 }
             };
 
+            // Prepare the state stream request
+            let state_request = Request::new(StateStreamRequest {
+                ids: poulpe_ids.iter().map(|&id| id as i32).collect(),
+                update_period: update_period.as_secs_f32(),
+            });
+
+            // Start receiving states
+            let mut state_stream = client.get_states(state_request).await.unwrap().into_inner();
+
+            // Prepare the command stream
             let command_stream = async_stream::stream! {
-                let mut loop_timestamp = std::time::SystemTime::now();
+                // fixed frequency
+                let mut interval = tokio::time::interval(Duration::from_secs_f32(0.0005));
+                
                 loop {
-                    let dt = update_period.as_secs_f32() - loop_timestamp.elapsed().unwrap().as_secs_f32();
-                    if dt > 0.0 {
-                        sleep(Duration::from_secs_f32(dt)).await;
-                    }
-                    loop_timestamp = std::time::SystemTime::now();
+                    // next cycle
+                    interval.tick().await;
                     let mut cmd_map = command_buff_lock.write().await;
                     if let Some(commands) = extract_commands(&mut cmd_map) {
                         yield commands;
                     }
                 }
             };
-            let request = Request::new(command_stream);
-            match client.get_commands(request).await {
-                Ok(_) => log::info!("Command stream ended"),
-                Err(e) => log::error!("Error in command stream: {:?}", e),
-            }
-        });
 
-        let url = addr.to_string();
-
-        // spawn the state stream
-        rt.spawn(async move {
-            let mut client = match PoulpeMultiplexerClient::connect(url).await {
-                Ok(client) => client,
-                Err(e) => {
-                    log::error!(
-                        "Error in connecting to the server! Check if server is up!!!\n  {:?}",
-                        e
-                    );
-                    return;
-                }
-            };
-
-
-            let request = Request::new(StateStreamRequest {
-                ids: poulpe_ids.iter().map(|&id| id as i32).collect(),
-                update_period: update_period.as_secs_f32(),
-            });
-
-            let mut stream = client.get_states(request).await.unwrap().into_inner();
-            while let Some(poulpe_state) = stream.message().await.unwrap() {
-                log::debug!("Update state with {:?}", poulpe_state);
-                {
-                    let mut state_buff = state_lock.write().await;
-
-                    for s in poulpe_state.states {
-                        state_buff.insert(s.id as u16, s);
+            // Send commands in parallel with state handling
+            tokio::select! {
+                // Handle state stream
+                _ = async {
+                    while let Some(poulpe_state) = state_stream.message().await.unwrap() {
+                        log::debug!("Update state with {:?}", poulpe_state);
+                        let mut state_buff = state_lock.write().await;
+                        for s in poulpe_state.states {
+                            state_buff.insert(s.id as u16, s);
+                        }
                     }
-                }
+                } => {},
+
+                // Handle command stream
+                result = client.get_commands(Request::new(command_stream)) => {
+                    match result {
+                        Ok(_) => log::info!("Command stream ended"),
+                        Err(e) => log::error!("Error in command stream: {:?}", e),
+                    }
+                },
             }
         });
 

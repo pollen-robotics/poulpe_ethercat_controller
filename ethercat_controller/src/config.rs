@@ -12,6 +12,8 @@ pub struct Config {
 pub struct EthercatConfig {
     pub master_id: u32,
     pub cycle_time_us: u32,
+    pub command_drop_time_us: u32,
+    pub mailbox_wait_time_ms: u32
 }
 
 #[derive(Debug, Serialize, Deserialize)]

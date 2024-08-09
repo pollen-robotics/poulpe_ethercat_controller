@@ -27,6 +27,8 @@ impl PoulpeController {
         let controller = EtherCatController::open(
             config.ethercat.master_id,
             Duration::from_micros(config.ethercat.cycle_time_us as u64),
+            config.ethercat.command_drop_time_us,
+            config.ethercat.mailbox_wait_time_ms
         )?.wait_for_ready();
 
         let mut poulpe_config = HashMap::new();
@@ -80,6 +82,12 @@ impl PoulpeController {
             inner: controller,
             poulpe_config,
         })
+    }
+
+    // function that checks if the time is longer that dropping time
+    // returns true if its longer and false if not
+    pub fn check_if_too_old(&self, message_ellased_time: Duration) -> bool {
+        message_ellased_time.as_micros() as u32 > self.inner.command_drop_time_us 
     }
 
     pub fn get_orbita_type(&self, id: u32) -> u32 {
@@ -138,23 +146,11 @@ impl PoulpeController {
     // }
 
     fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize) -> Result<Vec<u8>, Box<dyn Error>> {
-        if !self.is_slave_ready(slave_id) {
-            // slave not ready
-            log::error!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
-            return Err("Slave not ready!".into());
-        }
         Ok(self.inner
             .get_pdo_register(slave_id, &reg.name().to_string(), index)
             .unwrap())
     }
     fn set_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize, value: &[u8]) -> Result<(), Box<dyn Error>> {
-        if !self.is_slave_ready(slave_id) {
-            // set value to 0 if slave not ready
-            log::error!("Writing slave {:?} (pos: {}), which is not operational! Writing zeros instead!", self.get_slave_name(slave_id).unwrap(), slave_id);
-            self.inner
-                .set_pdo_register(slave_id, &reg.name().to_string(), index, vec![0u8; value.len()]);
-            return Err("Slave not ready!".into());
-        }
         self.inner
             .set_pdo_register(slave_id, &reg.name().to_string(), index, value.to_vec());
         Ok(())
@@ -162,24 +158,11 @@ impl PoulpeController {
     }
 
     fn get_pdo_registers(&self, slave_id: u16, reg: PdoRegister) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
-        if !self.is_slave_ready(slave_id) {
-            // slave not ready
-            log::error!("Reading register: {:?} of the slave {:?} (pos: {}) which is not operational!", reg.name(), self.get_slave_name(slave_id).unwrap(), slave_id);
-            return Err("Slave not ready!".into());
-        }
         Ok(self.inner
             .get_pdo_registers(slave_id, &reg.name().to_string())
             .unwrap())
     }
     fn set_pdo_registers(&self, slave_id: u16, reg: PdoRegister, values: Vec<Vec<u8>>) -> Result<(), Box<dyn Error>>{
-        // log::error!("Writing slave {:?} (pos: {}), operational {:?}", self.get_slave_name(slave_id).unwrap(), slave_id, self.is_slave_ready(slave_id));
-        if !self.is_slave_ready(slave_id) {
-            // set value to 0 if slave not ready
-            log::error!("Writing slave {:?} (pos: {:?}), which is not operational! Writing zeros instead!", self.get_slave_name(slave_id).unwrap(), slave_id);
-            self.inner
-                .set_pdo_registers(slave_id, &reg.name().to_string(), values.iter().map(|_| vec![0u8; values[0].len()]).collect());
-            return Err("Slave not ready!".into());
-        }
         self.inner
             .set_pdo_registers(slave_id, &reg.name().to_string(), values);
         Ok(())
