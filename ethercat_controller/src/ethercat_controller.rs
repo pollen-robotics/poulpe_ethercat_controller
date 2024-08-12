@@ -4,7 +4,6 @@ use std::{
     io::{self, Read},
     ops::Range,
     sync::{
-        mpsc::{sync_channel, SyncSender},
         Arc, Condvar, Mutex, RwLock,
     },
     thread,
@@ -16,6 +15,8 @@ use ethercat::{
     PdoEntryPos, SlaveAddr, SlaveId, SlavePos, SmCfg,SmIdx, PdoPos, PdoIdx
 };
 
+use crossbeam_channel::{bounded, Sender, Receiver};
+
 #[derive(Debug)]
 pub struct EtherCatController {
     offsets: SlaveOffsets,
@@ -26,7 +27,7 @@ pub struct EtherCatController {
     cycle_condvar: Arc<(Mutex<bool>, Condvar)>,
     slave_states_condvar: Arc<(Mutex<Vec<u8>>, Condvar)>,
 
-    cmd_buff: SyncSender<(Range<usize>, Vec<u8>)>,
+    cmd_buff: Sender<(Range<usize>, Vec<u8>)>,
 
     pub command_drop_time_us: u32
 }
@@ -67,9 +68,12 @@ impl EtherCatController {
         // create a function to map slave id to slave name
         let slave_name_from_id = create_slave_name_mapper(slave_names.clone()); 
 
-        // create a channel to send data to the master
-        let (tx, rx) = sync_channel::<(Range<usize>, Vec<u8>)>((slave_number*10) as usize); // Buffer size dependanto on the slave number
-        
+        // create a sync channel to send data to the master
+        // crossbeam_channel is more efficient than std::sync::mcsp::SyncChannel
+        let buffer_size = (slave_number*10) as usize;
+        let (tx, rx): (crossbeam_channel::Sender<(Range<usize>, Vec<u8>)>, Receiver<(Range<usize>, Vec<u8>)>) = bounded(buffer_size);
+
+
         #[cfg(feature = "verify_mailboxes")]
         // initialize the mailbox verification 
         let (mut slave_mailbox_offsets, mut slave_mailbox_timestamps, mut slave_is_mailbox_responding, mut slave_mailbox_data_buffer) = init_mailbox_verification(slave_number, &mailbox_entries, &offsets);

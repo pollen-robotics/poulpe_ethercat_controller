@@ -191,9 +191,9 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 continue;
             }
 
-            let t_loop = SystemTime::now();
             log::debug!("Got commands {:?}", req);
             for cmd in req.commands {
+                let t_loop = SystemTime::now();
                 slave_id = cmd.id as u32;
 
                 let mut target_pos = cmd.target_position;
@@ -267,20 +267,19 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 }
                 
                 nb += 1;
+                let dt_loop =  t_loop.elapsed().unwrap().as_secs_f32();
+                if dt_max < dt_loop {
+                    dt_max = dt_loop;
+                }
             }
             // wait for the next cycle  
             // to make sure the commands are executed
             // self.controller.inner.wait_for_next_cycle();
 
-            command_times += elapsed_time;
             let dt = t.elapsed().unwrap().as_secs_f32();
-            let dt_loop =  t_loop.elapsed().unwrap().as_secs_f32();
-            if dt_max < dt_loop {
-                dt_max = dt_loop;
-            }
             if dt > 10.0 {
                 let f = nb as f32 / dt ;
-                let dt_c = (command_times as f32) / (nb as f32);
+                let dt_c = (t.elapsed().unwrap().as_secs_f32()) / (nb as f32);
                 // log::info!("GRPC EtherCAT Slave {}: {}  commnads/s, dropped {:0.2} req/s", slave_id, f, dropped_messages as f32/dt);
                 log::info!("GRPC EtherCAT Slave {}: {}  commnads/s, dropped {:0.2} req/s, avg time: {} ms,  max {} ms", slave_id, f, dropped_messages as f32/dt, dt_c, dt_max*1000.0);
 
