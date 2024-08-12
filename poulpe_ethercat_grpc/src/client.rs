@@ -70,74 +70,6 @@ impl PoulpeRemoteClient {
                 return Err(std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "Error in connecting to the server! Check if server is up!!!"));
             }
         }
-
-        // // spawn the command stream
-        // rt.spawn(async move {
-        //     let mut client = match PoulpeMultiplexerClient::connect(url).await {
-        //         Ok(client) => client,
-        //         Err(e) => {
-        //             log::error!(
-        //                 "Error in connecting to the server! Check if server is up!!!\n  {:?}",
-        //                 e
-        //             );
-        //             return;
-        //         }
-        //     };
-
-        //     let command_stream = async_stream::stream! {
-        //         let mut loop_timestamp = std::time::SystemTime::now();
-        //         loop {
-        //             let dt = 0.0001;//update_period.as_secs_f32() - loop_timestamp.elapsed().unwrap().as_secs_f32();
-        //             if dt > 0.0 {
-        //                 sleep(Duration::from_secs_f32(dt)).await;
-        //             }
-        //             loop_timestamp = std::time::SystemTime::now();
-        //             let mut cmd_map = command_buff_lock.write().await;
-        //             if let Some(commands) = extract_commands(&mut cmd_map) {
-        //                 yield commands;
-        //             }
-        //         }
-        //     };
-        //     let request = Request::new(command_stream);
-        //     match client.get_commands(request).await {
-        //         Ok(_) => log::info!("Command stream ended"),
-        //         Err(e) => log::error!("Error in command stream: {:?}", e),
-        //     }
-        // });
-
-        // let url = addr.to_string();
-
-        // // spawn the state stream
-        // rt.spawn(async move {
-        //     let mut client = match PoulpeMultiplexerClient::connect(url).await {
-        //         Ok(client) => client,
-        //         Err(e) => {
-        //             log::error!(
-        //                 "Error in connecting to the server! Check if server is up!!!\n  {:?}",
-        //                 e
-        //             );
-        //             return;
-        //         }
-        //     };
-
-
-        //     let request = Request::new(StateStreamRequest {
-        //         ids: poulpe_ids.iter().map(|&id| id as i32).collect(),
-        //         update_period: update_period.as_secs_f32(),
-        //     });
-
-        //     let mut stream = client.get_states(request).await.unwrap().into_inner();
-        //     while let Some(poulpe_state) = stream.message().await.unwrap() {
-        //         log::debug!("Update state with {:?}", poulpe_state);
-        //         {
-        //             let mut state_buff = state_lock.write().await;
-        //             for s in poulpe_state.states {
-        //                 state_buff.insert(s.id as u16, s);
-        //             }
-        //         }
-        //     }
-        // });
-
         
         // spawn a single thread to handle both the state stream and command stream
         rt.spawn(async move {
@@ -165,7 +97,7 @@ impl PoulpeRemoteClient {
             // Prepare the command stream
             let command_stream = async_stream::stream! {
                 // fixed frequency
-                let mut interval = tokio::time::interval(Duration::from_secs_f32(0.0005));
+                let mut interval = tokio::time::interval(update_period / 2);
                 
                 loop {
                     // next cycle
@@ -285,6 +217,22 @@ impl PoulpeRemoteClient {
 
     pub fn get_axis_sensors(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
+    }
+
+    
+    pub fn get_velocity_limit(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
+        self.get_state_property(
+            slave_id,
+            |state| state.requested_velocity_limit.clone(),
+            vec![],
+        )
+    }
+    pub fn get_torque_limit(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
+        self.get_state_property(
+            slave_id,
+            |state| state.requested_torque_limit.clone(),
+            vec![],
+        )
     }
 
     fn push_command(&mut self, slave_id: u16, command: Command) -> Result<(), ()> {

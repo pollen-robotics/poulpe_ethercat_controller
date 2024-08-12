@@ -379,6 +379,25 @@ impl PoulpeController {
         self.get_register_values(id, PdoRegister::TargetPosition)
     }
 
+
+    // we are not actually reading it
+    // we return the set value
+    pub fn get_current_velocity_limit(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::VelocityLimit)
+    }
+
+    // we are not actually reading it
+    // we return the set value
+    pub fn get_current_torque_limit(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::TorqueLimit)
+    }
+
     fn set_register_values(
         &self,
         id: u32,
@@ -413,5 +432,4 @@ impl PoulpeController {
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::TorqueLimit, torque_limit)
     }
-
 }

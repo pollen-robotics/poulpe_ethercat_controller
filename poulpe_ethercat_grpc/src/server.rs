@@ -78,6 +78,26 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
                 return Err("Failed to get requested target position".into());
             }
         },
+        requested_velocity_limit: match controller.get_current_velocity_limit(slave_id) {
+            Ok(Some(velocity_limit)) => velocity_limit,
+            _ => {
+                log::error!(
+                    "Failed to get requested velcity limit for slave {}",
+                    slave_id
+                );
+                return Err("Failed to get requested  velcity limit".into());
+            }
+        },
+        requested_torque_limit: match controller.get_current_torque_limit(slave_id) {
+            Ok(Some(troque_limit)) => troque_limit,
+            _ => {
+                log::error!(
+                    "Failed to get requested torque limit for slave {}",
+                    slave_id
+                );
+                return Err("Failed to get requested torque limit".into());
+            }
+        },
         state: controller.get_status(slave_id) as u32,
         torque_state: match controller.is_torque_on(slave_id) {
             Ok(Some(state)) => state,
@@ -182,7 +202,9 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
         let mut elapsed_time = 0;
         let mut dt_max :f32 = 0.0 ;
         let mut dropped_messages = 0;
+
         while let Some(Ok(req)) = stream.next().await {
+
             let mut slave_id:u32 = req.commands[0].id as u32;
             // check if the slave is ready and drop the command if not
             if self.controller.is_slave_ready(slave_id as u16) == false{
@@ -346,6 +368,8 @@ fn poule_empty_state() -> PoulpeState {
         actual_torque: vec![],
         axis_sensors: vec![],
         requested_target_position: vec![],
+        requested_velocity_limit: vec![],
+        requested_torque_limit: vec![],
         state: 0,
         torque_state: false,
         published_timestamp: None,

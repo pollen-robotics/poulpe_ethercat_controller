@@ -27,10 +27,12 @@ message PoulpeState {
     repeated float axis_sensors = 6;
 
     repeated float requested_target_position = 7;
+    repeated float requested_velocity_limit = 8;
+    repeated float requested_torque_limit = 9;
 
-    uint32 state = 8;
-    bool torque_state = 9;
-    google.protobuf.Timestamp published_timestamp = 10;
+    uint32 state = 10;
+    bool torque_state = 11;
+    google.protobuf.Timestamp published_timestamp = 12;
 }
 
 message PoulpeStates {

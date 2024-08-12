@@ -70,7 +70,7 @@ impl EtherCatController {
 
         // create a sync channel to send data to the master
         // crossbeam_channel is more efficient than std::sync::mcsp::SyncChannel
-        let buffer_size = (slave_number*10) as usize;
+        let buffer_size = (slave_number*20) as usize;
         let (tx, rx): (crossbeam_channel::Sender<(Range<usize>, Vec<u8>)>, Receiver<(Range<usize>, Vec<u8>)>) = bounded(buffer_size);
 
 
@@ -151,6 +151,8 @@ impl EtherCatController {
                 // check if the master is operational
                 // and only if operational update the data buffer with the new data to send to the slaves
                 if master_operational{
+                    // check if the RX buffer is getting full!!!
+                    // if rx.len() > 40 {log::warn!("RX buffer almost full: {}/{}", rx.len(), buffer_size)}
                     // update the data buffer with the new data to send 
                     while let Ok((reg_addr_range, value)) = rx.try_recv() {
                         data[reg_addr_range].copy_from_slice(&value);
