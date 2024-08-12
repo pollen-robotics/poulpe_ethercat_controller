@@ -168,10 +168,16 @@ impl PoulpeRemoteClient {
             if let Ok(systime) = std::time::SystemTime::try_from(ts.clone()) {
                 if systime.elapsed().unwrap().as_millis() > 1000 {
                     log::error!("State is older than 1s for slave {}, server maybe down!", slave_id);
+                    // kill the slave if error recovery not supported
+                    #[cfg(not(feature = "recover_from_error"))]
+                    std::process::exit(10);
                     return Err(());
                 }
             } else {
                 log::warn!("Cannot parse the timestamp, discarding message!");
+                // kill the slave if error recovery not supported
+                #[cfg(not(feature = "recover_from_error"))]
+                std::process::exit(10);
                 return Err(());
             }
         } else {

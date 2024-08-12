@@ -22,3 +22,7 @@ tonic-build = {version = "0.11", features = ["prost"]}
 [[bin]]
 name = "server"
 path = "src/server.rs"
+
+[features]
+default = [] # recover_from_error]
+recover_from_error = []

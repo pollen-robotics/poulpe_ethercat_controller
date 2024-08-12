@@ -212,6 +212,10 @@ impl EtherCatController {
                             log_master_state(&master, slave_number, &slave_name_from_id, &slave_is_mailbox_responding);
                             #[cfg(not(feature = "verify_mailboxes"))]
                             log_master_state(&master, slave_number, &slave_name_from_id);
+                            
+                            // kill the master if error recovery not supported
+                            #[cfg(not(feature = "recover_from_error"))]
+                            std::process::exit(10);
                         }
                     }
                 } else {
