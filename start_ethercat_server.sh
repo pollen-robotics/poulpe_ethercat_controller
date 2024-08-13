@@ -1,4 +1,4 @@
 #! /bin/bash
 
 cd $HOME/dev/poulpe_ethercat_controller
-./target/release/server config/robot.yaml
+RUST_LOG=info ./target/release/server config/robot.yaml
