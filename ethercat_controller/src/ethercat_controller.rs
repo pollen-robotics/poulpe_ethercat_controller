@@ -79,33 +79,30 @@ impl EtherCatController {
         let (mut slave_mailbox_offsets, mut slave_mailbox_timestamps, mut slave_is_mailbox_responding, mut slave_mailbox_data_buffer) = init_mailbox_verification(slave_number, &mailbox_entries, &offsets);
 
 
-        thread::spawn(move || {
+        tokio::spawn(async move {
             // is master operational flag
             let mut master_operational = false;
             // timestamp to say from when the master is not operational
-            let mut display_not_operational_timestamp = std::time::Instant::now();
+            let mut not_operational_timestamp = tokio::time::Instant::now();
             // timestap used to establish the loop period
-            let mut loop_period_timestamp = std::time::Instant::now();
-            let mut debug_loop_timestamp = std::time::Instant::now();
+            let mut debug_loop_timestamp = tokio::time::Instant::now();
             let mut debug_loop_counter = 0;
+
+            let mut interval = tokio::time::interval(cycle_period);
+    
             // spawn a thread to handle the master
             loop {
 
                 // check the loop period
                 // make it approximately equal to the cycle period
                 // make sure that the subtraction does not return a negative value
-                let dt_sleep = cycle_period.as_secs_f32() - loop_period_timestamp.elapsed().as_secs_f32();
-                if dt_sleep > 0.0 {
-                    thread::sleep(Duration::from_secs_f32(dt_sleep));
-                }
-                // set the loop period timestamp
-                loop_period_timestamp = std::time::Instant::now();
+                interval.tick().await;
                 
                 // debugging output
                 debug_loop_counter += 1;
                 if debug_loop_timestamp.elapsed().as_secs_f32() > 10.0 {
                     log::info!("EtherCAT loop: {:.02} Hz", debug_loop_counter as f32 / debug_loop_timestamp.elapsed().as_secs_f32());
-                    debug_loop_timestamp = std::time::Instant::now();
+                    debug_loop_timestamp = tokio::time::Instant::now();
                     debug_loop_counter = 0;
                 }
 
@@ -203,8 +200,8 @@ impl EtherCatController {
                         log::info!("Master and all slaves operational!");
                     }else{
                         // check each second
-                        if display_not_operational_timestamp.elapsed().as_secs() > 1 {
-                            display_not_operational_timestamp = std::time::Instant::now();
+                        if not_operational_timestamp.elapsed().as_secs() > 1 {
+                            not_operational_timestamp = tokio::time::Instant::now();
                             log::warn!("Master cannot go to operational!");
                             // display the master state
                             // if the master is not operational
