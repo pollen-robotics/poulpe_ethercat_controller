@@ -179,7 +179,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 }
                 nb +=1;
                 if nb_timestamp.elapsed().as_secs_f32() > 10.0 {
-                    log::info!("GRPC EtherCAT Slave {}: {} states/s", request.ids[0], nb as f32/nb_timestamp.elapsed().as_secs_f32());
+                    log::info!("GRPC EtherCAT Slave {}: states {} req/s", request.ids[0], nb as f32/nb_timestamp.elapsed().as_secs_f32());
                     nb = 0;
                     nb_timestamp = tokio::time::Instant::now();
                 }
@@ -195,13 +195,12 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
     ) -> Result<Response<()>, Status> {
         let mut stream = request.into_inner();
 
-        let mut t = SystemTime::now();
-        let mut nb = 0;
-        let mut command_times:u128 = 0;
-
-        let mut elapsed_time = 0;
-        let mut dt_max :f32 = 0.0 ;
-        let mut dropped_messages = 0;
+        // measure time t
+        let mut t_debug = tokio::time::Instant::now();
+        let mut nb_commands = 0;
+        let mut nb_dropped = 0;
+        let mut t_command = tokio::time::Instant::now();
+        let mut dt_command_max :f32 = 0.0 ;
 
         while let Some(Ok(req)) = stream.next().await {
 
@@ -209,13 +208,12 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             // check if the slave is ready and drop the command if not
             if self.controller.is_slave_ready(slave_id as u16) == false{
                 log::error!("Slave (id: {}) not ready!", slave_id);
-                dropped_messages +=1;
+                nb_dropped +=1;
                 continue;
             }
 
             log::debug!("Got commands {:?}", req);
             for cmd in req.commands {
-                let t_loop = SystemTime::now();
                 slave_id = cmd.id as u32;
 
                 let mut target_pos = cmd.target_position;
@@ -230,7 +228,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                         };
                         // check if the message is older than allowed time
                         if self.controller.check_if_too_old(published_time.elapsed().unwrap()) {
-                            dropped_messages +=1;
+                            nb_dropped +=1;
                             continue;
                         }
                     }
@@ -288,28 +286,37 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     None => (),
                 }
                 
-                nb += 1;
-                let dt_loop =  t_loop.elapsed().unwrap().as_secs_f32();
-                if dt_max < dt_loop {
-                    dt_max = dt_loop;
+                // check if the time between commands is longest than 
+                // the previous longest time, and save it for debugging
+                let dt_command =  t_command.elapsed().as_secs_f32();
+                if dt_command_max < dt_command {
+                    dt_command_max = dt_command;
                 }
+                // timestamp of the new command
+                t_command = tokio::time::Instant::now();
+                nb_commands += 1;
             }
             // wait for the next cycle  
             // to make sure the commands are executed
             // self.controller.inner.wait_for_next_cycle();
 
-            let dt = t.elapsed().unwrap().as_secs_f32();
-            if dt > 10.0 {
-                let f = nb as f32 / dt ;
-                let dt_c = (t.elapsed().unwrap().as_secs_f32()) / (nb as f32);
-                // log::info!("GRPC EtherCAT Slave {}: {}  commnads/s, dropped {:0.2} req/s", slave_id, f, dropped_messages as f32/dt);
-                log::info!("GRPC EtherCAT Slave {}: {}  commnads/s, dropped {:0.2} req/s, avg time: {} ms,  max {} ms", slave_id, f, dropped_messages as f32/dt, dt_c, dt_max*1000.0);
+            let dt_debug = t_debug.elapsed().as_secs_f32();
+            if dt_debug > 10.0 {
+                let f_commands = nb_commands as f32 / dt_debug ;
+                let f_commands_dropped = nb_dropped as f32 / dt_debug;
+                let dt_commands_ms = (dt_debug) / (nb_commands as f32) * 1000.0;
+                let dt_command_max_ms = dt_command_max * 1000.0;
+                log::info!("GRPC EtherCAT Slave {}: commands {:0.2} req/s, dropped {:0.2} req/s, avg time: {:0.2} (max {:0.2}) ms", 
+                            slave_id, 
+                            f_commands, 
+                            f_commands_dropped, 
+                            dt_commands_ms, 
+                            dt_command_max_ms);
 
-                t = SystemTime::now();
-                command_times = 0;
-                nb = 0;
-                dropped_messages = 0;
-                dt_max = 0.0;
+                t_debug = tokio::time::Instant::now();
+                nb_commands = 0;
+                nb_dropped = 0;
+                dt_command_max = 0.0;
             }
         }
 
