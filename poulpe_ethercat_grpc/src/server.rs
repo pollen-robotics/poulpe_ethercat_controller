@@ -148,8 +148,14 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             // state to be sent if no state is available
             // this is to avoid sending empty states
             let mut last_state = poule_empty_state();
-            let mut nb = 0;
-            let mut nb_timestamp = tokio::time::Instant::now();
+
+            // DEBUGGING
+            let mut nb_states = 0;
+            let mut t_debug = tokio::time::Instant::now();
+            // debug report sent time
+            // first report will be displayed after this many seconds
+            // and then every other will be after 30s
+            let mut report_display_time = 5.0; // seconds
             loop {
                 // Wait until the next tick
                 interval.tick().await;
@@ -173,15 +179,18 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                         )
                         .collect(),
                 };
-
                 if tx.send(Ok(states)).await.is_err() {
                     break;
                 }
-                nb +=1;
-                if nb_timestamp.elapsed().as_secs_f32() > 10.0 {
-                    log::info!("GRPC EtherCAT Slave {}: states {} req/s", request.ids[0], nb as f32/nb_timestamp.elapsed().as_secs_f32());
-                    nb = 0;
-                    nb_timestamp = tokio::time::Instant::now();
+
+                // DEBUGGING
+                // send the report to the user about the states 
+                nb_states += 1;
+                if t_debug.elapsed().as_secs_f32() > report_display_time {
+                    log::info!("GRPC EtherCAT Slave {} | states sent {} req/s", request.ids[0], nb_states as f32/t_debug.elapsed().as_secs_f32());
+                    nb_states = 0;
+                    t_debug = tokio::time::Instant::now();
+                    report_display_time = 30.0; // [secs] next report display 
                 }
             }
         });
@@ -195,12 +204,20 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
     ) -> Result<Response<()>, Status> {
         let mut stream = request.into_inner();
 
-        // measure time t
+        // DEBUGGING
+        // measure the time for debugging
         let mut t_debug = tokio::time::Instant::now();
+        // measure the number of commands sent and dropped
         let mut nb_commands = 0;
         let mut nb_dropped = 0;
+        // measure the time between the commands
         let mut t_command = tokio::time::Instant::now();
-        let mut dt_command_max :f32 = 0.0 ;
+        // the longest time between two commands
+        let mut dt_command_max :f32 = 0.0;
+        // debug report sent time
+        // first report will be displayed after this many seconds
+        // and then every other will be after 30s
+        let mut report_display_time = 5.0; // seconds
 
         while let Some(Ok(req)) = stream.next().await {
 
@@ -286,6 +303,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     None => (),
                 }
                 
+                // DEBUGGING
                 // check if the time between commands is longest than 
                 // the previous longest time, and save it for debugging
                 let dt_command =  t_command.elapsed().as_secs_f32();
@@ -300,13 +318,15 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             // to make sure the commands are executed
             // self.controller.inner.wait_for_next_cycle();
 
+            // DEBUGGING
+            // display the status report to the user each 10s
             let dt_debug = t_debug.elapsed().as_secs_f32();
-            if dt_debug > 10.0 {
+            if dt_debug > report_display_time {
                 let f_commands = nb_commands as f32 / dt_debug ;
                 let f_commands_dropped = nb_dropped as f32 / dt_debug;
                 let dt_commands_ms = (dt_debug) / (nb_commands as f32) * 1000.0;
                 let dt_command_max_ms = dt_command_max * 1000.0;
-                log::info!("GRPC EtherCAT Slave {}: commands {:0.2} req/s, dropped {:0.2} req/s, avg time: {:0.2} (max {:0.2}) ms", 
+                log::info!("GRPC EtherCAT Slave {} | commands sent {:0.2} cmd/s, commands dropped {:0.2} req/s, command time: {:0.2} (max {:0.2}) ms", 
                             slave_id, 
                             f_commands, 
                             f_commands_dropped, 
@@ -317,6 +337,8 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 nb_commands = 0;
                 nb_dropped = 0;
                 dt_command_max = 0.0;
+                t_command = tokio::time::Instant::now();
+                report_display_time = 30.0; // [secs] next report display 
             }
         }
 
