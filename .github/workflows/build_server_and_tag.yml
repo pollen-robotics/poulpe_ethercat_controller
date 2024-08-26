@@ -56,6 +56,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
         
       # Setup
@@ -96,7 +98,7 @@ jobs:
             if [[ -n $(git status --porcelain target/release/server) ]]; then
                 git status --porcelain target/release/server
                 # git status
-                git add target/release/server
+                git add -f target/release/server
                 git commit -m "Update to ${{  needs.compute-next-version-tag.outputs.next_tag }}  : ${{ github.event.inputs.tag-annotation }}"
                 git push
             else
