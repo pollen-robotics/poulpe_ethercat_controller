@@ -1,0 +1,92 @@
+name: 
+
+on:
+  workflow_dispatch:
+    inputs:
+        version-upgrade:
+            description: |
+              Select the version index to bump
+            required: true
+            default: "revision"
+            type: choice
+            options:
+            - major
+            - minor
+            - revision
+
+
+jobs:
+  convert-upgrade-choice-to-index:
+    runs-on: ubuntu-latest
+    outputs:
+      version_index: ${{ steps.set-index.outputs.version_index }}
+    steps:
+      - name: Determine version index
+        id: set-index
+        run: |
+          case "${{ github.event.inputs.version-upgrade }}" in
+            major) echo "VERSION_INDEX=1" >> $GITHUB_OUTPUT ;;
+            minor) echo "VERSION_INDEX=2" >> $GITHUB_OUTPUT ;;
+            revision) echo "VERSION_INDEX=3" >> $GITHUB_OUTPUT ;;
+            *) echo "Invalid upgrade type" && exit 1 ;;
+          esac
+      - name: Echo version index
+        run: |
+          echo "Version index is set to: ${{ steps.set-index.outputs.version_index }}"
+        
+
+  compute-next-version-tag:
+    needs: convert-upgrade-choice-to-index
+    uses: pollen-robotics/CI_library/.github/workflows/Compute-Tag.yml@main
+    with:
+      version-index: ${{ needs.convert-upgrade-choice-to-index.outputs.version_index }}
+
+# RUN RUST_LOG=info cargo build --release
+# ETHERCAT_PATH=$HOME/dev/TEMPORARY_ethercat_compile_crutch
+  build-server:
+    needs: compute-next-version-tag
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+        
+      # Setup
+      - name: Install SSH_KEY
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Rust build
+        run: |
+          echo "Building server"
+          cargo build --release
+          echo "Server built"
+        env:
+            ETHERCAT_PATH: $PWD/ethercat_master
+            RUST_LOG: info
+
+    # if target/release/bin has some git change, commit and push it
+      - name: Commit and push
+        run: |
+            git config --global user.email "robot.setup@pollen-robotics.com"
+            git config --global user.name "CI"
+            git add .
+            git commit -m "CI: Bump version"
+            git push
+
+      # create tag with new computed tag and push the tag
+      - name: Create tag
+        run: |
+            git tag -a ${{ needs.compute-next-version-tag.outputs.next_version_tag }} -m "CI: Bump version"
+            git push origin ${{ needs.compute-next-version-tag.outputs.next_version_tag }}
+        
+
+
+
+    
