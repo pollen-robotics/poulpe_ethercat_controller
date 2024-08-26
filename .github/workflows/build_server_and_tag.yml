@@ -74,7 +74,7 @@ jobs:
           cargo build --release
           echo "Server built"
         env:
-            ETHERCAT_PATH: ethercat_master
+            ETHERCAT_PATH: /home/runner/work/poulpe_ethercat_controller/poulpe_ethercat_controller/ethercat_master
             RUST_LOG: info
 
     # if target/release/bin has some git change, commit and push it
