@@ -1,0 +1,120 @@
+name: Build server and update tag
+
+on:
+  workflow_dispatch:
+    inputs:
+        version-upgrade:
+            description: |
+              Select the version index to bump
+            required: true
+            default: "revision"
+            type: choice
+            options:
+            - major
+            - minor
+            - revision
+        tag-annotation:
+            description: |
+              Add an annotation to the tag
+            required: false
+            default: "CI: Bump version"
+            type: string
+
+
+jobs:
+  convert-upgrade-choice-to-index:
+    runs-on: ubuntu-latest
+    outputs:
+      version_index: ${{ steps.set-index.outputs.version_index }}
+    steps:
+      - name: Determine version index
+        id: set-index
+        run: |
+          case "${{ github.event.inputs.version-upgrade }}" in
+            major) echo "VERSION_INDEX=1" >> $GITHUB_OUTPUT ;;
+            minor) echo "VERSION_INDEX=2" >> $GITHUB_OUTPUT ;;
+            revision) echo "VERSION_INDEX=3" >> $GITHUB_OUTPUT ;;
+            *) echo "Invalid upgrade type" && exit 1 ;;
+          esac
+      - name: Echo version index
+        run: |
+          echo "Version index is set to: ${{ steps.set-index.outputs.version_index }}"
+        
+
+  compute-next-version-tag:
+    needs: convert-upgrade-choice-to-index
+    uses: pollen-robotics/CI_library/.github/workflows/Compute-Tag.yml@main
+    with:
+      version-index: ${{ needs.convert-upgrade-choice-to-index.outputs.version_index }}
+
+# RUN RUST_LOG=info cargo build --release
+# ETHERCAT_PATH=$HOME/dev/TEMPORARY_ethercat_compile_crutch
+  build-server:
+    needs: compute-next-version-tag
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+        
+      # Setup
+      - name: Install SSH_KEY
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y libprotobuf-dev
+          sudo apt-get install -y libprotoc-dev
+
+      - name: Rust build
+        run: |
+          echo "Building server"
+          cargo build --release
+          echo "Server built"
+        env:
+            ETHERCAT_PATH: /home/runner/work/poulpe_ethercat_controller/poulpe_ethercat_controller/ethercat_master
+            RUST_LOG: info
+
+    # if target/release/bin has some git change, commit and push it
+    # if there is nothing to commit, the job will be skipped
+
+      - name: Commit and push
+
+        run: |
+            git config --global user.email "robot.setup@pollen-robotics.com"
+            git config --global user.name "CI"
+            # if git status of target release server is not empty, commit and push
+            if [[ -n $(git status --porcelain target/release/server) ]]; then
+                git status --porcelain target/release/server
+                # git status
+                git add -f target/release/server
+                git commit -m "Update to ${{  needs.compute-next-version-tag.outputs.next_tag }}  : ${{ github.event.inputs.tag-annotation }}"
+                git push
+            else
+                echo "No server modifications to commit"
+            fi
+            # git add .
+            # git commit -m "Update to ${{  needs.compute-next-version-tag.outputs.next_tag }}  : ${{ github.event.inputs.tag-annotation }}"
+            # git push
+
+      # create tag with new computed tag and push the tag
+      - name: Create tag
+        run: |
+            git tag -a ${{  needs.compute-next-version-tag.outputs.next_tag }} -m "${{ github.event.inputs.tag-annotation }}"
+            git push origin ${{  needs.compute-next-version-tag.outputs.next_tag }}
+        
+
+
+
+    
