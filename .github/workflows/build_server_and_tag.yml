@@ -90,7 +90,7 @@ jobs:
             git config --global user.email "robot.setup@pollen-robotics.com"
             git config --global user.name "CI"
             git add .
-            git commit -m "CI: Bump version"
+            git commit -m "update to ${{  needs.compute-next-version-tag.outputs.next_tag }}  : ${{ github.event.inputs.tag-annotation }}"
             git push
 
       # create tag with new computed tag and push the tag
