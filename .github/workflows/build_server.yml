@@ -13,6 +13,12 @@ on:
             - major
             - minor
             - revision
+        tag-annotation:
+            description: |
+              Add an annotation to the tag
+            required: false
+            default: "CI: Bump version"
+            type: string
 
 
 jobs:
@@ -83,7 +89,7 @@ jobs:
       # create tag with new computed tag and push the tag
       - name: Create tag
         run: |
-            git tag -a ${{ needs.compute-next-version-tag.outputs.next_version_tag }} -m "CI: Bump version"
+            git tag -a ${{ needs.compute-next-version-tag.outputs.next_version_tag }} -m "${{ github.event.inputs.tag-annotation }}"
             git push origin ${{ needs.compute-next-version-tag.outputs.next_version_tag }}
         
 
