@@ -96,8 +96,8 @@ jobs:
       # create tag with new computed tag and push the tag
       - name: Create tag
         run: |
-            git tag -a ${{ needs.compute-next-version-tag.outputs.next_version_tag }} -m "${{ github.event.inputs.tag-annotation }}"
-            git push origin ${{ needs.compute-next-version-tag.outputs.next_version_tag }}
+            git tag -a ${{  needs.compute-next-version-tag.outputs.next_tag }} -m "${{ github.event.inputs.tag-annotation }}"
+            git push origin ${{  needs.compute-next-version-tag.outputs.next_tag }}
         
 
 
