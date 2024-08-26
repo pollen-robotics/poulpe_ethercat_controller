@@ -74,7 +74,7 @@ jobs:
           cargo build --release
           echo "Server built"
         env:
-            ETHERCAT_PATH: $PWD/ethercat_master
+            ETHERCAT_PATH: ethercat_master
             RUST_LOG: info
 
     # if target/release/bin has some git change, commit and push it
