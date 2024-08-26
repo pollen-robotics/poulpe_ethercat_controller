@@ -94,6 +94,8 @@ jobs:
             git config --global user.name "CI"
             # if git status of target release server is not empty, commit and push
             if [[ -n $(git status --porcelain target/release/server) ]]; then
+                git status --porcelain target/release/server
+                git status
                 git add target/release/server
                 git commit -m "Update to ${{  needs.compute-next-version-tag.outputs.next_tag }}  : ${{ github.event.inputs.tag-annotation }}"
                 git push
