@@ -64,8 +64,9 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1.9
-
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
 
       - name: Install protoc
         run: |
