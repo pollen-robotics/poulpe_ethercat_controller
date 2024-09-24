@@ -82,10 +82,10 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
             Ok(Some(velocity_limit)) => velocity_limit,
             _ => {
                 log::error!(
-                    "Failed to get requested velcity limit for slave {}",
+                    "Failed to get requested velocity limit for slave {}",
                     slave_id
                 );
-                return Err("Failed to get requested  velcity limit".into());
+                return Err("Failed to get requested  velocity limit".into());
             }
         },
         requested_torque_limit: match controller.get_current_torque_limit(slave_id) {
