@@ -1,4 +1,4 @@
-use std::{any::Any, collections::HashMap, f32::consts::E, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use super::pb::{
     poulpe_multiplexer_client::PoulpeMultiplexerClient, PoulpeCommand, PoulpeCommands, PoulpeState,
@@ -6,9 +6,8 @@ use super::pb::{
 };
 use prost_types::Timestamp;
 use tokio::{
-    runtime::{Builder, Runtime, Handle},
+    runtime::{Builder, Runtime},
     sync::RwLock,
-    time::sleep,
 };
 use tonic::{transport::Uri, Request};
 
@@ -17,20 +16,24 @@ enum Command {
     Compliancy(bool),
     TargetPosition(Vec<f32>),
     VelocityLimit(Vec<f32>),
-    TorqueLimit(Vec<f32>)
+    TorqueLimit(Vec<f32>),
 }
 
 #[derive(Debug)]
 pub struct PoulpeRemoteClient {
     ids: Vec<u16>,
     rt: Arc<Runtime>,
-    addr : Uri,
+    addr: Uri,
     state: Arc<RwLock<HashMap<u16, PoulpeState>>>,
-    command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>
+    command_buff: Arc<RwLock<HashMap<u16, Vec<Command>>>>,
 }
 
 impl PoulpeRemoteClient {
-    pub fn connect(addr: Uri, poulpe_ids: Vec<u16>, update_period: Duration) -> Result<Self, std::io::Error> {
+    pub fn connect(
+        addr: Uri,
+        poulpe_ids: Vec<u16>,
+        update_period: Duration,
+    ) -> Result<Self, std::io::Error> {
         let state = Arc::new(RwLock::new(HashMap::new()));
         let state_lock = Arc::clone(&state);
 
@@ -40,7 +43,6 @@ impl PoulpeRemoteClient {
         // let rt = Builder::new_multi_thread().enable_all().build().unwrap();
         let rt = Arc::new(Builder::new_multi_thread().enable_all().build().unwrap());
 
-        
         // Validate poulpe_ids
         let client = PoulpeRemoteClient {
             ids: poulpe_ids.clone(),
@@ -59,18 +61,30 @@ impl PoulpeRemoteClient {
                 let available_ids = available_ids.0;
                 let mut common_ids = available_ids.clone();
                 common_ids.retain(|id| poulpe_ids.contains(id));
-                if common_ids.len() != poulpe_ids.len(){
-                    log::error!("Invalid poulpe_ids: {:?}, available_ids: {:?}", poulpe_ids, available_ids);
-                    return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid poulpe_ids"));
+                if common_ids.len() != poulpe_ids.len() {
+                    log::error!(
+                        "Invalid poulpe_ids: {:?}, available_ids: {:?}",
+                        poulpe_ids,
+                        available_ids
+                    );
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "Invalid poulpe_ids",
+                    ));
                 }
-            },
+            }
             Err(e) => {
-                log::error!("Error in connecting to the server! Check if server is up!!!\n  {:?}",
-                    e);
-                return Err(std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "Error in connecting to the server! Check if server is up!!!"));
+                log::error!(
+                    "Error in connecting to the server! Check if server is up!!!\n  {:?}",
+                    e
+                );
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::ConnectionRefused,
+                    "Error in connecting to the server! Check if server is up!!!",
+                ));
             }
         }
-        
+
         // spawn a single thread to handle both the state stream and command stream
         rt.spawn(async move {
             // Connect to the server
@@ -98,7 +112,7 @@ impl PoulpeRemoteClient {
             let command_stream = async_stream::stream! {
                 // fixed frequency
                 let mut interval = tokio::time::interval(update_period / 2);
-                
+
                 loop {
                     // next cycle
                     interval.tick().await;
@@ -137,20 +151,25 @@ impl PoulpeRemoteClient {
             rt,
             addr,
             state,
-            command_buff
+            command_buff,
         })
     }
 
-    pub fn get_poulpe_ids_sync(&self) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
+    pub fn get_poulpe_ids_sync(
+        &self,
+    ) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
         self.rt.block_on(async {
             let mut client = PoulpeMultiplexerClient::connect(self.addr.to_string()).await?;
             get_poulpe_ids_async(&mut client).await
         })
     }
 
-
     pub fn get_poulpe_ids(&self) -> Vec<u16> {
-        self.rt.block_on(self.state.read()).keys().cloned().collect()
+        self.rt
+            .block_on(self.state.read())
+            .keys()
+            .cloned()
+            .collect()
     }
 
     // get the state property
@@ -163,11 +182,14 @@ impl PoulpeRemoteClient {
         let state = state.get(&slave_id).ok_or_else(|| {
             log::error!("No state found for slave {}", slave_id);
         })?;
-    
+
         if let Some(ts) = &state.published_timestamp {
             if let Ok(systime) = std::time::SystemTime::try_from(ts.clone()) {
                 if systime.elapsed().unwrap().as_millis() > 1000 {
-                    log::error!("State is older than 1s for slave {}, server maybe down!", slave_id);
+                    log::error!(
+                        "State is older than 1s for slave {}, server maybe down!",
+                        slave_id
+                    );
                     // kill the slave if error recovery not supported
                     #[cfg(not(feature = "recover_from_error"))]
                     std::process::exit(10);
@@ -183,7 +205,7 @@ impl PoulpeRemoteClient {
         } else {
             log::warn!("No timestamp found for slave {}", slave_id);
         }
-    
+
         Ok(f(state))
     }
 
@@ -225,7 +247,6 @@ impl PoulpeRemoteClient {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
     }
 
-    
     pub fn get_velocity_limit(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(
             slave_id,
@@ -245,7 +266,7 @@ impl PoulpeRemoteClient {
         self.rt
             .block_on(self.command_buff.write())
             .entry(slave_id)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(command);
         Ok(())
     }
@@ -285,20 +306,20 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
             match cmd {
                 Command::Compliancy(comp) => poulpe_cmd.compliancy = Some(*comp),
                 Command::TargetPosition(pos) => {
-                    if pos.len() != 0 {
+                    if !pos.is_empty() {
                         poulpe_cmd.target_position.extend(pos.iter().cloned());
                     }
                 }
                 Command::VelocityLimit(vel) => {
-                    if vel.len() != 0 {
+                    if !vel.is_empty() {
                         poulpe_cmd.velocity_limit.extend(vel.iter().cloned());
                     }
                 }
                 Command::TorqueLimit(torque) => {
-                    if torque.len() != 0 {
+                    if !torque.is_empty() {
                         poulpe_cmd.torque_limit.extend(torque.iter().cloned());
                     }
-                },
+                }
             }
         }
         poulpe_cmd.published_timestamp = Some(Timestamp::from(std::time::SystemTime::now()));
@@ -310,11 +331,16 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
     Some(PoulpeCommands { commands })
 }
 
-pub async fn get_poulpe_ids_async( client: &mut PoulpeMultiplexerClient<tonic::transport::Channel>) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
+pub async fn get_poulpe_ids_async(
+    client: &mut PoulpeMultiplexerClient<tonic::transport::Channel>,
+) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
     let response = client.get_poulpe_ids(Request::new(())).await?;
     let response = response.into_inner();
     let ids: Vec<u16> = response.ids.into_iter().map(|id| id as u16).collect();
-    let names: Vec<String> = response.names.into_iter().map(|name: String| name as String).collect();
+    let names: Vec<String> = response
+        .names
+        .into_iter()
+        .map(|name: String| name as String)
+        .collect();
     Ok((ids, names))
 }
-

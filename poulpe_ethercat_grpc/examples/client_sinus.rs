@@ -7,7 +7,6 @@ use std::{
 
 use poulpe_ethercat_grpc::PoulpeRemoteClient;
 
-
 // takes the salve id as argument
 // and moves the motor in a sinusoidal motion
 fn main() -> Result<(), Box<dyn Error>> {
@@ -26,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "http://127.0.0.1:50098".parse()?,
         vec![id],
         Duration::from_secs_f32(0.001),
-    ){
+    ) {
         Ok(client) => client,
         Err(e) => {
             log::error!("Failed to connect to the server: {}", e);

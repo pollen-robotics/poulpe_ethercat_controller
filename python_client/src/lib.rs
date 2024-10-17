@@ -32,7 +32,7 @@ impl PyPoulpeRemoteClient {
             Err(e) => panic!("Failed to connect to the server: {}", e),
         };
 
-        PyPoulpeRemoteClient {client}
+        PyPoulpeRemoteClient { client }
     }
 
     pub fn turn_on(&mut self, slave_id: u16) {

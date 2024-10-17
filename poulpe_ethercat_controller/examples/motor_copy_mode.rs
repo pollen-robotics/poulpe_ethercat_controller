@@ -1,6 +1,5 @@
-use std::{env, io};
+use std::env;
 
-use ethercat_controller::Config;
 use poulpe_ethercat_controller::PoulpeController;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let pouple_controller = PoulpeController::connect(filename)?;
 
-    for slave_id in vec![0, 1] {
+    for slave_id in [0, 1] {
         log::info!("Setup slave {}", slave_id);
         pouple_controller.setup(slave_id);
     }

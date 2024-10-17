@@ -1,6 +1,5 @@
 use std::{env, error::Error, f32::consts::PI, time::SystemTime};
 
-use ethercat_controller::Config;
 use poulpe_ethercat_controller::PoulpeController;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -35,9 +34,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     pouple_controller.set_torque_limit(slave_id, vec![1.0; no_axis])?;
     pouple_controller.set_velocity_limit(slave_id, vec![1.0; no_axis])?;
 
-    let mut t0 = SystemTime::now();
+    let t0 = SystemTime::now();
     let mut t1 = SystemTime::now();
-
 
     let mut max_t1 = 0.0;
     let mut nb_invalid = 0;
@@ -73,7 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let target = amp * (2.0 * PI * freq * t).sin();
         pouple_controller.set_target_position(slave_id, vec![target; no_axis])?;
 
-        if pos.iter().any(|x| *x==0.0) {
+        if pos.iter().any(|x| *x == 0.0) {
             log::error!("Invalid position: {:?}", pos);
             nb_invalid += 1;
         }
@@ -86,7 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         log::info!(
             "{:?}/{:?}\t\t Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",
             t1.elapsed().unwrap(),
-            max_t1/1000.0,
+            max_t1 / 1000.0,
             pos,
             vel,
             torque,
@@ -98,11 +96,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         t1 = SystemTime::now();
 
-        log::info!("slave states {:?}" , pouple_controller.inner.get_slave_states());
+        log::info!(
+            "slave states {:?}",
+            pouple_controller.inner.get_slave_states()
+        );
 
         std::thread::sleep(std::time::Duration::from_millis(1));
         nb_total += 1;
     }
-    log::info!("Number of invalid messages: {} out of {}", nb_invalid, nb_total);
+    log::info!(
+        "Number of invalid messages: {} out of {}",
+        nb_invalid,
+        nb_total
+    );
     Ok(())
 }

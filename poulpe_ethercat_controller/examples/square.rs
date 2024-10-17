@@ -1,12 +1,10 @@
 use std::{
     env,
     error::Error,
-    f32::consts::PI,
     thread::sleep,
     time::{Duration, SystemTime},
 };
 
-use ethercat_controller::Config;
 use poulpe_ethercat_controller::PoulpeController;
 
 fn main() -> Result<(), Box<dyn Error>> {

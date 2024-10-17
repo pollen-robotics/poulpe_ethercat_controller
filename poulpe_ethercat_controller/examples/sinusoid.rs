@@ -1,6 +1,5 @@
 use std::{env, error::Error, f32::consts::PI, time::SystemTime};
 
-use ethercat_controller::Config;
 use poulpe_ethercat_controller::PoulpeController;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -35,9 +34,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     pouple_controller.set_torque_limit(slave_id, vec![1.0; no_axis])?;
     pouple_controller.set_velocity_limit(slave_id, vec![1.0; no_axis])?;
 
-    let mut t0 = SystemTime::now();
+    let t0 = SystemTime::now();
     let mut t1 = SystemTime::now();
-
 
     let mut max_t1 = 0.0;
     loop {
@@ -73,7 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         log::info!(
             "{:?}/{:?}\t Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",
             t1.elapsed().unwrap(),
-            max_t1/1000.0,
+            max_t1 / 1000.0,
             pos,
             vel,
             torque,

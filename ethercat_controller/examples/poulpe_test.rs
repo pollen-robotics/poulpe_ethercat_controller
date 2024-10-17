@@ -8,7 +8,7 @@ fn main() {
     let id: u16 = 0;
 
     log::info!("Loading the controller");
-    let ec = EtherCatController::open( 0, Duration::from_millis(2)).unwrap();
+    let ec = EtherCatController::open(0, Duration::from_millis(2)).unwrap();
 
     log::info!("Waiting for controller to be ready");
     let ec = ec.wait_for_ready();
