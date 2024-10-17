@@ -279,8 +279,34 @@ impl PoulpeController {
                     return Ok(());
                 } else {
                     let no_motors = self.poulpe_config[&slave_id].orbita_type;
+                    
+                    // set the torque on all motors
                     let mut torque_on: u8 = 0x0;
+                    // if turn on is requested, set the target position to the current position - safety feature
                     if requested_torque {
+                        #[cfg(feature="safe_turn_on")]
+                        { 
+                            // set the target position to the current position
+                            let current_position = self.get_current_position(id).unwrap().unwrap();
+                            self.set_target_position(id, current_position.clone()).unwrap();
+
+                            // verify that the target position is set correctly and try 5 times
+                            let mut target_position = self.get_current_target_position(id).unwrap().unwrap();
+                            let mut tries = 0;
+                            // check if the target position is set correctly (small error margin)
+                            while tries < 5 && (current_position.iter().zip(target_position.iter()).all(|(a, b)| (a - b).abs() > 0.001)){
+                                self.set_target_position(id, current_position.clone()).unwrap();
+                                std::thread::sleep(std::time::Duration::from_millis(2));
+                                target_position = self.get_current_target_position(id).unwrap().unwrap();
+                                tries += 1;
+                            }
+                            // throw error if the target position is not set correctly
+                            if tries == 5 {
+                                log::error!("Error setting target position!");
+                                return Err("Error setting target position!".into());
+                            }
+                        }
+
                         for i in 0..no_motors {
                             torque_on |= 1 << i;
                         }
