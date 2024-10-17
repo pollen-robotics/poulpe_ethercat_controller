@@ -16,7 +16,7 @@ env_logger = "0.9.0"
 
 
 [features]
-default = ["verify_orbita_type", "allow_partial_network"]
+default = ["verify_orbita_type", "allow_partial_network", "safe_turn_on"]
 verify_orbita_type = [] # This feature is used to verify the type of the Orbita device connected to the EtherCAT network
                         # Verifies if the yaml file specifies the correct type of the Orbita device connected to the network (orbita2d = 2 and orbita3d = 3)
                         # If not specified this check is not performed
@@ -24,3 +24,4 @@ verify_orbita_type = [] # This feature is used to verify the type of the Orbita 
 allow_partial_network = []  # This feature enables to instantiate the ethercat master that talks to only a part of the EtherCAT slaves connected to the network 
                             # If not specified yaml file should specify all the slaves connected to the network
 
+safe_turn_on = [] # setting the current position to the target position on torque on

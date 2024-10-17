@@ -46,9 +46,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
     loop {
+        let complient = client.is_on(id).unwrap();
         let target_position = client.get_target_position(id).unwrap();
         let current_position = client.get_position_actual_value(id).unwrap();
-        log::info!("{:?}, {:?}", target_position, current_position);    
+        log::info!("{:?}, {:?}, {:?}", complient,  target_position, current_position);    
         thread::sleep(Duration::from_secs_f32(0.001));
     }
     Ok(())
