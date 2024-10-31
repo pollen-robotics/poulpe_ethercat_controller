@@ -30,71 +30,120 @@
           <Index>#x1600</Index>
           <Name>OrbitaIn</Name>
           <Entry>
-            <Index>#x10</Index>
+            <Index>#x0x6041</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>controlword</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6060</Index>
             <SubIndex>0</SubIndex>
             <BitLen>8</BitLen>
-            <Name>torque_state</Name>
+            <Name>mode_of_operation</Name>
             <DataType>UINT8</DataType>
           </Entry>
           <Entry>
-            <Index>#x11</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x607A</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>target</Name>
+            <Name>target_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x12</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x607A</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_position</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607A</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_position</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x60FF</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_velocity</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x60FF</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_velocity</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x60FF</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_velocity</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607F</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
             <Name>velocity_limit</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x13</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x607F</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>velocity_limit</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607F</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>velocity_limit</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6071</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_torque</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6071</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_torque</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6071</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_torque</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6072</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
             <Name>torque_limit</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x14</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>target</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x15</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>velocity_limit</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x16</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6072</Index>
+            <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
             <Name>torque_limit</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x17</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>target</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x18</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>velocity_limit</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x19</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6072</Index>
+            <SubIndex>3</SubIndex>
             <BitLen>32</BitLen>
             <Name>torque_limit</Name>
             <DataType>REAL</DataType>
@@ -105,18 +154,81 @@
           <Index>#x1700</Index>
           <Name>OrbitaState</Name>
           <Entry>
-            <Index>#x20</Index>
+            <Index>#x0x603F</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT32</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6402</Index>
             <SubIndex>0</SubIndex>
             <BitLen>8</BitLen>
-            <Name>state</Name>
+            <Name>actuator_type</Name>
             <DataType>UINT8</DataType>
           </Entry>
           <Entry>
-            <Index>#x21</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>8</BitLen>
-            <Name>type</Name>
-            <DataType>UINT8</DataType>
+            <Index>#x0x607C</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607C</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607C</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
           </Entry>
         </TxPdo>
         <!--OrbitaOut PDOs-->
@@ -124,94 +236,101 @@
           <Index>#x1800</Index>
           <Name>OrbitaOut</Name>
           <Entry>
-            <Index>#x22</Index>
+            <Index>#x0x6040</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>statusword</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6061</Index>
             <SubIndex>0</SubIndex>
             <BitLen>8</BitLen>
-            <Name>torque_enabled</Name>
+            <Name>mode_of_operation_display</Name>
             <DataType>UINT8</DataType>
           </Entry>
           <Entry>
-            <Index>#x23</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6064</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>position</Name>
+            <Name>actual_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x24</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6064</Index>
+            <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>velocity</Name>
+            <Name>actual_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x25</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6064</Index>
+            <SubIndex>3</SubIndex>
             <BitLen>32</BitLen>
-            <Name>torque</Name>
+            <Name>actual_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x26</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x606C</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>axis_sensor</Name>
+            <Name>actual_velocity</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x27</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x606C</Index>
+            <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>position</Name>
+            <Name>actual_velocity</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x28</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x606C</Index>
+            <SubIndex>3</SubIndex>
             <BitLen>32</BitLen>
-            <Name>velocity</Name>
+            <Name>actual_velocity</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x29</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6077</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>torque</Name>
+            <Name>actual_torque</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x30</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6077</Index>
+            <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>axis_sensor</Name>
+            <Name>actual_torque</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x31</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6077</Index>
+            <SubIndex>3</SubIndex>
             <BitLen>32</BitLen>
-            <Name>position</Name>
+            <Name>actual_torque</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x32</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6063</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>velocity</Name>
+            <Name>actual_axis_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x33</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6063</Index>
+            <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>torque</Name>
+            <Name>actual_axis_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x34</Index>
-            <SubIndex>0</SubIndex>
+            <Index>#x0x6063</Index>
+            <SubIndex>3</SubIndex>
             <BitLen>32</BitLen>
-            <Name>axis_sensor</Name>
+            <Name>actual_axis_position</Name>
             <DataType>REAL</DataType>
           </Entry>
         </TxPdo>

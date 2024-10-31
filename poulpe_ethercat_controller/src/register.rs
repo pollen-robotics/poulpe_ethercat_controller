@@ -1,13 +1,20 @@
 pub(crate) enum PdoRegister {
-    State,
-    OrbitaType,
+    ErrorCode,
+    ActuatorType,
+    AxisZeroPosition,
+    BoardTemperature,
+    MotorTemperature,
 
-    TroqueState,
+    ControlWord,
+    ModeOfOperation,
     TargetPosition,
+    TargetVelocity,
+    TargetTorque,
     VelocityLimit,
     TorqueLimit,
 
-    TroqueOn,
+    StatusWord,
+    ModeOfOperationDisplay,
     PositionActualValue,
     VelocityActualValue,
     TorqueActualValue,
@@ -17,17 +24,27 @@ pub(crate) enum PdoRegister {
 impl PdoRegister {
     pub(crate) fn name(&self) -> &'static str {
         match *self {
-            PdoRegister::State => "state",
-            PdoRegister::OrbitaType => "type",
-            PdoRegister::TroqueState => "torque_state",
-            PdoRegister::TroqueOn => "torque_enabled",
-            PdoRegister::TargetPosition => "target",
-            PdoRegister::PositionActualValue => "position",
-            PdoRegister::VelocityActualValue => "velocity",
-            PdoRegister::TorqueActualValue => "torque",
-            PdoRegister::AxisSensorActualValue => "axis_sensor",
+            PdoRegister::ErrorCode => "error_code",
+            PdoRegister::ActuatorType => "actuator_type",
+            PdoRegister::AxisZeroPosition => "axis_position_zero_offset",
+            PdoRegister::BoardTemperature => "board_temperatures",
+            PdoRegister::MotorTemperature => "motor_temperatures",
+
+            PdoRegister::ControlWord => "controlword",
+            PdoRegister::ModeOfOperation => "mode_of_operation",
+            PdoRegister::TargetTorque => "target_torque",
+            PdoRegister::TargetPosition => "target_position",
+            PdoRegister::TargetVelocity => "target_velocity",
             PdoRegister::VelocityLimit => "velocity_limit",
             PdoRegister::TorqueLimit => "torque_limit",
+            
+            PdoRegister::StatusWord => "statusword",
+            PdoRegister::ModeOfOperationDisplay => "mode_of_operation_display",
+            PdoRegister::PositionActualValue => "actual_position",
+            PdoRegister::VelocityActualValue => "actual_velocity",
+            PdoRegister::TorqueActualValue => "actual_torque",
+            PdoRegister::AxisSensorActualValue => "actual_axis_position",
+
         }
     }
 }
