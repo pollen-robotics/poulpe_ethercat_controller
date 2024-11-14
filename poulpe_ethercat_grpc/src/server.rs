@@ -98,7 +98,13 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
                 return Err("Failed to get requested torque limit".into());
             }
         },
-        state: controller.get_status(slave_id) as u32,
+        state: match controller.get_status(slave_id) {
+            Ok(state) => state as u32,
+            _ => {
+                log::error!("Failed to get state for slave {}", slave_id);
+                return Err("Failed to get state".into());
+            }
+        },
         torque_state: match controller.is_torque_on(slave_id) {
             Ok(Some(state)) => state,
             _ => {

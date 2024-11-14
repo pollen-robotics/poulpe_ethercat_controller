@@ -1,5 +1,8 @@
 use std::{collections::HashMap, error::Error, f32::consts::{E, PI}, sync::RwLock, time::Duration};
 
+mod state_machine;
+use state_machine::{parse_homing_error_flags, parse_motor_error_flags, parse_state_from_status_bits, parse_status_word, CiA402State, ErrorFlags, StatusBit, ControlWord};
+
 extern crate num;
 #[macro_use]
 extern crate num_derive;
@@ -12,7 +15,7 @@ use ethercat_controller::{
 };
 
 mod register;
-use register::{BoardStatus, PdoRegister};
+use register::{PdoRegister};
 
 #[derive(Debug)]
 pub struct PoulpeController {
@@ -120,30 +123,83 @@ impl PoulpeController {
         self.inner.is_slave_ready(id)
     }
 
-    // fn wait_for_status_bit(&self, slave_id: u16, satus: BoardStatus) {
-    //     let status_word = self.get_status(slave_id);
-    //     log::info!("Waiting for {:?} ({:?})", bit, satus);
 
-    //     loop {
-    //         let status_word = self.get_status(slave_id);
+    fn get_status_bits(&self, slave_id: u16) -> Result<Vec<StatusBit>, Box<dyn Error>> {
+        let status_word = self.get_pdo_register(slave_id, PdoRegister::StatusWord,0)?;
+        let bits = u16::from_le_bytes(status_word.try_into().unwrap());        
+        Ok(parse_status_word(bits))
+    }
 
-    //         if status_word.contains(&StatusBit::Fault) {
-    //             log::error!(
-    //                 "Fault status {:#x?} on slave {:?}",
-    //                 self.get_error_code(slave_id),
-    //                 slave_id
-    //             );
-    //             self.clear_fault(slave_id);
-    //             self.inner.wait_for_next_cycle();
-    //             continue;
-    //         }
+    fn get_mode_of_operation(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
+        let mode_of_opearation = self.get_pdo_register(slave_id, PdoRegister::ModeOfOperation, 0);
+        match mode_of_opearation {
+            Ok(b) => Ok(b[0]),
+            Err(_) => Err("Error reading mode of operation".into())
+        }
+    }
+    fn get_mode_of_operation_display(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
+        let mode_of_operation_display = self.get_pdo_register(slave_id, PdoRegister::ModeOfOperationDisplay, 0);
+        match mode_of_operation_display {
+            Ok(b) => Ok(b[0]),
+            Err(_) => Err("Error reading mode of operation display".into())
+        }
+    }
 
-    //         if status_word.contains(&bit) {
-    //             break;
-    //         }
-    //         self.inner.wait_for_next_cycle();
-    //     }
-    // }
+    fn set_mode_of_operation(&self, slave_id: u16, value: u8) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+    fn clear_fault(&self, slave_id: u16) -> Result<(), Box<dyn Error>> {
+        Ok(())  
+    }
+
+    fn set_controlword(&self, slave_id: u16, value: u16) -> Result<(), Box<dyn Error>> {
+        self.set_pdo_register(slave_id, PdoRegister::ControlWord, 0, &value.to_le_bytes())
+    }
+
+    fn get_error_flags(&self, slave_id: u16) -> Result<ErrorFlags, Box<dyn Error>> {
+        let error_code = self.get_pdo_register(slave_id, PdoRegister::ErrorCode, 0)?;
+        let homing_error_flags = parse_homing_error_flags(error_code[0]);
+        let mut motor_error_flags = Vec::new();
+        for i in 1..error_code.len(){
+            motor_error_flags.append(&mut parse_motor_error_flags(error_code[i]));
+        }
+
+        Ok(ErrorFlags{
+            motor_error_flags,
+            homing_error_flags
+        })
+    }
+    
+    fn wait_for_status_bit(&self, slave_id: u16, bit: StatusBit, timeout: Duration) -> Result<(), Box<dyn Error>> {
+        let status_bits = self.get_status_bits(slave_id);
+        log::debug!("Waiting for {:?} ({:?})", bit, status_bits);
+
+        let start = std::time::Instant::now();
+        loop {
+            let status_bits = self.get_status_bits(slave_id)?;
+
+            if status_bits.contains(&StatusBit::Fault) {
+                log::error!(
+                    "Slave {} in Fault state \n {:#x?}",
+                    slave_id,
+                    self.get_error_flags(slave_id)?,
+                );
+                return Err("Fault status".into());
+            }
+
+            if status_bits.contains(&bit) {
+                // bit is set
+                break;
+            }
+            if start.elapsed() > timeout {
+                log::error!("Timeout waiting for {:?} on slave {:?}", bit, slave_id);
+                return Err("Timeout waiting for bit".into());
+            }
+            self.inner.wait_for_next_cycle();
+        }
+        Ok(())
+    }
 
     fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize) -> Result<Vec<u8>, Box<dyn Error>> {
         Ok(self.inner
@@ -230,37 +286,53 @@ impl PoulpeController {
             }
         }
 
-        log::info!("Setup of slave {} done!", id);
+        // get staus bits
+        let status_bits = self.get_status_bits(slave_id)?;
+        
+        let state: CiA402State = self.get_status(slave_id as u32)?;
+        log::info!("Slave {}, state: {:?}", slave_id, state);
+        
+        // verify if not in fault state
+        if status_bits.contains(&StatusBit::Fault) {
+            log::error!(
+                "Slave {} in Fault state \n {:#x?}",
+                slave_id,
+                self.get_error_flags(slave_id)?,
+            );
+            return Err("Fault status".into());
+        }
+
+        // if enabled, we need to disable the operation
+        if status_bits.contains(&StatusBit::OperationEnabled) {
+            // if the operation is enabled, we need
+            // to disable it before we can set the controlword
+            self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
+            self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn, Duration::from_secs(1))?;
+        }
+         
+        // if switch on disabled, we need to switch on
+        if status_bits.contains(&StatusBit::SwitchedOnDisabled) {
+            // go to the ready to switch on state
+            self.set_controlword(slave_id, ControlWord::Shutdown.to_u16())?;
+            self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn, Duration::from_secs(1))?;
+        }
+
+        // if ready to switch on, we need to switch on
+        if status_bits.contains(&StatusBit::ReadyToSwitchOn) {
+            // go to the switched on state
+            self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())?;
+            self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?;
+        }
 
         Ok(())
     }
 
     pub fn is_torque_on(&self, id: u32) -> Result<Option<bool>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
-        let mut status;
-        match self.get_pdo_register(slave_id, PdoRegister::TroqueOn, 0){
-            Ok(b) => status = b[0],
-            Err(_) => {
-                log::error!("Error reading torque state!");
-                return Err("Error reading torque state!".into());
-            }
-        };
-        let no_motors = self.poulpe_config[&slave_id].orbita_type;
-        let mut torque_on = true;
-        log::debug!(
-            "Checking torque on slave {} with status {}, {}",
-            id,
-            status,
-            no_motors
-        );
-        for i in 0..no_motors {
-            if status & (1 << i) == 0 {
-                torque_on = false;
-                break;
-            }
-        }
-        Ok(Some(torque_on))
+        let status = self.get_status_bits(slave_id)?;
+        Ok(Some(status.contains(&StatusBit::OperationEnabled)))
     }
+
     pub fn set_torque(
         &self,
         id: u32,
@@ -278,10 +350,7 @@ impl PoulpeController {
                 if actual_torque == requested_torque {
                     return Ok(());
                 } else {
-                    let no_motors = self.poulpe_config[&slave_id].orbita_type;
-                    
-                    // set the torque on all motors
-                    let mut torque_on: u8 = 0x0;
+
                     // if turn on is requested, set the target position to the current position - safety feature
                     if requested_torque {
                         #[cfg(feature="safe_turn_on")]
@@ -307,18 +376,26 @@ impl PoulpeController {
                             }
                         }
 
-                        for i in 0..no_motors {
-                            torque_on |= 1 << i;
-                        }
+                        // Switch on
+                        self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())?;
+                        self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?;
+
+                        // Enable
+                        self.set_controlword(slave_id, ControlWord::EnableOperation.to_u16())?;
+                        self.wait_for_status_bit(slave_id, StatusBit::OperationEnabled, Duration::from_secs(1))?;
+                    }else{
+                        // Shutdown
+                        self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
+                        self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?; 
                     }
-                    self.set_pdo_register(slave_id, PdoRegister::TroqueState, 0, &[torque_on])
                 }
             },
             _ => {
                 log::error!("Error getting torque state!");
-                Err("Error getting torque state!".into())
+                return Err("Error getting torque state!".into());
             }
         }
+        Ok(())
     }
 
     fn get_pid(&self, _id: u32) -> Result<Option<(f32, f32, f32)>, Box<dyn std::error::Error>> {
@@ -328,23 +405,13 @@ impl PoulpeController {
         Ok(())
     }
 
-    pub fn get_current_temperature(
-        &self,
-        _id: u32,
-    ) -> Result<Option<f32>, Box<dyn std::error::Error>> {
-        Ok(Some(42.0))
-    }
-
-    pub fn get_status(&self, slave_id: u32) -> BoardStatus {
-        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::State, 0) {
-            Ok(b) => b[0],
-            Err(_) => 255,
-        };
-        BoardStatus::from_u8(byte)
+    pub fn get_status(&self, slave_id: u32) -> Result<CiA402State, Box<dyn std::error::Error>> {
+        let status_bits = self.get_status_bits(slave_id as u16)?;
+        Ok(parse_state_from_status_bits(status_bits))
     }
 
     pub fn get_type(&self, slave_id: u32) -> u8 {
-        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::OrbitaType, 0)
+        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::ActuatorType, 0)
         {
             Ok(b) => b[0],
             Err(_) => 255,
@@ -403,6 +470,32 @@ impl PoulpeController {
         id: u32,
     ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         self.get_register_values(id, PdoRegister::TargetPosition)
+    }
+
+    pub fn get_board_temperatures(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::BoardTemperature)
+    }
+
+    pub fn get_motor_temperatures(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::MotorTemperature)
+    }
+
+    pub fn get_temperatures(
+        &self,
+        id: u32,
+    ) -> Result<Option<(Vec<f32>, Vec<f32>)>, Box<dyn std::error::Error>> {
+        let board_temperatures = self.get_board_temperatures(id)?;
+        let motor_temperatures = self.get_motor_temperatures(id)?;
+        return match (board_temperatures, motor_temperatures) {
+            (Some(b), Some(m)) => Ok(Some((b, m))),
+            _ => Err("Error reading temperatures!".into())
+        };
     }
 
 

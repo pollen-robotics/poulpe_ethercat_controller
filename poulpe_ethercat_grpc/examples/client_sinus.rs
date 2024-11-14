@@ -60,15 +60,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         let actual_torque = client.get_torque_actual_value(id).unwrap();
         let state = client.get_state(id);
 
-        // log::info!(
-        //     "{:?}/{:?} state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
-        //     t1.elapsed().unwrap(),
-        //     max_t1/1000.0,
-        //     state,
-        //     actual_position,
-        //     actual_velocity,
-        //     actual_torque
-        // );
+        log::info!(
+            "{:?}/{:?} state {:?}, pos: {:?}\tvel: {:?}\ttorque: {:?}",
+            t1.elapsed().unwrap(),
+            max_t1/1000.0,
+            state,
+            actual_position,
+            actual_velocity,
+            actual_torque
+        );
         if t1.elapsed().unwrap().as_micros() as f32 > max_t1 {
             max_t1 = t1.elapsed().unwrap().as_micros() as f32;
         }

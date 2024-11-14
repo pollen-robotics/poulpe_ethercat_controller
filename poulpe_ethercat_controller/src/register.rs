@@ -66,21 +66,3 @@ pub enum BoardStatus {
     Unknown = 255,
 }
 
-impl BoardStatus {
-    pub fn from_u8(value: u8) -> BoardStatus {
-        match value {
-            0 => BoardStatus::Ok,
-            1 => BoardStatus::InitError,
-            2 => BoardStatus::SensorError,
-            3 => BoardStatus::IndexError,
-            4 => BoardStatus::ZeroingError,
-            5 => BoardStatus::OverTemperatureError,
-            6 => BoardStatus::OverCurrentError,
-            7 => BoardStatus::BusVoltageError,
-            20 => BoardStatus::Init,
-            100 => BoardStatus::HighTemperatureState,
-            255 => BoardStatus::Unknown,
-            _ => BoardStatus::Unknown,
-        }
-    }
-}
