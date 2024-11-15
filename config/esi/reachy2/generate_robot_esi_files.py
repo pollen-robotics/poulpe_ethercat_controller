@@ -49,7 +49,9 @@ def generate_orbita_esi(name, orbita_type):
     pdos.sm_type = SyncManagerType.MAILBOX
     pdos.address = "1200" 
     pdos.name = "OrbitaState"
-    pdos.entries.append(Entry(name="error_code", type=EntryType.UINT32, index="0x603F"))
+    pdos.entries.append(Entry(name="error_code", type=EntryType.UINT16, index="0x603F"))
+    for i in range(orbita_type):
+        pdos.entries.append(Entry(name="error_code", type=EntryType.UINT16, index="0x603F", sub_index=i+1))
     pdos.entries.append(Entry(name="actuator_type", type=EntryType.UINT8, index="0x6402"))
     for i in range(orbita_type):
         pdos.entries.append(Entry(name="axis_position_zero_offset", type=EntryType.REAL, index="0x607C", sub_index=i+1))

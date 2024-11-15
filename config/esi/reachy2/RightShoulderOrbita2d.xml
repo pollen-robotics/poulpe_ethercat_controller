@@ -121,9 +121,23 @@
           <Entry>
             <Index>#x0x603F</Index>
             <SubIndex>0</SubIndex>
-            <BitLen>32</BitLen>
+            <BitLen>16</BitLen>
             <Name>error_code</Name>
-            <DataType>UINT32</DataType>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
           </Entry>
           <Entry>
             <Index>#x0x6402</Index>

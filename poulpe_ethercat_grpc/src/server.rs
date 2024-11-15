@@ -33,11 +33,11 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
 
     Ok(PoulpeState {
         id,
-        compliant: match controller.is_torque_on(slave_id) {
-            Ok(Some(state)) => state,
+        mode_of_operation : match controller.get_mode_of_operation_display(slave_id as u16) {
+            Ok(mode) => mode as i32,
             _ => {
-                log::error!("Failed to get compliant state for slave {}", slave_id);
-                return Err("Failed to get compliant state".into());
+                log::error!("Failed to get mode of operation for slave {}", slave_id);
+                return Err("Failed to get mode of operation".into());
             }
         },
         actual_position: match controller.get_current_position(slave_id) {
@@ -66,6 +66,27 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
             _ => {
                 log::error!("Failed to get axis sensor for slave {}", slave_id);
                 return Err("Failed to get axis sensor".into());
+            }
+        },
+        axis_sensor_zeros: match controller.get_axis_sensor_zeros(slave_id) {
+            Ok(Some(sensor)) => sensor,
+            _ => {
+                log::error!("Failed to get axis sensor zeros for slave {}", slave_id);
+                return Err("Failed to get axis sensor zeros".into());
+            }
+        },
+        board_temperatures: match controller.get_board_temperatures(slave_id) {
+            Ok(Some(temps)) => temps,
+            _ => {
+                log::error!("Failed to get board temperatures for slave {}", slave_id);
+                return Err("Failed to get board temperatures".into());
+            }
+        },
+        motor_temperatures: match controller.get_motor_temperatures(slave_id) {
+            Ok(Some(temps)) => temps,
+            _ => {
+                log::error!("Failed to get motor temperatures for slave {}", slave_id);
+                return Err("Failed to get motor temperatures".into());
             }
         },
         requested_target_position: match controller.get_current_target_position(slave_id) {
@@ -105,7 +126,14 @@ fn get_state_for_id(controller: &PoulpeController, id: i32) -> Result<PoulpeStat
                 return Err("Failed to get state".into());
             }
         },
-        torque_state: match controller.is_torque_on(slave_id) {
+        error_codes: match controller.get_error_codes(slave_id) {
+            Ok(error_codes) => error_codes.iter().map(|x| *x as i32).collect(),
+            _ => {
+                log::error!("Failed to get error codes for slave {}", slave_id);
+                return Err("Failed to get error codes".into());
+            }
+        },
+        compliant: match controller.is_torque_on(slave_id) {
             Ok(Some(state)) => state,
             _ => {
                 log::error!("Failed to get torque state for slave {}", slave_id);
@@ -397,16 +425,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn poule_empty_state() -> PoulpeState {
     PoulpeState {
         id: 0,
-        compliant: false,
+        mode_of_operation: 0,
         actual_position: vec![],
         actual_velocity: vec![],
         actual_torque: vec![],
         axis_sensors: vec![],
+        axis_sensor_zeros: vec![],
+        motor_temperatures: vec![],
+        board_temperatures: vec![],
         requested_target_position: vec![],
         requested_velocity_limit: vec![],
         requested_torque_limit: vec![],
         state: 0,
-        torque_state: false,
+        error_codes: vec![],
+        compliant: false,
         published_timestamp: None,
     }
 }

@@ -130,14 +130,14 @@ impl PoulpeController {
         Ok(parse_status_word(bits))
     }
 
-    fn get_mode_of_operation(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
+    pub fn get_mode_of_operation(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
         let mode_of_opearation = self.get_pdo_register(slave_id, PdoRegister::ModeOfOperation, 0);
         match mode_of_opearation {
             Ok(b) => Ok(b[0]),
             Err(_) => Err("Error reading mode of operation".into())
         }
     }
-    fn get_mode_of_operation_display(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
+    pub fn get_mode_of_operation_display(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
         let mode_of_operation_display = self.get_pdo_register(slave_id, PdoRegister::ModeOfOperationDisplay, 0);
         match mode_of_operation_display {
             Ok(b) => Ok(b[0]),
@@ -157,12 +157,13 @@ impl PoulpeController {
         self.set_pdo_register(slave_id, PdoRegister::ControlWord, 0, &value.to_le_bytes())
     }
 
+
     fn get_error_flags(&self, slave_id: u16) -> Result<ErrorFlags, Box<dyn Error>> {
-        let error_code = self.get_pdo_register(slave_id, PdoRegister::ErrorCode, 0)?;
-        let homing_error_flags = parse_homing_error_flags(error_code[0]);
-        let mut motor_error_flags = Vec::new();
-        for i in 1..error_code.len(){
-            motor_error_flags.append(&mut parse_motor_error_flags(error_code[i]));
+        let error_codes = self.get_pdo_registers(slave_id, PdoRegister::ErrorCode)?;
+        let homing_error_flags = parse_homing_error_flags(error_codes[0][0..2].try_into().unwrap());
+        let mut motor_error_flags = vec![Vec::new(); error_codes.len()-1];
+        for (i, e) in error_codes.iter().skip(1).enumerate() {
+            motor_error_flags[i] = parse_motor_error_flags(e[0..2].try_into().unwrap());
         }
 
         Ok(ErrorFlags{
@@ -271,8 +272,8 @@ impl PoulpeController {
                     n => break n
                 }
                 if current_time.elapsed().unwrap().as_millis() > 1000 {
-                    log::error!("Slave {} Orbita type not set!", id);
-                    return Err("Orbita type not set!".into());
+                    log::error!("Slave {} - Commnunication not established:  1s timout on orbita type!", id);
+                    return Err("Commnunication not established:  1s timout on orbita type!".into());
                 }
             };
             if orbita_type != (no_axes as u8) {
@@ -286,11 +287,11 @@ impl PoulpeController {
             }
         }
 
-        // get staus bits
-        let status_bits = self.get_status_bits(slave_id)?;
-        
         let state: CiA402State = self.get_status(slave_id as u32)?;
-        log::info!("Slave {}, state: {:?}", slave_id, state);
+        log::info!("Slave {}, inital state: {:?}", slave_id, state);
+
+        // get staus bits
+        let mut status_bits = self.get_status_bits(slave_id)?;
         
         // verify if not in fault state
         if status_bits.contains(&StatusBit::Fault) {
@@ -302,20 +303,32 @@ impl PoulpeController {
             return Err("Fault status".into());
         }
 
+        if state == CiA402State::NotReadyToSwitchOn{
+            log::info!("Slave {} in NotReadyToSwitchOn state, waiting to be rady for SwitchOn", slave_id);
+            // wait 1s
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            self.wait_for_status_bit(slave_id, StatusBit::SwitchedOnDisabled, Duration::from_secs(100))?;
+
+            // get staus bits
+            status_bits = self.get_status_bits(slave_id)?;
+        }
+
+        // if switch on disabled, we need to switch on
+        if status_bits.contains(&StatusBit::SwitchedOnDisabled) {
+            // go to the ready to switch on state
+            self.set_controlword(slave_id, ControlWord::Shutdown.to_u16())?;
+        }
+        
         // if enabled, we need to disable the operation
         if status_bits.contains(&StatusBit::OperationEnabled) {
             // if the operation is enabled, we need
             // to disable it before we can set the controlword
             self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
-            self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn, Duration::from_secs(1))?;
         }
-         
-        // if switch on disabled, we need to switch on
-        if status_bits.contains(&StatusBit::SwitchedOnDisabled) {
-            // go to the ready to switch on state
-            self.set_controlword(slave_id, ControlWord::Shutdown.to_u16())?;
-            self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn, Duration::from_secs(1))?;
-        }
+
+        // here the slave shoulde be in ready to switch on state)
+        self.wait_for_status_bit(slave_id, StatusBit::ReadyToSwitchOn, Duration::from_secs(1))?;
+        status_bits = self.get_status_bits(slave_id)?;
 
         // if ready to switch on, we need to switch on
         if status_bits.contains(&StatusBit::ReadyToSwitchOn) {
@@ -323,6 +336,9 @@ impl PoulpeController {
             self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())?;
             self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?;
         }
+
+        let state: CiA402State = self.get_status(slave_id as u32)?;
+        log::info!("Slave {}, setup done! Current state: {:?}", slave_id, state);
 
         Ok(())
     }
@@ -407,7 +423,7 @@ impl PoulpeController {
 
     pub fn get_status(&self, slave_id: u32) -> Result<CiA402State, Box<dyn std::error::Error>> {
         let status_bits = self.get_status_bits(slave_id as u16)?;
-        Ok(parse_state_from_status_bits(status_bits))
+        parse_state_from_status_bits(status_bits)
     }
 
     pub fn get_type(&self, slave_id: u32) -> u8 {
@@ -498,6 +514,13 @@ impl PoulpeController {
         };
     }
 
+    // axis sensor zeros in firmware
+    pub fn get_axis_sensor_zeros(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::AxisZeroPosition)
+    }
 
     // we are not actually reading it
     // we return the set value
@@ -551,4 +574,19 @@ impl PoulpeController {
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::TorqueLimit, torque_limit)
     }
+
+    pub fn get_error_codes(&self, id: u32) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
+        let slave_id = id as u16;
+        match self.get_pdo_registers(slave_id, PdoRegister::ErrorCode){
+            Ok(bytes) => {
+                let mut error_codes = Vec::new();
+                for e in bytes.iter(){
+                    error_codes.push(u16::from_le_bytes(e[0..2].try_into().unwrap()) as u32);
+                }
+                Ok(error_codes)
+            }
+            Err(_) => Err("Error reading error codes!".into())
+        }
+    }
+
 }

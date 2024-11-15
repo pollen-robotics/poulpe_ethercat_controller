@@ -14,6 +14,14 @@ fn main() {
     let ec = ec.wait_for_ready();
     log::info!("Controller is ready");
 
+
+    std::thread::sleep(Duration::from_secs(1));
+    // send switch on command
+    ec.set_pdo_register(id, &"controlword".into(), 0, vec![0b0111, 0]);
+
+    std::thread::sleep(Duration::from_secs(1));
+    // ec.set_pdo_register(id, &"controlword".into(), 0, vec![0b1111, 0]);
+
     let t0 = std::time::Instant::now();
     loop {
         let status = ec.get_pdo_register(id, &"statusword".into(), 0);
@@ -84,6 +92,7 @@ fn main() {
         // set the target position to the first motor (index 0)
         ec.set_pdo_register(id, &"target_position".into(), 0, sin_target.to_le_bytes().to_vec());
         ec.set_pdo_register(id, &"target_position".into(), 1, sin_target.to_le_bytes().to_vec());
+        // ec.set_pdo_register(id, &"target_position".into(), 2, sin_target.to_le_bytes().to_vec());
         // set the torque and velocity limit
         ec.set_pdo_register(
             id,
@@ -98,8 +107,16 @@ fn main() {
             1,
             1.0f32.to_le_bytes().to_vec(),
         );
+        // // set the torque and velocity limit
+        // ec.set_pdo_register(
+        //     id,
+        //     &"velocity_limit".into(),
+        //     2,
+        //     1.0f32.to_le_bytes().to_vec(),
+        // );
         ec.set_pdo_register(id, &"torque_limit".into(), 0, 1.0f32.to_le_bytes().to_vec());
         ec.set_pdo_register(id, &"torque_limit".into(), 1, 1.0f32.to_le_bytes().to_vec());
+        // ec.set_pdo_register(id, &"torque_limit".into(), 2, 1.0f32.to_le_bytes().to_vec());
 
         // std::thread::sleep(Duration::from_millis(1));
     }

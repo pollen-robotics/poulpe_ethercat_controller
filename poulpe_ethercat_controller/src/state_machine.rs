@@ -1,4 +1,3 @@
-
 #[derive(FromPrimitive, Debug, PartialEq)]
 pub enum StatusBit {
     ReadyToSwitchOn = 0,
@@ -103,7 +102,7 @@ pub enum CiA402State {
 
 #[derive( Debug)]
 pub struct ErrorFlags{
-    pub motor_error_flags: Vec<MotorErrorFlag>,
+    pub motor_error_flags: Vec<Vec<MotorErrorFlag>>,
     pub homing_error_flags: Vec<HomingErrorFlag>,
 }
 
@@ -117,21 +116,23 @@ pub fn parse_status_word(status: u16) -> Vec<StatusBit> {
     status_bits
 }
 
-pub fn parse_motor_error_flags(error: u8) -> Vec<MotorErrorFlag> {
+pub fn parse_motor_error_flags(error: [u8;2]) -> Vec<MotorErrorFlag> {
+    let motor_error = u16::from_le_bytes(error);
     let mut error_flags = Vec::new();
-    for i in 0..8 {
-        if error & (1 << i) != 0 {
-            error_flags.push(num::FromPrimitive::from_u8(i as u8).unwrap());
+    for i in 0..16 {
+        if motor_error & (1 << i) != 0 {
+            error_flags.push(num::FromPrimitive::from_u16(i as u16).unwrap());
         }
     }
     error_flags
 }
 
-pub fn parse_homing_error_flags(error: u8) -> Vec<HomingErrorFlag> {
+pub fn parse_homing_error_flags(error: [u8;2]) -> Vec<HomingErrorFlag> {
+    let homming_error = u16::from_le_bytes(error);
     let mut error_flags = Vec::new();
-    for i in 0..8 {
-        if error & (1 << i) != 0 {
-            error_flags.push(num::FromPrimitive::from_u8(i as u8).unwrap());
+    for i in 0..16 {
+        if homming_error & (1 << i) != 0 {
+            error_flags.push(num::FromPrimitive::from_u16(i as u16).unwrap());
         }
     }
     error_flags
@@ -141,10 +142,13 @@ pub fn parse_state_from_status_word(status: u16) -> CiA402State {
     num::FromPrimitive::from_u16(status).unwrap()
 }
 
-pub fn parse_state_from_status_bits(status_bits: Vec<StatusBit>) -> CiA402State {
+pub fn parse_state_from_status_bits(status_bits: Vec<StatusBit>) -> Result<CiA402State, Box<dyn std::error::Error>> {
     let mut state = 0;
     for bit in status_bits {
         state |= 1 << bit as u16;
     }
-    num::FromPrimitive::from_u16(state).unwrap()
+    match num::FromPrimitive::from_u16(state){
+        Some(s) => Ok(s),
+        None => Err("Invalid state".into())
+    }
 }

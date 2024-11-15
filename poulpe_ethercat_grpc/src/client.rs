@@ -15,7 +15,10 @@ use tonic::{transport::Uri, Request};
 #[derive(Debug)]
 enum Command {
     Compliancy(bool),
+    ModeOfOperation(u32),
     TargetPosition(Vec<f32>),
+    TargetVelocity(Vec<f32>),
+    TargetTorque(Vec<f32>),
     VelocityLimit(Vec<f32>),
     TorqueLimit(Vec<f32>)
 }
@@ -202,7 +205,7 @@ impl PoulpeRemoteClient {
     }
 
     pub fn is_on(&self, slave_id: u16) -> Result<bool, ()> {
-        self.get_state_property(slave_id, |state| state.torque_state, false)
+        self.get_state_property(slave_id, |state| state.compliant, false)
     }
 
     pub fn get_target_position(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
@@ -213,16 +216,35 @@ impl PoulpeRemoteClient {
         )
     }
 
+    pub fn get_motor_temperatures(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
+        self.get_state_property(slave_id, |state| state.motor_temperatures.clone(), vec![])
+    }
+    pub fn get_board_temperatures(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
+        self.get_state_property(slave_id, |state| state.board_temperatures.clone(), vec![])
+    }
+
+    pub fn get_mode_of_operation(&self, slave_id: u16) -> Result<u32, ()> {
+        self.get_state_property(slave_id, |state| state.mode_of_operation as u32, 255)
+    }
+
     pub fn get_state(&self, slave_id: u16) -> Result<u32, ()> {
         self.get_state_property(slave_id, |state| state.state, 255)
     }
 
     pub fn get_torque_state(&self, slave_id: u16) -> Result<bool, ()> {
-        self.get_state_property(slave_id, |state| state.torque_state, false)
+        self.get_state_property(slave_id, |state| state.compliant, false)
     }
 
     pub fn get_axis_sensors(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
+    }
+
+    pub fn get_axis_sensor_zeros(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
+        self.get_state_property(slave_id, |state| state.axis_sensor_zeros.clone(), vec![])
+    }
+
+    pub fn get_error_codes(&self, slave_id: u16) -> Result<Vec<i32>, ()> {
+        self.get_state_property(slave_id, |state| state.error_codes.clone(), vec![])
     }
 
     
@@ -258,9 +280,20 @@ impl PoulpeRemoteClient {
         self.push_command(slave_id, Command::Compliancy(true));
     }
 
+    pub fn set_mode_of_operation(&mut self, slave_id: u16, mode: u32) {
+        self.push_command(slave_id, Command::ModeOfOperation(mode));
+    }
+
     pub fn set_target_position(&mut self, slave_id: u16, target_position: Vec<f32>) {
         self.push_command(slave_id, Command::TargetPosition(target_position));
     }
+    pub fn set_target_velocity(&mut self, slave_id: u16, target_velocity: Vec<f32>) {
+        self.push_command(slave_id, Command::TargetVelocity(target_velocity));
+    }
+    pub fn set_target_torque(&mut self, slave_id: u16, target_torque: Vec<f32>) {
+        self.push_command(slave_id, Command::TargetTorque(target_torque));
+    }
+
     pub fn set_velocity_limit(&mut self, slave_id: u16, velocity_limit: Vec<f32>) {
         self.push_command(slave_id, Command::VelocityLimit(velocity_limit));
     }
@@ -284,9 +317,20 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
         for cmd in cmds {
             match cmd {
                 Command::Compliancy(comp) => poulpe_cmd.compliancy = Some(*comp),
+                Command::ModeOfOperation(mode) => poulpe_cmd.mode_of_operation = *mode as i32,
                 Command::TargetPosition(pos) => {
                     if pos.len() != 0 {
                         poulpe_cmd.target_position.extend(pos.iter().cloned());
+                    }
+                }
+                Command::TargetVelocity(vel) => {
+                    if vel.len() != 0 {
+                        poulpe_cmd.target_velocity.extend(vel.iter().cloned());
+                    }
+                }
+                Command::TargetTorque(torque) => {
+                    if torque.len() != 0 {
+                        poulpe_cmd.target_torque.extend(torque.iter().cloned());
                     }
                 }
                 Command::VelocityLimit(vel) => {
