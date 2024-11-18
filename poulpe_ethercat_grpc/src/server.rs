@@ -285,13 +285,20 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     }
                     None => {
                         log::warn!("No published timestamp, discarding message!");
-                        continue;
+                        continue;   
                     }
                 }
 
                 let no_axis = self.controller.get_orbita_type(slave_id) as usize;
 
                 let mut set_compliant = cmd.compliancy;
+
+                let mode_of_operation = cmd.mode_of_operation;
+                if mode_of_operation != 0 {
+                    self.controller.set_mode_of_operation(slave_id as u16, mode_of_operation as u8).unwrap_or_else(
+                        |e| log::error!("Failed to set mode of operation for slave {}: {}", slave_id, e),
+                    );
+                }
 
                 if target_pos.len() != 0 {
                     // set only last target command 
@@ -323,6 +330,29 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     ).unwrap_or_else(|e| {
                         log::error!("Failed to set torque limit for slave {}: {}", slave_id, e);
                         set_compliant = Some(true); // disable the slave!
+                    });
+                }
+
+                let target_velocity = cmd.target_velocity;
+                if target_velocity.len() != 0 {
+                    // set only last target command 
+                    self.controller.set_target_velocity(
+                        slave_id, 
+                        target_velocity[(target_velocity.len()-no_axis)..].to_vec()
+                    ).unwrap_or_else(|e| {
+                        log::error!("Failed to set target velocity for slave {}: {}", slave_id, e);
+                        set_compliant = Some(true); // disable the slave!
+                    });
+                }
+                let target_torque = cmd.target_torque;
+                if target_torque.len() != 0 {
+                    // set only last target command 
+                    self.controller.set_target_torque(
+                        slave_id, 
+                        target_torque[(target_torque.len()-no_axis)..].to_vec()
+                    ).unwrap_or_else(|e| {
+                        log::error!("Failed to set target torque for slave {}: {}", slave_id, e);
+                        set_compliant = Some(true); // disable the save!
                     });
                 }
 

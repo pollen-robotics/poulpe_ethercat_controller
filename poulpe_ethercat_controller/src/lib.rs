@@ -145,10 +145,6 @@ impl PoulpeController {
         }
     }
 
-    fn set_mode_of_operation(&self, slave_id: u16, value: u8) -> Result<(), Box<dyn Error>> {
-        Ok(())
-    }
-
     fn clear_fault(&self, slave_id: u16) -> Result<(), Box<dyn Error>> {
         Ok(())  
     }
@@ -435,6 +431,39 @@ impl PoulpeController {
         byte
     }
 
+
+    // make sure that the slave is disabled before changing the mode of operation
+    pub fn set_mode_of_operation(&self, slave_id: u16, value: u8) -> Result<(), Box<dyn Error>> {
+
+        // if the mode of operation is already set, return
+        let mode_of_operation = self.get_mode_of_operation_display(slave_id)?;
+        if mode_of_operation == value {
+            return Ok(());
+        }
+
+        // if it is not verified that the slave is disabled
+        // if not return error
+        let is_on =  self.is_torque_on(slave_id as u32)?;
+        match is_on {
+            Some(is_on) => {
+                match is_on {
+                    true => {
+                        log::error!("Slave {} | Cannot change mode of operation when slave is turned on!", slave_id);
+                        return Err("Cannot change mode of operation when torque is on!".into());
+                    },
+                    false => {
+                        self.set_pdo_register(slave_id, PdoRegister::ModeOfOperation, 0, &[value])
+                    }
+                }
+            },
+            _ => {
+                log::error!("Slave {} | Error getting torque state!", slave_id);
+                return Err("Error getting torque state!".into());
+            }
+        }
+    }
+
+
     fn get_register_values(
         &self,
         id: u32,
@@ -573,6 +602,22 @@ impl PoulpeController {
         torque_limit: Vec<f32>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::TorqueLimit, torque_limit)
+    }
+
+    pub fn set_target_velocity(
+        &self,
+        id: u32,
+        target_velocity: Vec<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.set_register_values(id, PdoRegister::TargetVelocity, target_velocity)
+    }
+
+    pub fn set_target_torque(
+        &self,
+        id: u32,
+        target_torque: Vec<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.set_register_values(id, PdoRegister::TargetTorque, target_torque)
     }
 
     pub fn get_error_codes(&self, id: u32) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
