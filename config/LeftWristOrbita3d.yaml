@@ -1,18 +1,10 @@
 ethercat:
   master_id: 0
-  cycle_time_us: 1000 # us
+  cycle_time_us: 500 # us
   command_drop_time_us: 5000 # us (5ms default)
   mailbox_wait_time_ms: 10000 #ms  (1s default)
 
 slaves:
-  - !Poulpe
-    id: 2
-    orbita_type: 2
-    name: "LeftShoulderOrbita2d"
-  - !Poulpe
-    id: 1
-    orbita_type: 2
-    name: "LeftElbowOrbita2d"
   - !Poulpe
     id: 0
     orbita_type: 3
