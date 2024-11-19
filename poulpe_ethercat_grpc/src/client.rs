@@ -40,7 +40,7 @@ impl PoulpeRemoteClient {
         // let rt = Builder::new_multi_thread().enable_all().build().unwrap();
         let rt = Arc::new(Builder::new_multi_thread().enable_all().build().unwrap());
 
-        
+
         // Validate poulpe_ids
         let client = PoulpeRemoteClient {
             ids: poulpe_ids.clone(),
@@ -54,6 +54,9 @@ impl PoulpeRemoteClient {
         let ids = poulpe_ids.clone();
         // check if the id is valid and the server is up
         // check if poulpe_ids are valid
+
+	log::debug!("Connecting to poulpe ids: {:?} (grpc)",ids);
+
         match client.get_poulpe_ids_sync() {
             Ok(available_ids) => {
                 let available_ids = available_ids.0;
@@ -70,7 +73,7 @@ impl PoulpeRemoteClient {
                 return Err(std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "Error in connecting to the server! Check if server is up!!!"));
             }
         }
-        
+
         // spawn a single thread to handle both the state stream and command stream
         rt.spawn(async move {
             // Connect to the server
@@ -98,7 +101,7 @@ impl PoulpeRemoteClient {
             let command_stream = async_stream::stream! {
                 // fixed frequency
                 let mut interval = tokio::time::interval(update_period / 2);
-                
+
                 loop {
                     // next cycle
                     interval.tick().await;
@@ -163,7 +166,7 @@ impl PoulpeRemoteClient {
         let state = state.get(&slave_id).ok_or_else(|| {
             log::error!("No state found for slave {}", slave_id);
         })?;
-    
+
         if let Some(ts) = &state.published_timestamp {
             if let Ok(systime) = std::time::SystemTime::try_from(ts.clone()) {
                 if systime.elapsed().unwrap().as_millis() > 1000 {
@@ -183,7 +186,7 @@ impl PoulpeRemoteClient {
         } else {
             log::warn!("No timestamp found for slave {}", slave_id);
         }
-    
+
         Ok(f(state))
     }
 
@@ -225,7 +228,7 @@ impl PoulpeRemoteClient {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
     }
 
-    
+
     pub fn get_velocity_limit(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(
             slave_id,
@@ -317,4 +320,3 @@ pub async fn get_poulpe_ids_async( client: &mut PoulpeMultiplexerClient<tonic::t
     let names: Vec<String> = response.names.into_iter().map(|name: String| name as String).collect();
     Ok((ids, names))
 }
-
