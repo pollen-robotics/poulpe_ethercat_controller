@@ -16,6 +16,6 @@ crossbeam-channel = "0.5"
 tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["verify_mailboxes"] # , "recover_from_error"]
+default = []#"verify_mailboxes"] # , "recover_from_error"]
 verify_mailboxes = []
 recover_from_error = []
