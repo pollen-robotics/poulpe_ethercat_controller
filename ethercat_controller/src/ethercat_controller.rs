@@ -766,15 +766,43 @@ pub fn init_master(
         cvar.notify_one();
     }
 
+    #[cfg(not(feature = "verify_mailboxes"))] 
     // Function to get the current state of a slave
     fn get_slave_current_state(
         master: &Master,
         slave_pos: SlavePos,
         slave_name_from_id: &impl Fn(u16) -> String,
-        #[cfg(feature = "verify_mailboxes")] slave_is_mailbox_responding: bool,
     ) -> u8 {
         
-        #![cfg(feature = "verify_mailboxes")]
+        match master.get_slave_info(slave_pos) {
+            Ok(info) => {
+                if info.al_state != AlState::Op {
+                    log::error!("Slave {:?} is not operational! State: {:?}", info.name, info.al_state);
+                    0
+                } else {
+                    AlState::Op as u8
+                }
+            }
+            Err(_) => {
+                log::error!(
+                    "Failed to get slave info for slave {:?}, name: {:?}",
+                    slave_pos,
+                    slave_name_from_id(slave_pos.into())
+                );
+                255
+            }
+        }
+    }
+
+    #[cfg(feature = "verify_mailboxes")] 
+    // Function to get the current state of a slave
+    fn get_slave_current_state(
+        master: &Master,
+        slave_pos: SlavePos,
+        slave_name_from_id: &impl Fn(u16) -> String,
+        slave_is_mailbox_responding: bool,
+    ) -> u8 {
+        
         if !slave_is_mailbox_responding {
             log::error!("Slave {:?} (pos: {:?}) is not responding (mailbox check failed)!", slave_name_from_id(slave_pos.into()), slave_pos);
             return 0;
