@@ -156,6 +156,10 @@ impl PyPoulpeRemoteClient {
         }
     }
 
+    pub fn emergency_stop(&mut self, slave_id: u16) {
+        self.client.emergency_stop(slave_id);
+    }
+
 
 
     // Define other methods similarly...

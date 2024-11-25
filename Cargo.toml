@@ -4,5 +4,5 @@ members = [
     "ethercat_controller",
     "poulpe_ethercat_controller",
     "poulpe_ethercat_grpc",
-    "python_client"
+    # "python_client"
 ]

@@ -388,9 +388,12 @@ impl PoulpeController {
                             }
                         }
 
-                        // Switch on
-                        self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())?;
-                        self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?;
+                        #[cfg(feature = "switchon_on_turnon")]
+                        {
+                            // Switch on
+                            self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())?;
+                            self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?;
+                        }
 
                         // Enable
                         self.set_controlword(slave_id, ControlWord::EnableOperation.to_u16())?;
@@ -632,6 +635,16 @@ impl PoulpeController {
             }
             Err(_) => Err("Error reading error codes!".into())
         }
+    }
+
+    pub fn emergency_stop(&self, id: u32) -> Result<(), Box<dyn std::error::Error>> {
+        let slave_id = id as u16;
+        self.set_controlword(slave_id, ControlWord::QuickStop.to_u16())
+    }
+
+    pub fn reactivate_after_emergency_stop(&self, id: u32) -> Result<(), Box<dyn std::error::Error>> {
+        let slave_id = id as u16;
+        self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())
     }
 
 }

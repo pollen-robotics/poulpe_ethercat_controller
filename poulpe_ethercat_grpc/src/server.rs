@@ -267,6 +267,17 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             for cmd in req.commands {
                 slave_id = cmd.id as u32;
 
+                // emergency stop first
+                match cmd.emergency_stop {
+                    Some(true) => {
+                        self.controller.emergency_stop(slave_id).unwrap_or_else(
+                        |e| log::error!("Failed to set emergency stop for slave {}: {}", slave_id, e),
+                        );
+                        continue;
+                    },
+                    _ => (),
+                }
+
                 let mut target_pos = cmd.target_position;
                 match cmd.published_timestamp{
                     Some(published_time) => {

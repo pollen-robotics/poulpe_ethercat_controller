@@ -14,6 +14,7 @@ use tonic::{transport::Uri, Request};
 
 #[derive(Debug)]
 enum Command {
+    EmergencyStop(bool),
     Compliancy(bool),
     ModeOfOperation(u32),
     TargetPosition(Vec<f32>),
@@ -300,6 +301,11 @@ impl PoulpeRemoteClient {
     pub fn set_torque_limit(&mut self, slave_id: u16, torque_limit: Vec<f32>) {
         self.push_command(slave_id, Command::TorqueLimit(torque_limit));
     }
+
+    pub fn emergency_stop(&mut self, slave_id: u16) {
+        self.push_command(slave_id, Command::EmergencyStop(true));
+    }
+
 }
 
 fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeCommands> {
@@ -316,6 +322,7 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
         };
         for cmd in cmds {
             match cmd {
+                Command::EmergencyStop(stop) => poulpe_cmd.emergency_stop = Some(*stop),
                 Command::Compliancy(comp) => poulpe_cmd.compliancy = Some(*comp),
                 Command::ModeOfOperation(mode) => poulpe_cmd.mode_of_operation = *mode as i32,
                 Command::TargetPosition(pos) => {
