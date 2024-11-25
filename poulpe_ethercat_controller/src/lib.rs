@@ -1,7 +1,16 @@
-use std::{collections::HashMap, error::Error, f32::consts::{E, PI}, sync::RwLock, time::Duration};
+use std::{
+    collections::HashMap,
+    error::Error,
+    f32::consts::{E, PI},
+    sync::RwLock,
+    time::Duration,
+};
 
 mod state_machine;
-use state_machine::{parse_homing_error_flags, parse_motor_error_flags, parse_state_from_status_bits, parse_status_word, CiA402State, ErrorFlags, StatusBit, ControlWord};
+use state_machine::{
+    parse_homing_error_flags, parse_motor_error_flags, parse_state_from_status_bits,
+    parse_status_word, CiA402State, ControlWord, ErrorFlags, StatusBit,
+};
 
 extern crate num;
 #[macro_use]
@@ -15,7 +24,7 @@ use ethercat_controller::{
 };
 
 mod register;
-use register::{PdoRegister};
+use register::PdoRegister;
 
 #[derive(Debug)]
 pub struct PoulpeController {
@@ -31,8 +40,9 @@ impl PoulpeController {
             config.ethercat.master_id,
             Duration::from_micros(config.ethercat.cycle_time_us as u64),
             config.ethercat.command_drop_time_us,
-            config.ethercat.mailbox_wait_time_ms
-        )?.wait_for_ready();
+            config.ethercat.mailbox_wait_time_ms,
+        )?
+        .wait_for_ready();
 
         let mut poulpe_config = HashMap::new();
 
@@ -44,18 +54,27 @@ impl PoulpeController {
 
         // if the feature allow_partial_network is enabled, we do not check if the slave is in the config file
         // if the feature is not enabled, we check if the slave is in the config file as the whole network should be defined in the config file
-        #[cfg(not(feature="allow_partial_network"))]
+        #[cfg(not(feature = "allow_partial_network"))]
         {
             // check if all slaves are connected
             // check if the names of the slaves are correct
             let slave_ids = controller.get_slave_ids();
             for slave_id in slave_ids {
                 if poulpe_config.get(&slave_id).is_none() {
-                    log::error!("Slave {} with name {:?} not found in config, check config yaml file!", slave_id, controller.get_slave_name(slave_id).unwrap());
+                    log::error!(
+                        "Slave {} with name {:?} not found in config, check config yaml file!",
+                        slave_id,
+                        controller.get_slave_name(slave_id).unwrap()
+                    );
                     return Err("Slave not in yaml!".into());
                 } else if let Some(name) = controller.get_slave_name(slave_id) {
                     if poulpe_config[&slave_id].name != name {
-                        log::error!("Slave {} Name mismatch: expected {:?}, got {:?}", slave_id, poulpe_config[&slave_id].name, name);
+                        log::error!(
+                            "Slave {} Name mismatch: expected {:?}, got {:?}",
+                            slave_id,
+                            poulpe_config[&slave_id].name,
+                            name
+                        );
                         return Err("Name mismatch".into());
                     } else {
                         log::error!("Slave {} with name {:?} name not found on EtherCAT network, check connection!", slave_id, poulpe_config[&slave_id].name);
@@ -68,7 +87,7 @@ impl PoulpeController {
             let slave_ids = controller.get_slave_ids();
             let mut all_connected = true;
             if slave_ids.len() != poulpe_config.len() {
-                for p in poulpe_config.keys(){
+                for p in poulpe_config.keys() {
                     let name = controller.get_slave_name(*p);
                     if name.is_none() {
                         log::error!("Slave {} with name {:?} not found in Ethercat network, check connection!", p, poulpe_config[p].name);
@@ -76,11 +95,11 @@ impl PoulpeController {
                     }
                 }
             }
-            if all_connected == false{
+            if all_connected == false {
                 return Err("Number of slaves in config and in network do not match!".into());
             }
         }
-        
+
         Ok(Self {
             inner: controller,
             poulpe_config,
@@ -90,7 +109,7 @@ impl PoulpeController {
     // function that checks if the time is longer that dropping time
     // returns true if its longer and false if not
     pub fn check_if_too_old(&self, message_ellased_time: Duration) -> bool {
-        message_ellased_time.as_micros() as u32 > self.inner.command_drop_time_us 
+        message_ellased_time.as_micros() as u32 > self.inner.command_drop_time_us
     }
 
     pub fn get_orbita_type(&self, id: u32) -> u32 {
@@ -115,18 +134,19 @@ impl PoulpeController {
     }
 
     pub fn get_slave_names(&self) -> Vec<String> {
-        self.poulpe_config.values().map(|x| x.name.clone()).collect()
+        self.poulpe_config
+            .values()
+            .map(|x| x.name.clone())
+            .collect()
     }
-
 
     pub fn is_slave_ready(&self, id: u16) -> bool {
         self.inner.is_slave_ready(id)
     }
 
-
     fn get_status_bits(&self, slave_id: u16) -> Result<Vec<StatusBit>, Box<dyn Error>> {
-        let status_word = self.get_pdo_register(slave_id, PdoRegister::StatusWord,0)?;
-        let bits = u16::from_le_bytes(status_word.try_into().unwrap());        
+        let status_word = self.get_pdo_register(slave_id, PdoRegister::StatusWord, 0)?;
+        let bits = u16::from_le_bytes(status_word.try_into().unwrap());
         Ok(parse_status_word(bits))
     }
 
@@ -134,41 +154,46 @@ impl PoulpeController {
         let mode_of_opearation = self.get_pdo_register(slave_id, PdoRegister::ModeOfOperation, 0);
         match mode_of_opearation {
             Ok(b) => Ok(b[0]),
-            Err(_) => Err("Error reading mode of operation".into())
+            Err(_) => Err("Error reading mode of operation".into()),
         }
     }
     pub fn get_mode_of_operation_display(&self, slave_id: u16) -> Result<u8, Box<dyn Error>> {
-        let mode_of_operation_display = self.get_pdo_register(slave_id, PdoRegister::ModeOfOperationDisplay, 0);
+        let mode_of_operation_display =
+            self.get_pdo_register(slave_id, PdoRegister::ModeOfOperationDisplay, 0);
         match mode_of_operation_display {
             Ok(b) => Ok(b[0]),
-            Err(_) => Err("Error reading mode of operation display".into())
+            Err(_) => Err("Error reading mode of operation display".into()),
         }
     }
 
     fn clear_fault(&self, slave_id: u16) -> Result<(), Box<dyn Error>> {
-        Ok(())  
+        Ok(())
     }
 
     fn set_controlword(&self, slave_id: u16, value: u16) -> Result<(), Box<dyn Error>> {
         self.set_pdo_register(slave_id, PdoRegister::ControlWord, 0, &value.to_le_bytes())
     }
 
-
     fn get_error_flags(&self, slave_id: u16) -> Result<ErrorFlags, Box<dyn Error>> {
         let error_codes = self.get_pdo_registers(slave_id, PdoRegister::ErrorCode)?;
         let homing_error_flags = parse_homing_error_flags(error_codes[0][0..2].try_into().unwrap());
-        let mut motor_error_flags = vec![Vec::new(); error_codes.len()-1];
+        let mut motor_error_flags = vec![Vec::new(); error_codes.len() - 1];
         for (i, e) in error_codes.iter().skip(1).enumerate() {
             motor_error_flags[i] = parse_motor_error_flags(e[0..2].try_into().unwrap());
         }
 
-        Ok(ErrorFlags{
+        Ok(ErrorFlags {
             motor_error_flags,
-            homing_error_flags
+            homing_error_flags,
         })
     }
-    
-    fn wait_for_status_bit(&self, slave_id: u16, bit: StatusBit, timeout: Duration) -> Result<(), Box<dyn Error>> {
+
+    fn wait_for_status_bit(
+        &self,
+        slave_id: u16,
+        bit: StatusBit,
+        timeout: Duration,
+    ) -> Result<(), Box<dyn Error>> {
         let status_bits = self.get_status_bits(slave_id);
         log::debug!("Waiting for {:?} ({:?})", bit, status_bits);
 
@@ -198,24 +223,45 @@ impl PoulpeController {
         Ok(())
     }
 
-    fn get_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize) -> Result<Vec<u8>, Box<dyn Error>> {
-        Ok(self.inner
+    fn get_pdo_register(
+        &self,
+        slave_id: u16,
+        reg: PdoRegister,
+        index: usize,
+    ) -> Result<Vec<u8>, Box<dyn Error>> {
+        Ok(self
+            .inner
             .get_pdo_register(slave_id, &reg.name().to_string(), index)
             .unwrap())
     }
-    fn set_pdo_register(&self, slave_id: u16, reg: PdoRegister, index: usize, value: &[u8]) -> Result<(), Box<dyn Error>> {
+    fn set_pdo_register(
+        &self,
+        slave_id: u16,
+        reg: PdoRegister,
+        index: usize,
+        value: &[u8],
+    ) -> Result<(), Box<dyn Error>> {
         self.inner
             .set_pdo_register(slave_id, &reg.name().to_string(), index, value.to_vec());
         Ok(())
-        
     }
 
-    fn get_pdo_registers(&self, slave_id: u16, reg: PdoRegister) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
-        Ok(self.inner
+    fn get_pdo_registers(
+        &self,
+        slave_id: u16,
+        reg: PdoRegister,
+    ) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
+        Ok(self
+            .inner
             .get_pdo_registers(slave_id, &reg.name().to_string())
             .unwrap())
     }
-    fn set_pdo_registers(&self, slave_id: u16, reg: PdoRegister, values: Vec<Vec<u8>>) -> Result<(), Box<dyn Error>>{
+    fn set_pdo_registers(
+        &self,
+        slave_id: u16,
+        reg: PdoRegister,
+        values: Vec<Vec<u8>>,
+    ) -> Result<(), Box<dyn Error>> {
         self.inner
             .set_pdo_registers(slave_id, &reg.name().to_string(), values);
         Ok(())
@@ -228,26 +274,39 @@ impl PoulpeController {
 
         // check if slave_id exists in etheract network
         if !self.inner.get_slave_ids().contains(&slave_id) {
-            log::error!("Slave {} with name {:?} not found in Ethercat network, check connection!", id, self.poulpe_config[&slave_id].name);
+            log::error!(
+                "Slave {} with name {:?} not found in Ethercat network, check connection!",
+                id,
+                self.poulpe_config[&slave_id].name
+            );
             return Err("Slave not connected!".into());
         }
 
-        #[cfg(not(feature="allow_partial_network"))]
+        #[cfg(not(feature = "allow_partial_network"))]
         {
             // check if slave_id exists in config
             if !self.get_slave_ids().contains(&id) {
-                log::error!("Slave {} with name {:?} not found in config, check config yaml file!", id, self.get_slave_name(slave_id).unwrap());
+                log::error!(
+                    "Slave {} with name {:?} not found in config, check config yaml file!",
+                    id,
+                    self.get_slave_name(slave_id).unwrap()
+                );
                 return Err("Slave not in yaml!".into());
             }
         }
 
-        match self.inner.get_slave_name(slave_id){
+        match self.inner.get_slave_name(slave_id) {
             Some(name) => {
-                if self.poulpe_config[&slave_id].name != name{
-                    log::error!("Slave {} Name mismatch: expected {:?}, got {:?}", slave_id, self.poulpe_config[&slave_id].name, name);
+                if self.poulpe_config[&slave_id].name != name {
+                    log::error!(
+                        "Slave {} Name mismatch: expected {:?}, got {:?}",
+                        slave_id,
+                        self.poulpe_config[&slave_id].name,
+                        name
+                    );
                     return Err("Name mismatch".into());
                 }
-            },
+            }
             _ => {
                 log::error!("Slave {} name not found, check connection!", slave_id);
                 return Err("Name not found, check connection!".into());
@@ -258,17 +317,20 @@ impl PoulpeController {
         // orbita type is the number of axes
         // - orbita2s has 2 axes
         // - orbita3s has 3 axes
-        #[cfg(feature="verify_orbita_type")]
+        #[cfg(feature = "verify_orbita_type")]
         {
             let no_axes = self.poulpe_config[&slave_id].orbita_type;
             let current_time = std::time::SystemTime::now();
             let orbita_type = loop {
                 match self.get_type(slave_id as u32) {
                     0 => std::thread::sleep(std::time::Duration::from_millis(100)),
-                    n => break n
+                    n => break n,
                 }
                 if current_time.elapsed().unwrap().as_millis() > 1000 {
-                    log::error!("Slave {} - Commnunication not established:  1s timout on orbita type!", id);
+                    log::error!(
+                        "Slave {} - Commnunication not established:  1s timout on orbita type!",
+                        id
+                    );
                     return Err("Commnunication not established:  1s timout on orbita type!".into());
                 }
             };
@@ -288,7 +350,7 @@ impl PoulpeController {
 
         // get staus bits
         let mut status_bits = self.get_status_bits(slave_id)?;
-        
+
         // verify if not in fault state
         if status_bits.contains(&StatusBit::Fault) {
             log::error!(
@@ -299,11 +361,18 @@ impl PoulpeController {
             return Err("Fault status".into());
         }
 
-        if state == CiA402State::NotReadyToSwitchOn{
-            log::info!("Slave {} in NotReadyToSwitchOn state, waiting to be rady for SwitchOn", slave_id);
+        if state == CiA402State::NotReadyToSwitchOn {
+            log::info!(
+                "Slave {} in NotReadyToSwitchOn state, waiting to be rady for SwitchOn",
+                slave_id
+            );
             // wait 1s
             std::thread::sleep(std::time::Duration::from_secs(1));
-            self.wait_for_status_bit(slave_id, StatusBit::SwitchedOnDisabled, Duration::from_secs(100))?;
+            self.wait_for_status_bit(
+                slave_id,
+                StatusBit::SwitchedOnDisabled,
+                Duration::from_secs(100),
+            )?;
 
             // get staus bits
             status_bits = self.get_status_bits(slave_id)?;
@@ -314,7 +383,7 @@ impl PoulpeController {
             // go to the ready to switch on state
             self.set_controlword(slave_id, ControlWord::Shutdown.to_u16())?;
         }
-        
+
         // if enabled, we need to disable the operation
         if status_bits.contains(&StatusBit::OperationEnabled) {
             // if the operation is enabled, we need
@@ -362,23 +431,31 @@ impl PoulpeController {
                 if actual_torque == requested_torque {
                     return Ok(());
                 } else {
-
                     // if turn on is requested, set the target position to the current position - safety feature
                     if requested_torque {
-                        #[cfg(feature="safe_turn_on")]
-                        { 
+                        #[cfg(feature = "safe_turn_on")]
+                        {
                             // set the target position to the current position
                             let current_position = self.get_current_position(id).unwrap().unwrap();
-                            self.set_target_position(id, current_position.clone()).unwrap();
+                            self.set_target_position(id, current_position.clone())
+                                .unwrap();
 
                             // verify that the target position is set correctly and try 5 times
-                            let mut target_position = self.get_current_target_position(id).unwrap().unwrap();
+                            let mut target_position =
+                                self.get_current_target_position(id).unwrap().unwrap();
                             let mut tries = 0;
                             // check if the target position is set correctly (small error margin)
-                            while tries < 5 && (current_position.iter().zip(target_position.iter()).all(|(a, b)| (a - b).abs() > 0.001)){
-                                self.set_target_position(id, current_position.clone()).unwrap();
+                            while tries < 5
+                                && (current_position
+                                    .iter()
+                                    .zip(target_position.iter())
+                                    .all(|(a, b)| (a - b).abs() > 0.001))
+                            {
+                                self.set_target_position(id, current_position.clone())
+                                    .unwrap();
                                 std::thread::sleep(std::time::Duration::from_millis(2));
-                                target_position = self.get_current_target_position(id).unwrap().unwrap();
+                                target_position =
+                                    self.get_current_target_position(id).unwrap().unwrap();
                                 tries += 1;
                             }
                             // throw error if the target position is not set correctly
@@ -392,19 +469,31 @@ impl PoulpeController {
                         {
                             // Switch on
                             self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())?;
-                            self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?;
+                            self.wait_for_status_bit(
+                                slave_id,
+                                StatusBit::SwitchedOn,
+                                Duration::from_secs(1),
+                            )?;
                         }
 
                         // Enable
                         self.set_controlword(slave_id, ControlWord::EnableOperation.to_u16())?;
-                        self.wait_for_status_bit(slave_id, StatusBit::OperationEnabled, Duration::from_secs(1))?;
-                    }else{
+                        self.wait_for_status_bit(
+                            slave_id,
+                            StatusBit::OperationEnabled,
+                            Duration::from_secs(1),
+                        )?;
+                    } else {
                         // Shutdown
                         self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
-                        self.wait_for_status_bit(slave_id, StatusBit::SwitchedOn, Duration::from_secs(1))?; 
+                        self.wait_for_status_bit(
+                            slave_id,
+                            StatusBit::SwitchedOn,
+                            Duration::from_secs(1),
+                        )?;
                     }
                 }
-            },
+            }
             _ => {
                 log::error!("Error getting torque state!");
                 return Err("Error getting torque state!".into());
@@ -426,18 +515,15 @@ impl PoulpeController {
     }
 
     pub fn get_type(&self, slave_id: u32) -> u8 {
-        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::ActuatorType, 0)
-        {
+        let byte = match self.get_pdo_register(slave_id as u16, PdoRegister::ActuatorType, 0) {
             Ok(b) => b[0],
             Err(_) => 255,
         };
         byte
     }
 
-
     // make sure that the slave is disabled before changing the mode of operation
     pub fn set_mode_of_operation(&self, slave_id: u16, value: u8) -> Result<(), Box<dyn Error>> {
-
         // if the mode of operation is already set, return
         let mode_of_operation = self.get_mode_of_operation_display(slave_id)?;
         if mode_of_operation == value {
@@ -446,18 +532,17 @@ impl PoulpeController {
 
         // if it is not verified that the slave is disabled
         // if not return error
-        let is_on =  self.is_torque_on(slave_id as u32)?;
+        let is_on = self.is_torque_on(slave_id as u32)?;
         match is_on {
-            Some(is_on) => {
-                match is_on {
-                    true => {
-                        log::error!("Slave {} | Cannot change mode of operation when slave is turned on!", slave_id);
-                        return Err("Cannot change mode of operation when torque is on!".into());
-                    },
-                    false => {
-                        self.set_pdo_register(slave_id, PdoRegister::ModeOfOperation, 0, &[value])
-                    }
+            Some(is_on) => match is_on {
+                true => {
+                    log::error!(
+                        "Slave {} | Cannot change mode of operation when slave is turned on!",
+                        slave_id
+                    );
+                    return Err("Cannot change mode of operation when torque is on!".into());
                 }
+                false => self.set_pdo_register(slave_id, PdoRegister::ModeOfOperation, 0, &[value]),
             },
             _ => {
                 log::error!("Slave {} | Error getting torque state!", slave_id);
@@ -466,22 +551,21 @@ impl PoulpeController {
         }
     }
 
-
     fn get_register_values(
         &self,
         id: u32,
         register: PdoRegister,
     ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
-        match self.get_pdo_registers(slave_id, register){
+        match self.get_pdo_registers(slave_id, register) {
             Ok(bytes) => {
                 let values = bytes
                     .iter()
                     .map(|x| f32::from_le_bytes(x[0..4].try_into().unwrap()))
                     .collect::<Vec<f32>>();
                 Ok(Some(values))
-            },
-            Err(_) =>  Err("Error reading register!".into())
+            }
+            Err(_) => Err("Error reading register!".into()),
         }
     }
 
@@ -542,7 +626,7 @@ impl PoulpeController {
         let motor_temperatures = self.get_motor_temperatures(id)?;
         return match (board_temperatures, motor_temperatures) {
             (Some(b), Some(m)) => Ok(Some((b, m))),
-            _ => Err("Error reading temperatures!".into())
+            _ => Err("Error reading temperatures!".into()),
         };
     }
 
@@ -625,15 +709,15 @@ impl PoulpeController {
 
     pub fn get_error_codes(&self, id: u32) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
         let slave_id = id as u16;
-        match self.get_pdo_registers(slave_id, PdoRegister::ErrorCode){
+        match self.get_pdo_registers(slave_id, PdoRegister::ErrorCode) {
             Ok(bytes) => {
                 let mut error_codes = Vec::new();
-                for e in bytes.iter(){
+                for e in bytes.iter() {
                     error_codes.push(u16::from_le_bytes(e[0..2].try_into().unwrap()) as u32);
                 }
                 Ok(error_codes)
             }
-            Err(_) => Err("Error reading error codes!".into())
+            Err(_) => Err("Error reading error codes!".into()),
         }
     }
 
@@ -642,9 +726,11 @@ impl PoulpeController {
         self.set_controlword(slave_id, ControlWord::QuickStop.to_u16())
     }
 
-    pub fn reactivate_after_emergency_stop(&self, id: u32) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn reactivate_after_emergency_stop(
+        &self,
+        id: u32,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let slave_id = id as u16;
         self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())
     }
-
 }

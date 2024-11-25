@@ -44,7 +44,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut t0 = SystemTime::now();
     let mut t1 = SystemTime::now();
 
-
     let mut max_t1 = 0.0;
     loop {
         let t = t0.elapsed().unwrap().as_secs_f32();
@@ -74,16 +73,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         let target = amp * (2.0 * PI * freq * t).sin();
         pouple_controller.set_target_position(slave_id, vec![target; no_axis])?;
 
-        let temps = match pouple_controller.get_temperatures(slave_id){
+        let temps = match pouple_controller.get_temperatures(slave_id) {
             Ok(Some(temps)) => temps,
             _ => {
                 log::error!("Error getting temperatures!");
-                (vec![0.0; 2],vec![0.0; 2])
+                (vec![0.0; 2], vec![0.0; 2])
             }
         };
 
         let state = pouple_controller.get_status(slave_id)?;
-        
 
         let error = [target - pos[0], target - pos[1]];
 

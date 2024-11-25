@@ -37,14 +37,13 @@ impl PdoRegister {
             PdoRegister::TargetVelocity => "target_velocity",
             PdoRegister::VelocityLimit => "velocity_limit",
             PdoRegister::TorqueLimit => "torque_limit",
-            
+
             PdoRegister::StatusWord => "statusword",
             PdoRegister::ModeOfOperationDisplay => "mode_of_operation_display",
             PdoRegister::PositionActualValue => "actual_position",
             PdoRegister::VelocityActualValue => "actual_velocity",
             PdoRegister::TorqueActualValue => "actual_torque",
             PdoRegister::AxisSensorActualValue => "actual_axis_position",
-
         }
     }
 }
@@ -65,4 +64,3 @@ pub enum BoardStatus {
     HighTemperatureState = 100,
     Unknown = 255,
 }
-

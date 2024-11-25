@@ -19,15 +19,15 @@ pub enum StatusBit {
 }
 
 #[derive(FromPrimitive, Debug, PartialEq)]
-pub enum ControlWord{
-    Shutdown, 
-    SwitchOn, // the same as DisableOperation
+pub enum ControlWord {
+    Shutdown,
+    SwitchOn,       // the same as DisableOperation
     DisableVoltage, // NOT USED
     EnableOperation,
-    DisableOperation, 
-    QuickStop, 
-    FaultReset, 
-    Unknown
+    DisableOperation,
+    QuickStop,
+    FaultReset,
+    Unknown,
 }
 
 impl ControlWord {
@@ -38,14 +38,12 @@ impl ControlWord {
             ControlWord::DisableVoltage => 0b0000, // NOT USED
             ControlWord::EnableOperation => 0b1111,
             ControlWord::DisableOperation => 0b0111,
-            ControlWord::QuickStop =>  0b0010,
+            ControlWord::QuickStop => 0b0010,
             ControlWord::FaultReset => 0b10000000,
             ControlWord::Unknown => 0b0,
         }
     }
 }
-
-
 
 // Error codes for the motors, we will have one error code per motor
 // - None - no error
@@ -88,20 +86,19 @@ pub enum HomingErrorFlag {
 #[derive(FromPrimitive, PartialEq, Clone, Copy, Debug)]
 #[repr(u16)]
 pub enum CiA402State {
-    NotReadyToSwitchOn =    0b00000000, // initialisation and test of the drive is not yet completed
-    SwitchOnDisabled =      0b01000000, // init passed successfully  
-    ReadyToSwitchOn =       0b00100001, // init sucess + switch off received - (more or less saying that the EtherCAT is connected)
-    SwitchedOn =            0b00100011, // init sucess + switch on received 
-                                        //  - in our case we send operation enabled and switch on at the same time, so we dont really use this state
-    OperationEnabled =      0b00110111, // switched on + enable operation received
-    QuickStopActive =       0b00000111, // quick stop procedure going to Switch_on_disabled state ( we don't use quick stop )
-    FaultReactionActive =   0b00011111, // fault reaction going to Fault state
-    Fault =                 0b00001000, // fault state
+    NotReadyToSwitchOn = 0b00000000, // initialisation and test of the drive is not yet completed
+    SwitchOnDisabled = 0b01000000,   // init passed successfully
+    ReadyToSwitchOn = 0b00100001, // init sucess + switch off received - (more or less saying that the EtherCAT is connected)
+    SwitchedOn = 0b00100011,      // init sucess + switch on received
+    //  - in our case we send operation enabled and switch on at the same time, so we dont really use this state
+    OperationEnabled = 0b00110111, // switched on + enable operation received
+    QuickStopActive = 0b00000111, // quick stop procedure going to Switch_on_disabled state ( we don't use quick stop )
+    FaultReactionActive = 0b00011111, // fault reaction going to Fault state
+    Fault = 0b00001000,           // fault state
 }
 
-
-#[derive( Debug)]
-pub struct ErrorFlags{
+#[derive(Debug)]
+pub struct ErrorFlags {
     pub motor_error_flags: Vec<Vec<MotorErrorFlag>>,
     pub homing_error_flags: Vec<HomingErrorFlag>,
 }
@@ -116,7 +113,7 @@ pub fn parse_status_word(status: u16) -> Vec<StatusBit> {
     status_bits
 }
 
-pub fn parse_motor_error_flags(error: [u8;2]) -> Vec<MotorErrorFlag> {
+pub fn parse_motor_error_flags(error: [u8; 2]) -> Vec<MotorErrorFlag> {
     let motor_error = u16::from_le_bytes(error);
     let mut error_flags = Vec::new();
     for i in 0..16 {
@@ -127,7 +124,7 @@ pub fn parse_motor_error_flags(error: [u8;2]) -> Vec<MotorErrorFlag> {
     error_flags
 }
 
-pub fn parse_homing_error_flags(error: [u8;2]) -> Vec<HomingErrorFlag> {
+pub fn parse_homing_error_flags(error: [u8; 2]) -> Vec<HomingErrorFlag> {
     let homming_error = u16::from_le_bytes(error);
     let mut error_flags = Vec::new();
     for i in 0..16 {
@@ -142,13 +139,15 @@ pub fn parse_state_from_status_word(status: u16) -> CiA402State {
     num::FromPrimitive::from_u16(status).unwrap()
 }
 
-pub fn parse_state_from_status_bits(status_bits: Vec<StatusBit>) -> Result<CiA402State, Box<dyn std::error::Error>> {
+pub fn parse_state_from_status_bits(
+    status_bits: Vec<StatusBit>,
+) -> Result<CiA402State, Box<dyn std::error::Error>> {
     let mut state = 0;
     for bit in status_bits {
         state |= 1 << bit as u16;
     }
-    match num::FromPrimitive::from_u16(state){
+    match num::FromPrimitive::from_u16(state) {
         Some(s) => Ok(s),
-        None => Err("Invalid state".into())
+        None => Err("Invalid state".into()),
     }
 }

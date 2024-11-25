@@ -8,12 +8,11 @@ fn main() {
     let id: u16 = 0;
 
     log::info!("Loading the controller");
-    let ec = EtherCatController::open( 0, Duration::from_millis(2),1000, 1000).unwrap();
+    let ec = EtherCatController::open(0, Duration::from_millis(2), 1000, 1000).unwrap();
 
     log::info!("Waiting for controller to be ready");
     let ec = ec.wait_for_ready();
     log::info!("Controller is ready");
-
 
     std::thread::sleep(Duration::from_secs(1));
     // send switch on command
@@ -90,8 +89,18 @@ fn main() {
         // enable the first motor (by setring 1 to the 0th bit of the torque_state register)
         ec.set_pdo_register(id, &"controlword".into(), 0, vec![0b1111, 0]);
         // set the target position to the first motor (index 0)
-        ec.set_pdo_register(id, &"target_position".into(), 0, sin_target.to_le_bytes().to_vec());
-        ec.set_pdo_register(id, &"target_position".into(), 1, sin_target.to_le_bytes().to_vec());
+        ec.set_pdo_register(
+            id,
+            &"target_position".into(),
+            0,
+            sin_target.to_le_bytes().to_vec(),
+        );
+        ec.set_pdo_register(
+            id,
+            &"target_position".into(),
+            1,
+            sin_target.to_le_bytes().to_vec(),
+        );
         // ec.set_pdo_register(id, &"target_position".into(), 2, sin_target.to_le_bytes().to_vec());
         // set the torque and velocity limit
         ec.set_pdo_register(
