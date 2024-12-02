@@ -40,6 +40,7 @@ impl PoulpeController {
             config.ethercat.master_id,
             Duration::from_micros(config.ethercat.cycle_time_us as u64),
             config.ethercat.command_drop_time_us,
+            config.ethercat.watchdog_timeout_ms,
             config.ethercat.mailbox_wait_time_ms,
         )?
         .wait_for_ready();

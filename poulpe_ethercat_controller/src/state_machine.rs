@@ -146,6 +146,14 @@ pub fn parse_state_from_status_bits(
     for bit in status_bits {
         state |= 1 << bit as u16;
     }
+
+    // remove the manufacturer specific bits
+    // bits 8, 14 and 15
+    {state = state & 0b0011111011111111;}
+
+    // remove the warning bit
+    state = state & 0b1111111101111111;
+
     match num::FromPrimitive::from_u16(state) {
         Some(s) => Ok(s),
         None => Err("Invalid state".into()),

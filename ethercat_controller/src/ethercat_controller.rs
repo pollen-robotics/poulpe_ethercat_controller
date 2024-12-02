@@ -15,6 +15,13 @@ use ethercat::{
 
 use crossbeam_channel::{bounded, Receiver, Sender};
 
+use crate::{watchdog, MailboxEntries, PdoOffsets, SlaveNames, SlaveOffsets};
+
+#[cfg(feature = "verify_mailboxes")]
+use crate::mailboxes::{init_mailbox_verification, verify_mailboxes};
+#[cfg(feature = "enable_watchdog")]
+use crate::watchdog::{ init_watchdog_settings, verify_watchdog};
+
 #[derive(Debug)]
 pub struct EtherCatController {
     offsets: SlaveOffsets,
@@ -35,6 +42,7 @@ impl EtherCatController {
         master_id: u32,
         cycle_period: Duration,
         command_drop_time_us: u32,
+        watchdog_timeout_ms: u32,
         mailbox_wait_time_ms: u32,
     ) -> Result<Self, io::Error> {
         let (mut master, domain_idx, offsets, slave_names, mailbox_entries) =
@@ -82,7 +90,20 @@ impl EtherCatController {
             mut slave_mailbox_timestamps,
             mut slave_is_mailbox_responding,
             mut slave_mailbox_data_buffer,
-        ) = init_mailbox_verification(slave_number, &mailbox_entries, &offsets);
+        ) = init_mailbox_verification(slave_number, &mailbox_entries, &offsets, &get_reg_addr_ranges);
+
+
+        #[cfg(feature = "enable_watchdog")]
+        // initialize the watchdog settings
+        let (
+            slave_watchdog_control_offsets,
+            slave_watchdog_status_offsets,
+            mut slave_watchdog_timestamps,
+            mut slave_is_watchdog_responding,
+            mut slave_previous_watchdog_counter
+        ) = init_watchdog_settings(slave_number, &offsets, &get_reg_addr_ranges);
+
+        let mut watchdog_counter = 0;
 
         thread::spawn(move || {
             // is master operational flag
@@ -143,8 +164,6 @@ impl EtherCatController {
                     &mut slave_mailbox_timestamps,
                     &mut slave_is_mailbox_responding,
                     &mut slave_mailbox_data_buffer,
-                    &write_ready_condvar,
-                    &slave_name_from_id,
                     mailbox_wait_time_ms,
                 );
 
@@ -167,6 +186,23 @@ impl EtherCatController {
                     }
                 }
 
+                #[cfg(feature = "enable_watchdog")]
+                // verify the watchdog
+                let all_slaves_have_watchdog = verify_watchdog(
+                    slave_number,
+                    &mut data,
+                    watchdog_timeout_ms,
+                    watchdog_counter,
+                    &slave_watchdog_control_offsets,
+                    &slave_watchdog_status_offsets,
+                    &mut slave_watchdog_timestamps,
+                    &mut slave_is_watchdog_responding,
+                    &mut slave_previous_watchdog_counter,
+                    &slave_name_from_id,
+                );
+                // update the watchdog counter
+                watchdog_counter = (watchdog_counter + 1) % 8;
+
                 // send the data to the slaves
                 master.send().unwrap();
 
@@ -175,6 +211,8 @@ impl EtherCatController {
                 #[cfg(not(feature = "verify_mailboxes"))]
                 // get the slave states without mailbox verification
                 let all_slaves_responding = m_state.slaves_responding == slave_number;
+                #[cfg(not(feature = "enable_watchdog"))]
+                let all_slaves_have_watchdog = m_state.slaves_responding == slave_number;
 
                 // master opration state machine
                 // if the master is not operational
@@ -196,10 +234,12 @@ impl EtherCatController {
 
                     // To go to the operational state
                     // - if all slaves are responding
+                    // - if all slaves have watchdog
                     // - if the link is up
                     // - if the master is in operational state
                     // - if the number of slaves responding is equal to the number of slaves connected (no disconnected or newly connected slaves)
                     if all_slaves_responding 
+                        && all_slaves_have_watchdog
                         && m_state.link_up 
                         && m_state.al_states == AlState::Op as u8 // OP = 8 is operational
                         && m_state.slaves_responding == slave_number
@@ -220,15 +260,19 @@ impl EtherCatController {
                             log::warn!("Master cannot go to operational!");
                             // display the master state
                             // if the master is not operational
-                            #[cfg(feature = "verify_mailboxes")]
                             log_master_state(
                                 &master,
                                 slave_number,
+                                #[cfg(feature = "verify_mailboxes")]
+                                mailbox_wait_time_ms,
+                                #[cfg(feature = "enable_watchdog")]
+                                watchdog_timeout_ms,
                                 &slave_name_from_id,
+                                #[cfg(feature = "verify_mailboxes")]
                                 &slave_is_mailbox_responding,
+                                #[cfg(feature = "enable_watchdog")]
+                                &slave_is_watchdog_responding,
                             );
-                            #[cfg(not(feature = "verify_mailboxes"))]
-                            log_master_state(&master, slave_number, &slave_name_from_id);
 
                             // kill the master if error recovery not supported
                             #[cfg(not(feature = "recover_from_error"))]
@@ -258,26 +302,16 @@ impl EtherCatController {
                         }
 
                         // update the slave states
-                        // with mailbox verification
-                        #[cfg(feature = "verify_mailboxes")]
                         let slave_current_state = (0..slave_number)
                             .map(|i| {
                                 get_slave_current_state(
                                     &master,
                                     SlavePos::from(i as u16),
                                     &slave_name_from_id,
+                                    #[cfg(feature = "verify_mailboxes")]
                                     slave_is_mailbox_responding[i as usize],
-                                )
-                            })
-                            .collect::<Vec<_>>();
-                        // without mailbox verification
-                        #[cfg(not(feature = "verify_mailboxes"))]
-                        let slave_current_state = (0..slave_number)
-                            .map(|i| {
-                                get_slave_current_state(
-                                    &master,
-                                    SlavePos::from(i as u16),
-                                    &slave_name_from_id,
+                                    #[cfg(feature = "enable_watchdog")]
+                                    slave_is_watchdog_responding[i as usize],
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -290,7 +324,7 @@ impl EtherCatController {
                     }
 
                     // if master state has changed or not all slaves are responding
-                    if m_state.al_states != AlState::Op as u8 || !all_slaves_responding {
+                    if m_state.al_states != AlState::Op as u8 || !all_slaves_responding || !all_slaves_have_watchdog {
                         // master state has changed
                         if m_state.al_states != AlState::Op as u8 {
                             log::error!(
@@ -302,28 +336,25 @@ impl EtherCatController {
                             // not all slaves are responding
                             log::error!("Not all slaves are responding!");
                         }
+                        if !all_slaves_have_watchdog {
+                            // not all slaves have watchdog
+                            log::error!("Not all slaves have watchdog!");
+                        }
 
                         // update the slave states
                         // with mailbox verification
-                        #[cfg(feature = "verify_mailboxes")]
+                        // and watchdog verification
+                        // if enabled
                         let slave_current_state = (0..slave_number)
                             .map(|i| {
                                 get_slave_current_state(
                                     &master,
                                     SlavePos::from(i as u16),
                                     &slave_name_from_id,
+                                    #[cfg(feature = "verify_mailboxes")]
                                     slave_is_mailbox_responding[i as usize],
-                                )
-                            })
-                            .collect::<Vec<_>>();
-                        // without mailbox verification
-                        #[cfg(not(feature = "verify_mailboxes"))]
-                        let slave_current_state = (0..slave_number)
-                            .map(|i| {
-                                get_slave_current_state(
-                                    &master,
-                                    SlavePos::from(i as u16),
-                                    &slave_name_from_id,
+                                    #[cfg(feature = "enable_watchdog")]
+                                    slave_is_watchdog_responding[i as usize],
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -512,11 +543,6 @@ fn get_reg_addr_ranges(
     }
     ranges
 }
-
-type PdoOffsets = HashMap<String, Vec<(PdoEntryIdx, u8, Offset)>>;
-type SlaveOffsets = HashMap<SlavePos, PdoOffsets>;
-type SlaveNames = HashMap<String, SlavePos>;
-type MailboxEntries = HashMap<SlavePos, Vec<String>>;
 
 pub fn init_master(
     idx: u32,
@@ -731,102 +757,7 @@ fn create_slave_name_mapper(slave_names: SlaveNames) -> impl Fn(u16) -> String {
     }
 }
 
-#[cfg(feature = "verify_mailboxes")]
-fn init_mailbox_verification(
-    slave_number: u32,
-    mailbox_entries: &MailboxEntries,
-    offsets: &SlaveOffsets,
-) -> (
-    Vec<Vec<Range<usize>>>,
-    Vec<std::time::Instant>,
-    Vec<bool>,
-    Vec<Vec<Vec<u8>>>,
-) {
-    // initialize the mailbox verification variables
-    // offsets of the mailboxes data in the domain data
-    let mut slave_mailbox_offsets = vec![];
-    // last read timestamp of the mailbox data
-    let slave_mailbox_timestamps = vec![std::time::Instant::now(); slave_number as usize];
-    // flag to check if the slave is responding
-    let slave_is_mailbox_responding = vec![true; slave_number as usize];
-    // buffer to store the mailbox data (that are read asynchronusly from the slaves)
-    let slave_mailbox_data_buffer = vec![vec![]; slave_number as usize];
 
-    // find the mailbox offsets for each slave
-    for i in 0..slave_number {
-        let mut mailbox_offsets = vec![];
-        for m in mailbox_entries.get(&SlavePos::from(i as u16)).unwrap() {
-            mailbox_offsets.append(&mut get_reg_addr_ranges(&offsets, i as u16, m));
-        }
-        slave_mailbox_offsets.push(mailbox_offsets);
-    }
-
-    (
-        slave_mailbox_offsets,
-        slave_mailbox_timestamps,
-        slave_is_mailbox_responding,
-        slave_mailbox_data_buffer,
-    )
-}
-
-// verify the mailboxes of the slaves
-// verify that the slaves are still writing
-// checking if all the mailbox values are zero for more than 1s
-#[cfg(feature = "verify_mailboxes")]
-fn verify_mailboxes(
-    slave_number: u32,
-    data: &mut [u8],
-    slave_mailbox_offsets: &mut Vec<Vec<Range<usize>>>,
-    slave_mailbox_timestamps: &mut Vec<std::time::Instant>,
-    slave_is_mailbox_responding: &mut Vec<bool>,
-    slave_mailbox_data_buffer: &mut Vec<Vec<Vec<u8>>>,
-    write_ready_condvar: &Arc<(Mutex<bool>, Condvar)>,
-    slave_name_from_id: &impl Fn(u16) -> String,
-    mailbox_wait_time_ms: u32,
-) -> bool {
-    // return if all slaves responding
-    let mut all_slaves_responding = true;
-    // check each slave
-    for i in 0..slave_number {
-        // get slave mailbox offset
-        let offset = slave_mailbox_offsets[i as usize].clone();
-        // get the mailbox data
-        let mailbox_data = offset
-            .iter()
-            .map(|range| data[range.clone()].to_vec())
-            .collect::<Vec<_>>();
-        log::debug!("{:?}", mailbox_data);
-        // check if all the values are zero
-        let is_all_zeros = mailbox_data.iter().all(|d| d.iter().all(|&x| x == 0));
-
-        // flag to check if slave is responding
-        slave_is_mailbox_responding[i as usize] = true;
-        // if all the values are zero for more than 1s
-        if is_all_zeros {
-            if slave_mailbox_timestamps[i as usize].elapsed().as_millis() as u32
-                > mailbox_wait_time_ms
-            {
-                all_slaves_responding &= false; // set the all slaves responding flag to false
-                slave_is_mailbox_responding[i as usize] = false;
-            }
-        } else {
-            // if the values are not zero
-            slave_mailbox_timestamps[i as usize] = std::time::Instant::now();
-            slave_is_mailbox_responding[i as usize] = true;
-            slave_mailbox_data_buffer[i as usize] = mailbox_data;
-        }
-
-        if slave_is_mailbox_responding[i as usize] {
-            for (j, range) in offset.iter().enumerate() {
-                if slave_mailbox_data_buffer[i as usize].len() > j {
-                    data[range.clone()].copy_from_slice(&slave_mailbox_data_buffer[i as usize][j]);
-                }
-            }
-        }
-    }
-
-    return all_slaves_responding;
-}
 
 // set the ready flag with mutex
 fn set_ready_flag(condvar: &Arc<(Mutex<bool>, Condvar)>, flag: bool) {
@@ -851,45 +782,16 @@ fn notify_next_cycle(condvar: &Arc<(Mutex<bool>, Condvar)>) {
     cvar.notify_one();
 }
 
-#[cfg(not(feature = "verify_mailboxes"))]
-// Function to get the current state of a slave
-fn get_slave_current_state(
-    master: &Master,
-    slave_pos: SlavePos,
-    slave_name_from_id: &impl Fn(u16) -> String,
-) -> u8 {
-    match master.get_slave_info(slave_pos) {
-        Ok(info) => {
-            if info.al_state != AlState::Op {
-                log::error!(
-                    "Slave {:?} is not operational! State: {:?}",
-                    info.name,
-                    info.al_state
-                );
-                0
-            } else {
-                AlState::Op as u8
-            }
-        }
-        Err(_) => {
-            log::error!(
-                "Failed to get slave info for slave {:?}, name: {:?}",
-                slave_pos,
-                slave_name_from_id(slave_pos.into())
-            );
-            255
-        }
-    }
-}
 
-#[cfg(feature = "verify_mailboxes")]
 // Function to get the current state of a slave
 fn get_slave_current_state(
     master: &Master,
     slave_pos: SlavePos,
     slave_name_from_id: &impl Fn(u16) -> String,
-    slave_is_mailbox_responding: bool,
+    #[cfg(feature = "verify_mailboxes")] slave_is_mailbox_responding: bool,
+    #[cfg(feature = "enable_watchdog")] slave_is_watchdog_responding: bool,
 ) -> u8 {
+    #[cfg(feature = "verify_mailboxes")]
     if !slave_is_mailbox_responding {
         log::error!(
             "Slave {:?} (pos: {:?}) is not responding (mailbox check failed)!",
@@ -898,6 +800,16 @@ fn get_slave_current_state(
         );
         return 0;
     }
+    #[cfg(feature = "enable_watchdog")]
+    if !slave_is_watchdog_responding {
+        log::error!(
+            "Slave {:?} (pos: {:?}) is not responding (watchdog check failed)!",
+            slave_name_from_id(slave_pos.into()),
+            slave_pos
+        );
+        return 0;
+    }
+
     match master.get_slave_info(slave_pos) {
         Ok(info) => {
             if info.al_state != AlState::Op {
@@ -926,8 +838,13 @@ fn get_slave_current_state(
 fn log_master_state(
     master: &Master,
     slave_number: u32,
+    #[cfg(feature = "verify_mailboxes")]
+    maibox_timeout_ms: u32,
+    #[cfg(feature = "enable_watchdog")]
+    watchdog_timeout_ms: u32,
     slave_name_from_id: &impl Fn(u16) -> String,
     #[cfg(feature = "verify_mailboxes")] slave_is_mailbox_responding: &Vec<bool>,
+    #[cfg(feature = "enable_watchdog")] slave_is_watchdog_responding: &Vec<bool>,
 ) {
     let m_state = master.state().unwrap();
     log::debug!(
@@ -965,9 +882,25 @@ fn log_master_state(
         for i in 0..slave_number {
             if !slave_is_mailbox_responding[i as usize] {
                 log::error!(
-                    "Poulpe {:?} (pos: {:?}) not responding for more than 1s",
+                    "Poulpe {:?} (pos: {:?}) not responding for more than {}ms",
                     slave_name_from_id(i as u16),
-                    i
+                    i,
+                    maibox_timeout_ms
+                );
+            }
+        }
+    }
+
+    #[cfg(feature = "enable_watchdog")]
+    if !slave_is_watchdog_responding.iter().all(|&r| r) {
+        log::error!("Not all slaves have watchdog!");
+        for i in 0..slave_number {
+            if !slave_is_watchdog_responding[i as usize] {
+                log::error!(
+                    "Poulpe {:?} (pos: {:?}) watchdog not responding for more than {}ms",
+                    slave_name_from_id(i as u16),
+                    i,
+                    watchdog_timeout_ms
                 );
             }
         }
