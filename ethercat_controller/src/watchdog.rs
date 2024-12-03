@@ -75,7 +75,6 @@ pub fn verify_watchdog(
             if slave_watchdog_timestamps[i as usize].elapsed().as_millis() as u32 > watchdog_timeout_ms {
                 all_slaves_responding &= false;
                 slave_is_watchdog_responding[i as usize] = false;
-                log::error!("Slave {} ({})| Watchdog not responding!", i, slave_name_from_id(i as u16));
             }
         } else {
             // if the watchdog counter is different
