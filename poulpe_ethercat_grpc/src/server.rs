@@ -457,10 +457,10 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 let dt_commands_ms = (dt_debug) / (nb_commands as f32) * 1000.0;
                 let dt_command_max_ms = dt_command_max * 1000.0;
                 log::info!("GRPC EtherCAT Slave {} | commands sent {:0.2} cmd/s, commands dropped {:0.2} req/s, command time: {:0.2} (max {:0.2}) ms", 
-                            slave_id, 
-                            f_commands, 
-                            f_commands_dropped, 
-                            dt_commands_ms, 
+                            slave_id,
+                            f_commands,
+                            f_commands_dropped,
+                            dt_commands_ms,
                             dt_command_max_ms);
 
                 t_debug = tokio::time::Instant::now();

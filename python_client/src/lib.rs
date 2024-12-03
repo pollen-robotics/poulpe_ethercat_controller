@@ -32,9 +32,8 @@ impl PyPoulpeRemoteClient {
             Err(e) => panic!("Failed to connect to the server: {}", e),
         };
 
-        PyPoulpeRemoteClient {client}
+        PyPoulpeRemoteClient { client }
     }
-
 
     pub fn get_mode_of_operation(&mut self, slave_id: u16) -> u32 {
         match self.client.get_mode_of_operation(slave_id) {
@@ -143,13 +142,13 @@ impl PyPoulpeRemoteClient {
         }
     }
 
-    pub fn get_motor_temperatures(&mut self, slave_id: u16) ->  Vec<f32> {
+    pub fn get_motor_temperatures(&mut self, slave_id: u16) -> Vec<f32> {
         match self.client.get_motor_temperatures(slave_id) {
             Ok(temps) => temps,
             _ => panic!("Error in getting temperatures"),
         }
     }
-    pub fn get_board_temperatures(&mut self, slave_id: u16) ->  Vec<f32> {
+    pub fn get_board_temperatures(&mut self, slave_id: u16) -> Vec<f32> {
         match self.client.get_board_temperatures(slave_id) {
             Ok(temps) => temps,
             _ => panic!("Error in getting temperatures"),
@@ -159,8 +158,6 @@ impl PyPoulpeRemoteClient {
     pub fn emergency_stop(&mut self, slave_id: u16) {
         self.client.emergency_stop(slave_id);
     }
-
-
 
     // Define other methods similarly...
 }

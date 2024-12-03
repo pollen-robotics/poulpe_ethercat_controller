@@ -149,7 +149,9 @@ pub fn parse_state_from_status_bits(
 
     // remove the manufacturer specific bits
     // bits 8, 14 and 15
-    {state = state & 0b0011111011111111;}
+    {
+        state = state & 0b0011111011111111;
+    }
 
     // remove the warning bit
     state = state & 0b1111111101111111;

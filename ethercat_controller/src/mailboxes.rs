@@ -1,6 +1,4 @@
-use std::{
-    ops::Range,
-};
+use std::ops::Range;
 
 use crate::{MailboxEntries, SlaveOffsets, SlavePos};
 

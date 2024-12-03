@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             pos,
             vel,
             torque,
-            error, 
+            error,
             temps
         );
         if t1.elapsed().unwrap().as_micros() as f32 > max_t1 {

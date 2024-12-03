@@ -1,13 +1,10 @@
+use crate::SlaveOffsets;
 use std::ops::Range;
-use crate::{SlaveOffsets};
-
 
 // watchdog is added to the manufcturer specific data of the statusword
 // bits 8, 14 and 15
 // parse the 3bit watchdog counter from the statusword
-fn parse_watchdog_from_status(
-    statusword: Vec<u8>,
-) -> u8 {
+fn parse_watchdog_from_status(statusword: Vec<u8>) -> u8 {
     // bit 8
     let mut watchdog_counter = (statusword[1] & 0b0000_0001);
     // bits 14 and 15
@@ -16,12 +13,9 @@ fn parse_watchdog_from_status(
     watchdog_counter
 }
 
-// write the watchdog counter to the controlword 
+// write the watchdog counter to the controlword
 // to the bits 11-15 which are manufacturer specific
-fn write_watchdog_to_control(
-    control_word: Vec<u8>,
-    watchdog_counter: u8
-) -> Vec<u8> {
+fn write_watchdog_to_control(control_word: Vec<u8>, watchdog_counter: u8) -> Vec<u8> {
     let mut control_word = control_word;
     // clear the bits 11-15
     control_word[1] &= 0b0000_0111;
@@ -30,7 +24,6 @@ fn write_watchdog_to_control(
     // return the controlword
     control_word
 }
-
 
 // verify the watchdog of the slaves
 // verify that the slaves are still writing
@@ -63,16 +56,26 @@ pub fn verify_watchdog(
             .iter()
             .map(|range| data[range.clone()].to_vec())
             .collect::<Vec<_>>();
-        
+
         // doutput the watchdog status in binary
         let counter = parse_watchdog_from_status(status_data[0].clone());
-        log::debug!("Slave {} ({})| Watchdog counter received : {} ({:08b}), sent: {} ({:08b})", i, slave_name_from_id(i as u16), counter, counter, watchdog_counter, watchdog_counter);
+        log::debug!(
+            "Slave {} ({})| Watchdog counter received : {} ({:08b}), sent: {} ({:08b})",
+            i,
+            slave_name_from_id(i as u16),
+            counter,
+            counter,
+            watchdog_counter,
+            watchdog_counter
+        );
 
         // check if the watchdog counter is the same as the one in the previous cycle
         // if it is the same check for how long has it been the same
         // if it is the same for more than 1s the slave is considered not responding
         if slave_previous_watchdog_counter[i as usize] == counter {
-            if slave_watchdog_timestamps[i as usize].elapsed().as_millis() as u32 > watchdog_timeout_ms {
+            if slave_watchdog_timestamps[i as usize].elapsed().as_millis() as u32
+                > watchdog_timeout_ms
+            {
                 all_slaves_responding &= false;
                 slave_is_watchdog_responding[i as usize] = false;
             }
@@ -88,9 +91,9 @@ pub fn verify_watchdog(
         let control_offset = slave_watchdog_control_offsets[i as usize].clone();
         for (j, range) in control_offset.iter().enumerate() {
             let control_word = data[range.clone()].to_vec();
-            data[range.clone()].copy_from_slice(&write_watchdog_to_control(control_word, watchdog_counter));
+            data[range.clone()]
+                .copy_from_slice(&write_watchdog_to_control(control_word, watchdog_counter));
         }
-
     }
     all_slaves_responding
 }
@@ -124,12 +127,20 @@ pub fn init_watchdog_settings(
     // find the watchdog offsets for each slave
     for i in 0..slave_number {
         let mut watchdog_offsets = vec![];
-        watchdog_offsets.append(&mut get_reg_addr_ranges(&offsets, i as u16, &"controlword".to_string()));
+        watchdog_offsets.append(&mut get_reg_addr_ranges(
+            &offsets,
+            i as u16,
+            &"controlword".to_string(),
+        ));
         slave_watchdog_control_offsets.push(watchdog_offsets);
     }
     for i in 0..slave_number {
         let mut watchdog_offsets = vec![];
-        watchdog_offsets.append(&mut get_reg_addr_ranges(&offsets, i as u16, &"statusword".to_string()));
+        watchdog_offsets.append(&mut get_reg_addr_ranges(
+            &offsets,
+            i as u16,
+            &"statusword".to_string(),
+        ));
         slave_watchdog_status_offsets.push(watchdog_offsets);
     }
 

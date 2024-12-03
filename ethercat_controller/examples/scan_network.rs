@@ -14,10 +14,13 @@ fn main() {
     let ec = ec.wait_for_ready();
     log::info!("EtherCAT master is ready");
 
-
     log::info!("---------------------------");
     log::info!("Scanning network");
     ec.get_slave_ids().iter().for_each(|slave_id| {
-        log::info!("Slave ID: {}, name: {}", slave_id, ec.get_slave_name(*slave_id).unwrap());
+        log::info!(
+            "Slave ID: {}, name: {}",
+            slave_id,
+            ec.get_slave_name(*slave_id).unwrap()
+        );
     });
 }

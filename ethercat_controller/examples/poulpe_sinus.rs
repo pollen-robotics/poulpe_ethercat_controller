@@ -1,7 +1,7 @@
 use ethercat_controller::EtherCatController;
 use log;
-use std::time::Duration;
 use std::env;
+use std::time::Duration;
 
 fn main() {
     env_logger::init();
@@ -9,7 +9,7 @@ fn main() {
     // get the id from the argument
     let args: Vec<_> = env::args().collect();
     let id: u16 = match args.len() {
-        2 => match &args[1].parse(){
+        2 => match &args[1].parse() {
             Ok(id) => *id,
             Err(_) => {
                 log::error!("invalid slave id");
@@ -23,7 +23,6 @@ fn main() {
             return;
         }
     };
-
 
     log::info!("Loading the controller");
     let ec = EtherCatController::open(0, Duration::from_millis(2), 1000, 500, 1000).unwrap();

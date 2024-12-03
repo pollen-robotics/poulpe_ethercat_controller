@@ -4,11 +4,8 @@ pub use config::Config;
 mod ethercat_controller;
 pub use ethercat_controller::EtherCatController;
 
-
-use ethercat::{
-    Offset,  PdoEntryIdx,  SlavePos
-};
-use std::collections::{HashMap};
+use ethercat::{Offset, PdoEntryIdx, SlavePos};
+use std::collections::HashMap;
 
 pub type PdoOffsets = HashMap<String, Vec<(PdoEntryIdx, u8, Offset)>>;
 pub type SlaveOffsets = HashMap<SlavePos, PdoOffsets>;
