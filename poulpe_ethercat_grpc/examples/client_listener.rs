@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let target_position = client.get_target_position(id).unwrap();
         let current_position = client.get_position_actual_value(id).unwrap();
         log::info!(
-            "{:?}, {:?}, {:?}",
+            "Compliant: {:?},\t Target position: {:?},\t Current position: {:?}",
             complient,
             target_position,
             current_position
