@@ -45,7 +45,6 @@ impl ControlWord {
     }
 }
 
-
 // Error codes for the motors, we will have one error code per motor
 // - None - no error
 // - ConfigFail - error during the configuration of the motor
