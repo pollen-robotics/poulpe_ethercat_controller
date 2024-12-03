@@ -13,7 +13,8 @@ pub struct EthercatConfig {
     pub master_id: u32,
     pub cycle_time_us: u32,
     pub command_drop_time_us: u32,
-    pub mailbox_wait_time_ms: u32
+    pub watchdog_timeout_ms: u32,
+    pub mailbox_wait_time_ms: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,7 +27,7 @@ pub enum SlaveConfig {
 pub struct PoulpeKind {
     pub id: u16,
     pub orbita_type: u32,
-    pub name: String
+    pub name: String,
 }
 
 impl Config {

@@ -17,13 +17,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         "http://127.0.0.1:50098".parse()?,
         vec![active_id, passiv_id],
         Duration::from_millis(1),
-    ){
+    ) {
         Ok(client) => client,
         Err(e) => {
             log::error!("Failed to connect to the server: {}", e);
             return Err(e.into());
         }
-    
     };
 
     log::info!("Turn off slave {}", passiv_id);

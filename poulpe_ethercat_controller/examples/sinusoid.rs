@@ -26,6 +26,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Setup slave {}", slave_id);
     pouple_controller.setup(slave_id)?;
 
+    log::info!("Turn off slave {}", slave_id);
+    pouple_controller.set_torque(slave_id, false)?;
+
+    // sleep 2s
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
     log::info!("Turn on slave {}", slave_id);
     pouple_controller.set_torque(slave_id, true)?;
 
@@ -37,7 +43,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut t0 = SystemTime::now();
     let mut t1 = SystemTime::now();
-
 
     let mut max_t1 = 0.0;
     loop {
@@ -68,16 +73,28 @@ fn main() -> Result<(), Box<dyn Error>> {
         let target = amp * (2.0 * PI * freq * t).sin();
         pouple_controller.set_target_position(slave_id, vec![target; no_axis])?;
 
+        let temps = match pouple_controller.get_temperatures(slave_id) {
+            Ok(Some(temps)) => temps,
+            _ => {
+                log::error!("Error getting temperatures!");
+                (vec![0.0; 2], vec![0.0; 2])
+            }
+        };
+
+        let state = pouple_controller.get_status(slave_id)?;
+
         let error = [target - pos[0], target - pos[1]];
 
         log::info!(
-            "{:?}/{:?}\t Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?}",
+            "{:?}/{:?}\t State: {:?}\t Pos: {:?}\t Vel: {:?}\t Torque: {:?}\t Error: {:?},\t Temperatures: {:?}",
             t1.elapsed().unwrap(),
             max_t1/1000.0,
+            state,
             pos,
             vel,
             torque,
-            error
+            error,
+            temps
         );
         if t1.elapsed().unwrap().as_micros() as f32 > max_t1 {
             max_t1 = t1.elapsed().unwrap().as_micros() as f32;

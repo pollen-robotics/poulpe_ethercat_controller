@@ -25,3 +25,5 @@ allow_partial_network = []  # This feature enables to instantiate the ethercat m
                             # If not specified yaml file should specify all the slaves connected to the network
 
 safe_turn_on = [] # setting the current position to the target position on torque on
+
+switchon_on_turnon = [] # on eacth turn on call the switch on command is sent to the slaves as well (this is not recommended but can be used for debugging or to make the switch on more robust)

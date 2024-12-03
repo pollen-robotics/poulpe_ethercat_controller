@@ -1,13 +1,20 @@
 pub(crate) enum PdoRegister {
-    State,
-    OrbitaType,
+    ErrorCode,
+    ActuatorType,
+    AxisZeroPosition,
+    BoardTemperature,
+    MotorTemperature,
 
-    TroqueState,
+    ControlWord,
+    ModeOfOperation,
     TargetPosition,
+    TargetVelocity,
+    TargetTorque,
     VelocityLimit,
     TorqueLimit,
 
-    TroqueOn,
+    StatusWord,
+    ModeOfOperationDisplay,
     PositionActualValue,
     VelocityActualValue,
     TorqueActualValue,
@@ -17,17 +24,26 @@ pub(crate) enum PdoRegister {
 impl PdoRegister {
     pub(crate) fn name(&self) -> &'static str {
         match *self {
-            PdoRegister::State => "state",
-            PdoRegister::OrbitaType => "type",
-            PdoRegister::TroqueState => "torque_state",
-            PdoRegister::TroqueOn => "torque_enabled",
-            PdoRegister::TargetPosition => "target",
-            PdoRegister::PositionActualValue => "position",
-            PdoRegister::VelocityActualValue => "velocity",
-            PdoRegister::TorqueActualValue => "torque",
-            PdoRegister::AxisSensorActualValue => "axis_sensor",
+            PdoRegister::ErrorCode => "error_code",
+            PdoRegister::ActuatorType => "actuator_type",
+            PdoRegister::AxisZeroPosition => "axis_position_zero_offset",
+            PdoRegister::BoardTemperature => "board_temperatures",
+            PdoRegister::MotorTemperature => "motor_temperatures",
+
+            PdoRegister::ControlWord => "controlword",
+            PdoRegister::ModeOfOperation => "mode_of_operation",
+            PdoRegister::TargetTorque => "target_torque",
+            PdoRegister::TargetPosition => "target_position",
+            PdoRegister::TargetVelocity => "target_velocity",
             PdoRegister::VelocityLimit => "velocity_limit",
             PdoRegister::TorqueLimit => "torque_limit",
+
+            PdoRegister::StatusWord => "statusword",
+            PdoRegister::ModeOfOperationDisplay => "mode_of_operation_display",
+            PdoRegister::PositionActualValue => "actual_position",
+            PdoRegister::VelocityActualValue => "actual_velocity",
+            PdoRegister::TorqueActualValue => "actual_torque",
+            PdoRegister::AxisSensorActualValue => "actual_axis_position",
         }
     }
 }
@@ -47,23 +63,4 @@ pub enum BoardStatus {
     Init = 20,
     HighTemperatureState = 100,
     Unknown = 255,
-}
-
-impl BoardStatus {
-    pub fn from_u8(value: u8) -> BoardStatus {
-        match value {
-            0 => BoardStatus::Ok,
-            1 => BoardStatus::InitError,
-            2 => BoardStatus::SensorError,
-            3 => BoardStatus::IndexError,
-            4 => BoardStatus::ZeroingError,
-            5 => BoardStatus::OverTemperatureError,
-            6 => BoardStatus::OverCurrentError,
-            7 => BoardStatus::BusVoltageError,
-            20 => BoardStatus::Init,
-            100 => BoardStatus::HighTemperatureState,
-            255 => BoardStatus::Unknown,
-            _ => BoardStatus::Unknown,
-        }
-    }
 }

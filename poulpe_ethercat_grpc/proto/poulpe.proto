@@ -18,21 +18,27 @@ message StateStreamRequest {
 message PoulpeState {
     int32 id = 1;
 
-    bool compliant = 2;
+    int32 mode_of_operation = 2;
 
     repeated float actual_position = 3;
     repeated float actual_velocity = 4;
     repeated float actual_torque = 5;
 
     repeated float axis_sensors = 6;
+    repeated float axis_sensor_zeros = 7;
 
-    repeated float requested_target_position = 7;
-    repeated float requested_velocity_limit = 8;
-    repeated float requested_torque_limit = 9;
+    repeated float board_temperatures = 8;
+    repeated float motor_temperatures = 9;
 
-    uint32 state = 10;
-    bool torque_state = 11;
-    google.protobuf.Timestamp published_timestamp = 12;
+    repeated float requested_target_position = 10;
+    repeated float requested_velocity_limit = 11;
+    repeated float requested_torque_limit = 12;
+
+
+    uint32 state = 13;
+    repeated int32 error_codes = 14;
+    bool compliant = 15;
+    google.protobuf.Timestamp published_timestamp = 16;
 }
 
 message PoulpeStates {
@@ -42,11 +48,16 @@ message PoulpeStates {
 message PoulpeCommand {
     int32 id = 1;
 
-    google.protobuf.BoolValue compliancy = 2;
-    repeated float target_position = 3;
-    repeated float velocity_limit = 4;
-    repeated float torque_limit = 5;
-    google.protobuf.Timestamp published_timestamp = 6;
+    google.protobuf.BoolValue emergency_stop = 2;
+    
+    google.protobuf.BoolValue compliancy = 3;
+    int32 mode_of_operation = 4;
+    repeated float target_position = 5;
+    repeated float target_velocity = 6;
+    repeated float target_torque = 7;
+    repeated float velocity_limit = 8;
+    repeated float torque_limit = 9;
+    google.protobuf.Timestamp published_timestamp = 10;
 }
 
 message PoulpeCommands {

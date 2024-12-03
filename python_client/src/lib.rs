@@ -32,7 +32,17 @@ impl PyPoulpeRemoteClient {
             Err(e) => panic!("Failed to connect to the server: {}", e),
         };
 
-        PyPoulpeRemoteClient {client}
+        PyPoulpeRemoteClient { client }
+    }
+
+    pub fn get_mode_of_operation(&mut self, slave_id: u16) -> u32 {
+        match self.client.get_mode_of_operation(slave_id) {
+            Ok(mode) => mode,
+            _ => panic!("Error in getting mode of operation"),
+        }
+    }
+    pub fn set_mode_of_operation(&mut self, slave_id: u16, mode: u32) {
+        self.client.set_mode_of_operation(slave_id, mode);
     }
 
     pub fn turn_on(&mut self, slave_id: u16) {
@@ -69,6 +79,13 @@ impl PyPoulpeRemoteClient {
         }
     }
 
+    pub fn set_target_velocity(&mut self, slave_id: u16, velocity: Vec<f32>) {
+        self.client.set_target_velocity(slave_id, velocity);
+    }
+    pub fn set_target_torque(&mut self, slave_id: u16, torque: Vec<f32>) {
+        self.client.set_target_torque(slave_id, torque);
+    }
+
     pub fn get_velocity_actual_value(&mut self, slave_id: u16) -> Vec<f32> {
         match self.client.get_velocity_actual_value(slave_id) {
             Ok(velocity) => velocity,
@@ -90,6 +107,13 @@ impl PyPoulpeRemoteClient {
         }
     }
 
+    pub fn get_axis_sensor_zeros(&mut self, slave_id: u16) -> Vec<f32> {
+        match self.client.get_axis_sensor_zeros(slave_id) {
+            Ok(zeros) => zeros,
+            _ => panic!("Error in getting axis sensor zeros"),
+        }
+    }
+
     pub fn get_torque_state(&mut self, slave_id: u16) -> bool {
         match self.client.get_torque_state(slave_id) {
             Ok(state) => state,
@@ -104,11 +128,35 @@ impl PyPoulpeRemoteClient {
         }
     }
 
+    pub fn get_error_codes(&mut self, slave_id: u16) -> Vec<i32> {
+        match self.client.get_error_codes(slave_id) {
+            Ok(codes) => codes,
+            _ => panic!("Error in getting error codes"),
+        }
+    }
+
     pub fn get_connected_devices(&mut self) -> (Vec<u16>, Vec<String>) {
         match self.client.get_poulpe_ids_sync() {
             Ok(ids) => ids,
             _ => panic!("Error in getting connected devices"),
         }
+    }
+
+    pub fn get_motor_temperatures(&mut self, slave_id: u16) -> Vec<f32> {
+        match self.client.get_motor_temperatures(slave_id) {
+            Ok(temps) => temps,
+            _ => panic!("Error in getting temperatures"),
+        }
+    }
+    pub fn get_board_temperatures(&mut self, slave_id: u16) -> Vec<f32> {
+        match self.client.get_board_temperatures(slave_id) {
+            Ok(temps) => temps,
+            _ => panic!("Error in getting temperatures"),
+        }
+    }
+
+    pub fn emergency_stop(&mut self, slave_id: u16) {
+        self.client.emergency_stop(slave_id);
     }
 
     // Define other methods similarly...

@@ -40,6 +40,9 @@ For right wrist at the address `4`
 ethercat sii_write -p4 RightWristOrbita3d.bin # may need sudo
 ```
 
+> If there is an error in the transfer try disconnecting and reconnecting the the ethernet cable.
+
+
 **Make sure to restart the boarda after this (diconnect the power)**
 
 Make sure to put the proper slave index `p0` is for slate 0, `p1` for slave 1, etc.

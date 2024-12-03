@@ -1,168 +1,266 @@
 <?xml version="1.0" ?>
 <EtherCATInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="EtherCATInfo.xsd" Version="1.6">
   <Vendor>
-    <Id>#xF3F</Id>
-    <Name>Pollen Robotics SAS</Name>
+    <Id>0xF3F</Id>
+    <Name>Pollen Robotcs SAS</Name>
     <ImageData16x14>424dd6020000000000003600000028000000100000000e0000000100180000000000a0020000c40e0000c40e000000000000000000004cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb1224cb122ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff241cedffffff241cedffffff241ced241cedffffffffffffffffff241ced241ced241cedffffff241cedffffffffffff241cedffffff241cedffffff241cedffffff241cedffffff241cedffffff241cedffffffffffff241cedffffffffffff241cedffffff241cedffffff241cedffffff241cedffffff241cedffffff241cedffffffffffff241cedffffffffffff241cedffffff241cedffffff241cedffffff241cedffffffffffff241cedffffffffffffffffff241cedffffffffffff241ced241ced241cedffffff241ced241cedffffffffffff241cedffffff241cedffffffffffff241cedffffffffffff241cedffffff241cedffffff241cedffffff241cedffffff241cedffffff241cedffffffffffff241cedffffffffffff241cedffffff241cedffffff241cedffffff241cedffffffffffff241cedffffffffffffffffff241cedffffffffffff241cedffffff241cedffffff241cedffffff241cedffffffffffffffffffffffffffffffffffff241cedffffffffffffffffff241cedffffffffffffffffff241cedffffffffffffffffffffffffffffffffffff241ced241ced241cedffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</ImageData16x14>
   </Vendor>
   <Descriptions>
     <Groups>
       <Group SortOrder="0">
         <Type>SSC_Device</Type>
-        <Name LcId="1033">EasyCAT</Name>
+        <Name LcId="1033">Pollen PYESI</Name>
         <ImageData16x14>424dd6020000000000003600000028000000100000000e0000000100180000000000a0020000c40e0000c40e00000000000000000000241ced241ced241ced241cedffffff241cedffffffffffffffffff241cedffffffffffffffffff241cedffffffffffff241cedffffffffffffffffffffffff241cedffffffffffffffffff241cedffffffffffffffffff241cedffffffffffff241cedffffffffffffffffffffffff241ced241ced241ced241ced241cedffffffffffffffffff241cedffffffffffff241cedffffffffffffffffffffffff241cedffffffffffffffffff241cedffffffffffffffffff241cedffffffffffff241cedffffffffffffffffffffffff241ced241cedffffff241ced241cedffffff241cedffffff241cedffffff241ced241ced241ced241ced241cedffffffffffff241ced241ced241cedffffffffffff241ced241ced241ced241ced241cedffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff241ced241ced241cedffffffffffff241ced241ced241cedffffff241ced241ced241cedffffff241ced241ced241ced241cedffffffffffffffffff241cedffffffffffff241cedffffffffffffffffff241cedffffffffffffffffff241ced241cedffffffffffffffffffffffff241ced241cedffffffffffff241ced241ced241cedffffff241ced241ced241ced241ced241cedffffffffffffffffffffffffffffff241cedffffff241cedffffffffffffffffff241cedffffff241ced241cedffffffffffffffffffffffff241ced241ced241cedffffff241ced241ced241cedffffff241cedffffff241ced241cedffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff241ced241ced241cedffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</ImageData16x14>
       </Group>
     </Groups>
     <Devices>
       <Device Physics="YY">
-        <!--Orbita 2D Device-->
+        <!--Orbita2d Device-->
         <Type ProductCode="#x1" RevisionNo="#x1" CheckRevisionNo="EQ_OR_G">Orbita2d</Type>
         <Name LcId="1033">Orbita2d</Name>
         <GroupType>SSC_Device</GroupType>
-        <Fmmu>Orbita</Fmmu>
-        <Fmmu>MotorsIn</Fmmu>
-        <Fmmu>MotorsOut</Fmmu>
-        <Sm StartAddress="#x1000" ControlByte="#x64" Enable="1">MotorsIn</Sm>
-        <Sm StartAddress="#x1200" ControlByte="#x22" Enable="1">Orbita</Sm>
-        <Sm StartAddress="#x1300" ControlByte="#x20" Enable="1">MotorsOut</Sm>
-        <!--MotorIn PDOs-->
+        <Fmmu>OrbitaIn</Fmmu>
+        <Fmmu>OrbitaState</Fmmu>
+        <Fmmu>OrbitaOut</Fmmu>
+        <Sm StartAddress="#x1000" ControlByte="#x64" Enable="1">OrbitaIn</Sm>
+        <Sm StartAddress="#x1200" ControlByte="#x22" Enable="1">OrbitaState</Sm>
+        <Sm StartAddress="#x1300" ControlByte="#x20" Enable="1">OrbitaOut</Sm>
+        <!--OrbitaIn PDOs-->
         <RxPdo Fixed="1" Mandatory="1" Sm="0">
           <Index>#x1600</Index>
-          <Name>MotorIn</Name>
+          <Name>OrbitaIn</Name>
           <Entry>
-            <Index>#x10</Index>
-            <SubIndex>1</SubIndex>
+            <Index>#x0x6041</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>controlword</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6060</Index>
+            <SubIndex>0</SubIndex>
             <BitLen>8</BitLen>
-            <Name>torque_state</Name>
+            <Name>mode_of_operation</Name>
             <DataType>UINT8</DataType>
           </Entry>
           <Entry>
-            <Index>#x11</Index>
+            <Index>#x0x607A</Index>
             <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>target</Name>
+            <Name>target_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x11</Index>
+            <Index>#x0x607A</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_position</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x60FF</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_velocity</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x60FF</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_velocity</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607F</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>velocity_limit</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607F</Index>
             <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
             <Name>velocity_limit</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x11</Index>
-            <SubIndex>3</SubIndex>
+            <Index>#x0x6071</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_torque</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6071</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_torque</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6072</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
             <Name>torque_limit</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x12</Index>
-            <SubIndex>1</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>target</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x12</Index>
+            <Index>#x0x6072</Index>
             <SubIndex>2</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>velocity_limit</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x12</Index>
-            <SubIndex>3</SubIndex>
             <BitLen>32</BitLen>
             <Name>torque_limit</Name>
             <DataType>REAL</DataType>
           </Entry>
         </RxPdo>
-        <!--Orbita State PDOs-->
+        <!--OrbitaState PDOs-->
         <TxPdo Fixed="1" Mandatory="1" Sm="1">
-          <Index>#x1a00</Index>
-          <Name>Orbita</Name>
+          <Index>#x1700</Index>
+          <Name>OrbitaState</Name>
           <Entry>
-            <Index>#x20</Index>
+            <Index>#x0x603F</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6402</Index>
             <SubIndex>0</SubIndex>
             <BitLen>8</BitLen>
-            <Name>state</Name>
+            <Name>actuator_type</Name>
             <DataType>UINT8</DataType>
           </Entry>
           <Entry>
-            <Index>#x20</Index>
+            <Index>#x0x607C</Index>
             <SubIndex>1</SubIndex>
-            <BitLen>8</BitLen>
-            <Name>type</Name>
-            <DataType>UINT8</DataType>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607C</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
           </Entry>
         </TxPdo>
-        <!--MotorOut PDOs-->
+        <!--OrbitaOut PDOs-->
         <TxPdo Fixed="1" Mandatory="1" Sm="2">
-          <Index>#x1a01</Index>
-          <Name>MotorOut</Name>
+          <Index>#x1800</Index>
+          <Name>OrbitaOut</Name>
           <Entry>
-            <Index>#x30</Index>
+            <Index>#x0x6040</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>statusword</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6061</Index>
             <SubIndex>0</SubIndex>
             <BitLen>8</BitLen>
-            <Name>torque_enabled</Name>
+            <Name>mode_of_operation_display</Name>
             <DataType>UINT8</DataType>
           </Entry>
           <Entry>
-            <Index>#x31</Index>
+            <Index>#x0x6064</Index>
             <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>position</Name>
+            <Name>actual_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x31</Index>
+            <Index>#x0x6064</Index>
             <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>velocity</Name>
+            <Name>actual_position</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x31</Index>
-            <SubIndex>3</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>torque</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x31</Index>
-            <SubIndex>4</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>axis_sensor</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x32</Index>
+            <Index>#x0x606C</Index>
             <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>position</Name>
+            <Name>actual_velocity</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x32</Index>
+            <Index>#x0x606C</Index>
             <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>velocity</Name>
+            <Name>actual_velocity</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x32</Index>
-            <SubIndex>3</SubIndex>
+            <Index>#x0x6077</Index>
+            <SubIndex>1</SubIndex>
             <BitLen>32</BitLen>
-            <Name>torque</Name>
+            <Name>actual_torque</Name>
             <DataType>REAL</DataType>
           </Entry>
           <Entry>
-            <Index>#x32</Index>
-            <SubIndex>4</SubIndex>
+            <Index>#x0x6077</Index>
+            <SubIndex>2</SubIndex>
             <BitLen>32</BitLen>
-            <Name>axis_sensor</Name>
+            <Name>actual_torque</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6063</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>actual_axis_position</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6063</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>actual_axis_position</Name>
             <DataType>REAL</DataType>
           </Entry>
         </TxPdo>
@@ -176,7 +274,7 @@
             <Name>DC_Sync</Name>
             <Desc>DC_Sync</Desc>
             <AssignActivate>#x300</AssignActivate>
-            <CycleTimeSync0 Factor="1">0</CycleTimeSync0> <!-- 100 ms cycle time for 10 Hz -->
+            <CycleTimeSync0 Factor="1">0</CycleTimeSync0>
             <ShiftTimeSync0>2000200000</ShiftTimeSync0>
           </OpMode>
         </Dc>
