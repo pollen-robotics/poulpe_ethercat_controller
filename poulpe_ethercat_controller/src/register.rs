@@ -1,3 +1,5 @@
+use crate::state_machine::{CiA402State, ErrorFlags, HomingErrorFlag, MotorErrorFlag};
+
 pub(crate) enum PdoRegister {
     ErrorCode,
     ActuatorType,
@@ -63,4 +65,100 @@ pub enum BoardStatus {
     Init = 20,
     HighTemperatureState = 100,
     Unknown = 255,
+}
+
+impl BoardStatus {
+    pub fn from_cia402_to_board_status(state: u32, flags: Vec<i32>) -> Result<BoardStatus, ()> {
+        let state: CiA402State = num::FromPrimitive::from_u32(state).unwrap();
+
+        let homing_errors: Vec<HomingErrorFlag> = flags
+            .first()
+            .map(|x| {
+                let error = u16::from_le_bytes((*x as u16).to_le_bytes());
+                let mut error_flags = Vec::new();
+                for i in 0..16 {
+                    if error & (1 << i) != 0 {
+                        error_flags.push(num::FromPrimitive::from_u16(i as u16).unwrap());
+                    }
+                }
+                error_flags
+            })
+            .unwrap_or(Vec::new());
+
+        // start from the second flags element
+        let motor_errors: Vec<Vec<MotorErrorFlag>> = flags[1..]
+            .iter()
+            .map(|x| {
+                let error = u16::from_le_bytes((*x as u16).to_le_bytes());
+                let mut error_flags = Vec::new();
+                for i in 0..16 {
+                    if error & (1 << i) != 0 {
+                        error_flags.push(num::FromPrimitive::from_u16(i as u16).unwrap());
+                    }
+                }
+                error_flags
+            })
+            .collect();
+
+        let flags = ErrorFlags {
+            motor_error_flags: motor_errors,
+            homing_error_flags: homing_errors,
+        };
+
+        // baordstatus is much less informative than the error flags so we are obliged to make some strange decisions here
+        match state {
+            CiA402State::NotReadyToSwitchOn => Ok(BoardStatus::Init),
+            CiA402State::SwitchOnDisabled
+            | CiA402State::ReadyToSwitchOn
+            | CiA402State::SwitchedOn
+            | CiA402State::OperationEnabled
+            | CiA402State::QuickStopActive => {
+                if flags
+                    .motor_error_flags
+                    .iter()
+                    .any(|x| x.contains(&MotorErrorFlag::HighTemperatureWarning))
+                {
+                    Ok(BoardStatus::HighTemperatureState)
+                } else {
+                    Ok(BoardStatus::Ok)
+                }
+            }
+            CiA402State::Fault | CiA402State::FaultReactionActive => {
+                if flags.motor_error_flags.iter().any(|x| {
+                    x.contains(&MotorErrorFlag::OverTemperatureMotor)
+                        || x.contains(&MotorErrorFlag::OverTemperatureBoard)
+                }) {
+                    Ok(BoardStatus::OverTemperatureError)
+                } else if flags
+                    .motor_error_flags
+                    .iter()
+                    .any(|x| x.contains(&MotorErrorFlag::OverCurrent))
+                {
+                    Ok(BoardStatus::OverCurrentError)
+                } else if flags.motor_error_flags.iter().any(|x| {
+                    x.contains(&MotorErrorFlag::LowBusVoltage)
+                        || x.contains(&MotorErrorFlag::DriverFault)
+                }) {
+                    Ok(BoardStatus::BusVoltageError)
+                } else if flags
+                    .homing_error_flags
+                    .contains(&HomingErrorFlag::IndexSearchFail)
+                {
+                    Ok(BoardStatus::IndexError)
+                } else if flags
+                    .homing_error_flags
+                    .contains(&HomingErrorFlag::ZeroingFail)
+                {
+                    Ok(BoardStatus::ZeroingError)
+                } else if flags
+                    .homing_error_flags
+                    .contains(&HomingErrorFlag::AxisSensorReadFail)
+                {
+                    Ok(BoardStatus::SensorError)
+                } else {
+                    Ok(BoardStatus::InitError)
+                }
+            }
+        }
+    }
 }

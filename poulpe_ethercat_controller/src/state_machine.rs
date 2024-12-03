@@ -53,7 +53,8 @@ impl ControlWord {
 // - OverTemperature - error due to the temperature being too high
 // - OverCurrent - error due to the current being too high
 // - LowBusVoltage - error due to the bus voltage being too low
-// - CommunicationFail - error due to communication failure with the motor driver
+// - DriverFault - error due to a fault in the driver
+// - TemperatureSensorMalfunctionWarning - warning for a malfunction in the temperature sensor
 #[derive(FromPrimitive, PartialEq, Clone, Copy, Debug)]
 pub enum MotorErrorFlag {
     // None = 0,
@@ -65,13 +66,17 @@ pub enum MotorErrorFlag {
     OverCurrent = 5,
     LowBusVoltage = 6,
     DriverFault = 7,
+    TemperatureSensorMalfunctionWarning = 8,
 }
 
 // Error codes for the homing procedure
 // - None - no error
 // - AxisSensorReadFail - error during the reading of the axis sensor
+// - MotorMovementCheckFail - error during the check of the motor movement
+// - AxisSensorAlignFail - error during the alignment of the axis sensor
 // - ZeroingFail - error during the zeroing of the axis positions
 // - IndexSearchFail - error during the search of the index (only orbita3d)
+// - LowLevelCommunicaiton - error due to communication failure with the motor driver
 #[derive(FromPrimitive, PartialEq, Clone, Copy, Debug)]
 pub enum HomingErrorFlag {
     // None = 0,
@@ -80,7 +85,7 @@ pub enum HomingErrorFlag {
     AxisSensorAlignFail = 2,
     ZeroingFail = 3,
     IndexSearchFail = 4,
-    CommunicationFail = 5,
+    LowLevelCommunicaiton = 5,
 }
 
 #[derive(FromPrimitive, PartialEq, Clone, Copy, Debug)]

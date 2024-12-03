@@ -23,7 +23,7 @@ use ethercat_controller::{
     Config, EtherCatController,
 };
 
-mod register;
+pub mod register;
 use register::PdoRegister;
 
 #[derive(Debug)]

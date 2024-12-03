@@ -12,6 +12,8 @@ use tokio::{
 };
 use tonic::{transport::Uri, Request};
 
+use poulpe_ethercat_controller::register::BoardStatus;
+
 #[derive(Debug)]
 enum Command {
     EmergencyStop(bool),
@@ -252,6 +254,18 @@ impl PoulpeRemoteClient {
     }
 
     pub fn get_state(&self, slave_id: u16) -> Result<u32, ()> {
+        // temporaty solution trasnforming the state to board status
+        match BoardStatus::from_cia402_to_board_status(
+            self.get_state_property(slave_id, |state| state.state, 255)?,
+            self.get_state_property(slave_id, |state| state.error_codes.clone(), vec![])?,
+        ) {
+            Ok(s) => Ok(s as u32),
+            Err(_) => Err(()),
+        }
+        // self.get_state_property(slave_id, |state| state.state, 255)
+    }
+
+    pub fn get_cia402_state(&self, slave_id: u16) -> Result<u32, ()> {
         self.get_state_property(slave_id, |state| state.state, 255)
     }
 
