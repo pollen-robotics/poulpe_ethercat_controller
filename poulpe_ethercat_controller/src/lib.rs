@@ -388,7 +388,7 @@ impl PoulpeController {
             #[cfg(not(feature = "trun_off_slaves_setup"))]
             {
                 log::info!("Slave {}, setup done! Current state: {:?}", slave_id, state);
-                return Ok(())
+                return Ok(());
             }
         }
 
