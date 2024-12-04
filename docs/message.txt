@@ -1,0 +1,59 @@
+ (expected Varint)", source: None }
+[ros2_control_node-2] stack backtrace:
+[ros2_control_node-2]    0:     0x7fc107a40646 - std::backtrace_rs::backtrace::libunwind::trace::h9935f35d5d71abf0
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/../../backtrace/src/backtrace/libunwind.rs:104:5
+[ros2_control_node-2]    1:     0x7fc107a40646 - std::backtrace_rs::backtrace::trace_unsynchronized::hd59699c41f2e6aad
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/../../backtrace/src/backtrace/mod.rs:66:5
+[ros2_control_node-2]    2:     0x7fc107a40646 - std::sys_common::backtrace::_print_fmt::hdc8269ad843339ad
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/sys_common/backtrace.rs:68:5
+[ros2_control_node-2]    3:     0x7fc107a40646 - <std::sys_common::backtrace::_print::DisplayBacktrace as core::fmt::Display>::fmt::h6fb76961d8caf66c
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/sys_common/backtrace.rs:44:22
+[ros2_control_node-2]    4:     0x7fc107a906f0 - core::fmt::rt::Argument::fmt::h75437217cfbafb23
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/core/src/fmt/rt.rs:142:9
+[ros2_control_node-2]    5:     0x7fc107a906f0 - core::fmt::write::h8e9b7298183ac6f6
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/core/src/fmt/mod.rs:1120:17
+[ros2_control_node-2]    6:     0x7fc107a35c2f - std::io::Write::write_fmt::h19d404d0a00ee354
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/io/mod.rs:1810:15
+[ros2_control_node-2]    7:     0x7fc107a40424 - std::sys_common::backtrace::_print::haf1bbee6930128a9
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/sys_common/backtrace.rs:47:5
+[ros2_control_node-2]    8:     0x7fc107a40424 - std::sys_common::backtrace::print::hfc2eb4fb9773503f
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/sys_common/backtrace.rs:34:9
+[ros2_control_node-2]    9:     0x7fc107a431b7 - std::panicking::default_hook::{{closure}}::h647effa37bf1429e
+[ros2_control_node-2]   10:     0x7fc107a42f19 - std::panicking::default_hook::hc4a4f075b5edbb2d
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/panicking.rs:292:9
+[ros2_control_node-2]   11:     0x7fc107a43708 - std::panicking::rust_panic_with_hook::hfa726f992ca18c6f
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/panicking.rs:779:13
+[ros2_control_node-2]   12:     0x7fc107a435e2 - std::panicking::begin_panic_handler::{{closure}}::h0be2c0ce0cd3ab47
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/panicking.rs:657:13
+[ros2_control_node-2]   13:     0x7fc107a40b46 - std::sys_common::backtrace::__rust_end_short_backtrace::hb239a05c0934ed19
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/sys_common/backtrace.rs:171:18
+[ros2_control_node-2]   14:     0x7fc107a43340 - rust_begin_unwind
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/panicking.rs:645:5
+[ros2_control_node-2]   15:     0x7fc107683255 - core::panicking::panic_fmt::h6ff37c205123f0b6
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/core/src/panicking.rs:72:14
+[ros2_control_node-2]   16:     0x7fc107683893 - core::result::unwrap_failed::hb5fe6c1f6cec750c
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/core/src/result.rs:1649:5
+[ros2_control_node-2]   17:     0x7fc107813f17 - <core::future::poll_fn::PollFn<F> as core::future::future::Future>::poll::h2bc0b9fca03014a2
+[ros2_control_node-2]   18:     0x7fc107b85aad - poulpe_ethercat_grpc::client::PoulpeRemoteClient::connect::{{closure}}::hc748dc8114009bd4
+[ros2_control_node-2]   19:     0x7fc107b82939 - tokio::runtime::task::core::Core<T,S>::poll::h6c4495dbbb88a4cf
+[ros2_control_node-2]   20:     0x7fc107b70316 - tokio::runtime::task::harness::Harness<T,S>::poll::h8e12ba40722ae629
+[ros2_control_node-2]   21:     0x7fc1079c3dcb - tokio::runtime::scheduler::multi_thread::worker::Context::run_task::h1b5238e948564193
+[ros2_control_node-2]   22:     0x7fc1079c2b04 - tokio::runtime::scheduler::multi_thread::worker::Context::run::h76f9d8ab4325735d
+[ros2_control_node-2]   23:     0x7fc107989172 - tokio::runtime::context::set_scheduler::h52bd9932078239a0
+[ros2_control_node-2]   24:     0x7fc1079a975f - tokio::runtime::context::runtime::enter_runtime::he06e8f244fd33e70
+[ros2_control_node-2]   25:     0x7fc1079c240a - tokio::runtime::scheduler::multi_thread::worker::run::h10f7f1a4cc4d8823
+[ros2_control_node-2]   26:     0x7fc1079a6983 - <tokio::runtime::blocking::task::BlockingTask<T> as core::future::future::Future>::poll::h5d042f0aa9f151c9
+[ros2_control_node-2]   27:     0x7fc107994f6a - tokio::runtime::task::core::Core<T,S>::poll::h7965a9cd3897a36d
+[ros2_control_node-2]   28:     0x7fc10797ecea - tokio::runtime::task::harness::Harness<T,S>::poll::h03ce0d05ac41384c
+[ros2_control_node-2]   29:     0x7fc107996d96 - std::sys_common::backtrace::__rust_begin_short_backtrace::h889620b81c3919d0
+[ros2_control_node-2]   30:     0x7fc1079875e9 - core::ops::function::FnOnce::call_once{{vtable.shim}}::h7461c4a9f9e81d7d
+[ros2_control_node-2]   31:     0x7fc107a4d775 - <alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once::h458f0211dc90af94
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/alloc/src/boxed.rs:2015:9
+[ros2_control_node-2]   32:     0x7fc107a4d775 - <alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once::h07cfea7c7bf8143a
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/alloc/src/boxed.rs:2015:9
+[ros2_control_node-2]   33:     0x7fc107a4d775 - std::sys::unix::thread::Thread::new::thread_start::hc15840d32f1b5e1c
+[ros2_control_node-2]                                at /rustc/5ac4c8a63ee305742071ac6dd11817f7c24adce2/library/std/src/sys/unix/thread.rs:108:17
+[ros2_control_node-2]   34:     0x7fc111777ac3 - <unknown>
+[ros2_control_node-2]   35:     0x7fc111809850 - <unknown>
+[ros2_control_node-2]   36:                0x0 - <unknown>
+[ethercat_master_server-1] [2024-12-03T15:14:34Z INFO  server] New client - update period of 0.002s
