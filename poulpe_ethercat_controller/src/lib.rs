@@ -379,17 +379,23 @@ impl PoulpeController {
             status_bits = self.get_status_bits(slave_id)?;
         }
 
+        // if enabled
+        if status_bits.contains(&StatusBit::OperationEnabled) {
+            #[cfg(feature = "trun_off_slaves_setup")]
+            // if the operation is enabled, we need
+            // to disable it before we can set the controlword
+            self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
+            #[cfg(not(feature = "trun_off_slaves_setup"))]
+            {
+                log::info!("Slave {}, setup done! Current state: {:?}", slave_id, state);
+                return Ok(())
+            }
+        }
+
         // if switch on disabled, we need to switch on
         if status_bits.contains(&StatusBit::SwitchedOnDisabled) {
             // go to the ready to switch on state
             self.set_controlword(slave_id, ControlWord::Shutdown.to_u16())?;
-        }
-
-        // if enabled, we need to disable the operation
-        if status_bits.contains(&StatusBit::OperationEnabled) {
-            // if the operation is enabled, we need
-            // to disable it before we can set the controlword
-            self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
         }
 
         // here the slave shoulde be in ready to switch on state)

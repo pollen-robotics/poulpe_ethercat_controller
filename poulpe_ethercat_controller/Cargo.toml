@@ -16,7 +16,7 @@ env_logger = "0.9.0"
 
 
 [features]
-default = ["verify_orbita_type", "allow_partial_network", "safe_turn_on"]
+default = ["verify_orbita_type", "allow_partial_network", "safe_turn_on", "trun_off_slaves_setup"]
 verify_orbita_type = [] # This feature is used to verify the type of the Orbita device connected to the EtherCAT network
                         # Verifies if the yaml file specifies the correct type of the Orbita device connected to the network (orbita2d = 2 and orbita3d = 3)
                         # If not specified this check is not performed
@@ -27,3 +27,5 @@ allow_partial_network = []  # This feature enables to instantiate the ethercat m
 safe_turn_on = [] # setting the current position to the target position on torque on
 
 switchon_on_turnon = [] # on eacth turn on call the switch on command is sent to the slaves as well (this is not recommended but can be used for debugging or to make the switch on more robust)
+
+trun_off_slaves_setup = [] # This feature is used to turn off the slaves connected to the network
