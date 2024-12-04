@@ -12,7 +12,7 @@ use tokio::{
 };
 use tonic::{transport::Uri, Request};
 
-use poulpe_ethercat_controller::register::BoardStatus;
+use poulpe_ethercat_controller::{register::BoardStatus, state_machine::CiA402State};
 
 #[derive(Debug)]
 enum Command {

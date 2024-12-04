@@ -78,6 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         client.set_target_position(id, vec![target_position; 3]);
         thread::sleep(Duration::from_secs_f32(0.001));
+        client.turn_on(id);
     }
     Ok(())
 }

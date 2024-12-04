@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-mod state_machine;
+pub mod state_machine;
 use state_machine::{
     parse_homing_error_flags, parse_motor_error_flags, parse_state_from_status_bits,
     parse_status_word, CiA402State, ControlWord, ErrorFlags, StatusBit,
@@ -175,7 +175,7 @@ impl PoulpeController {
         self.set_pdo_register(slave_id, PdoRegister::ControlWord, 0, &value.to_le_bytes())
     }
 
-    fn get_error_flags(&self, slave_id: u16) -> Result<ErrorFlags, Box<dyn Error>> {
+    pub fn get_error_flags(&self, slave_id: u16) -> Result<ErrorFlags, Box<dyn Error>> {
         let error_codes = self.get_pdo_registers(slave_id, PdoRegister::ErrorCode)?;
         let homing_error_flags = parse_homing_error_flags(error_codes[0][0..2].try_into().unwrap());
         let mut motor_error_flags = vec![Vec::new(); error_codes.len() - 1];
