@@ -24,5 +24,6 @@ name = "server"
 path = "src/server.rs"
 
 [features]
-default = [] # recover_from_error]
+default = ["stop_stack_on_slave_fault"] # recover_from_error]
 recover_from_error = []
+stop_stack_on_slave_fault = []

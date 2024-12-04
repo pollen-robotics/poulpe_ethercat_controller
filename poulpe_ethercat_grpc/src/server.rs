@@ -6,7 +6,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use poulpe_ethercat_controller::PoulpeController;
+use poulpe_ethercat_controller::{state_machine::CiA402State, PoulpeController};
 use tokio::{
     sync::mpsc,
     time::{error::Elapsed, sleep},
@@ -262,6 +262,10 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
         // and then every other will be after 30s
         let mut report_display_time = 5.0; // seconds
 
+        #[cfg(feature = "stop_stack_on_slave_fault")]
+        // number of errors before stopping the loop
+        let mut nb_errors = 0;
+
         while let Some(Ok(req)) = stream.next().await {
             let mut slave_id: u32 = req.commands[0].id as u32;
             // check if the slave is ready and drop the command if not
@@ -269,6 +273,26 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 log::error!("Slave (id: {}) not ready!", slave_id);
                 nb_dropped += 1;
                 continue;
+            }
+
+            // check if the slave is in fault state
+            #[cfg(feature = "stop_stack_on_slave_fault")]
+            {
+                match self.controller.get_status(slave_id) {
+                    Ok(CiA402State::Fault) | Ok(CiA402State::FaultReactionActive) => {
+                        nb_errors += 1;
+                        if nb_errors > 1000 {
+                            log::error!("Slave {} (name {}) is in fault state for {}ms,\n {:#x?}\nStopping the GRPC master!", 
+                            slave_id,
+                            self.controller.get_slave_name(slave_id as u16).unwrap(),
+                            nb_errors,
+                            self.controller.get_error_flags(slave_id as u16).unwrap());
+                            std::process::exit(10);
+                        }
+                        continue;
+                    }
+                    _ => {} // do nothing
+                }
             }
 
             log::debug!("Got commands {:?}", req);
