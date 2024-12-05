@@ -7,6 +7,9 @@ This crate is a wrapper around the `ethercat-rs` crate that provides a more user
 
 The crate is desigend to work with poulpe boards as slaves, detecting them at startup and monitoring them at runtime. It also implements a watchdog and mailbox PDOs to ensure proper communication with the slaves as well as numerous safety checks to ensure that all the slaves are operational.
 
+<img src="../docs/ethercat_controller.png" width="500">
+
+
 ### Main features
 
 - Automatic slave detection at startup + PDO reading from EEPROM
