@@ -279,7 +279,7 @@ impl EtherCatController {
                             );
 
                             // kill the master if error recovery not supported
-                            #[cfg(not(feature = "recover_from_error"))]
+                            #[cfg(feature = "stop_opeation_on_error")]
                             std::process::exit(10);
                         }
                     }

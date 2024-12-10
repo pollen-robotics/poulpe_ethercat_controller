@@ -16,7 +16,15 @@ crossbeam-channel = "0.5"
 tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["verify_mailboxes", "enable_watchdog"] # , "recover_from_error"]
-verify_mailboxes = []
-recover_from_error = []
-enable_watchdog = []
+default = ["verify_mailboxes", "enable_watchdog" ]#, "stop_opeation_on_error"]
+verify_mailboxes = []           # If this feature is set the ethercat controller will automatically extract the mailbox PDOS
+                                # from the slave configuration and verify in real time that the slaves are setting the mailbox data
+                                # If the mailbox data is not set for more than 1 second the controller will go to the non operational state
+
+enable_watchdog = []            # If this feature is set the controller will set the watchdog counter that is communicated to the slaves uisng the controlword and statusword
+                                # Upon each send operation to the slaves the controller will increment the watchdog counter and send it to the slaves
+                                # The slaves echo back the watchdog counter and the controller verifies if the watchdog counter is being updated by the slaves
+                                # If the watchdog counter is not updated by the slaves the controller will go to non operational state
+
+stop_opeation_on_error = []     # If this feature is set the controller will stop the operation on any error that occurs
+                                # Whenever the controller encounters an error and goes to non operational state the controller will stop the operation
