@@ -282,23 +282,28 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     let i = slave_id as usize;
                     nb_errors[i] += 1;
                     if nb_errors[i] % nb_errors_max == 0 {
-                        log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}\nStopping the GRPC master!", 
+                        log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}", 
                         slave_id,
                         self.controller.get_slave_name(slave_id as u16).unwrap(),
                         nb_errors[i] as f32 * 1e-3,
                         self.controller.get_error_flags(slave_id as u16).unwrap());
 
                         #[cfg(feature = "qucik_stop_on_slave_fault")]
-                        // quick stop on all slaves
-                        self.controller
-                            .emergency_stop_all(slave_id as u16)
-                            .unwrap_or_else(|e| {
-                                log::error!("Failed to quick stop all slaves: {}", e);
-                            });
-
+                        {
+                            log::warn!("Sending emergency stop on all slaves!");
+                            // quick stop on all slaves
+                            self.controller
+                                .emergency_stop_all(slave_id as u16)
+                                .unwrap_or_else(|e| {
+                                    log::error!("Failed to quick stop all slaves: {}", e);
+                                });
+                        }
                         #[cfg(feature = "stop_server_on_actuator_error")]
-                        // stop the stack
-                        std::process::exit(10);
+                        {
+                            log::error!("Stopping the GRPC master!");
+                            // stop the stack
+                            std::process::exit(10);
+                        }
                         // display the error every 5s
                         nb_errors_max = 5000;
                     }
