@@ -533,7 +533,7 @@ impl PoulpeController {
                         self.wait_for_status_bit(
                             slave_id,
                             StatusBit::OperationEnabled,
-                            Duration::from_millis(5),
+                            Duration::from_millis(20),
                         )?;
                     } else {
                         // Shutdown
@@ -541,7 +541,7 @@ impl PoulpeController {
                         self.wait_for_status_bit(
                             slave_id,
                             StatusBit::SwitchedOn,
-                            Duration::from_millis(5),
+                            Duration::from_millis(20),
                         )?;
                     }
                 }
