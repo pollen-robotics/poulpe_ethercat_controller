@@ -198,14 +198,14 @@ impl PoulpeRemoteClient {
                         slave_id
                     );
                     // kill the slave if error recovery not supported
-                    #[cfg(not(feature = "recover_from_error"))]
+                    #[cfg(feature = "stop_client_on_server_timeout")]
                     std::process::exit(10);
                     return Err(());
                 }
             } else {
                 log::warn!("Cannot parse the timestamp, discarding message!");
                 // kill the slave if error recovery not supported
-                #[cfg(not(feature = "recover_from_error"))]
+                #[cfg(feature = "stop_client_on_server_timeout")]
                 std::process::exit(10);
                 return Err(());
             }

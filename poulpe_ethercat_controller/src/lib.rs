@@ -203,11 +203,11 @@ impl PoulpeController {
             let status_bits = self.get_status_bits(slave_id)?;
 
             if status_bits.contains(&StatusBit::Fault) {
-                log::error!(
-                    "Slave {} in Fault state \n {:#x?}",
-                    slave_id,
-                    self.get_error_flags(slave_id)?,
-                );
+                // log::error!(
+                //     "Slave {} in Fault state \n {:#x?}",
+                //     slave_id,
+                //     self.get_error_flags(slave_id)?,
+                // );
                 return Err("Fault status".into());
             }
 
@@ -359,7 +359,15 @@ impl PoulpeController {
                 slave_id,
                 self.get_error_flags(slave_id)?,
             );
+
+            #[cfg(not(feature = "allow_fault_on_slave"))]
             return Err("Fault status".into());
+            #[cfg(feature = "allow_fault_on_slave")]
+            {
+                // turn off all the slaves if one of them is in fault state
+                self.emergency_stop_all(slave_id)?;
+                return Ok(());
+            }
         }
 
         if state == CiA402State::NotReadyToSwitchOn {
@@ -379,13 +387,23 @@ impl PoulpeController {
             status_bits = self.get_status_bits(slave_id)?;
         }
 
-        // if enabled
+        // if enabled (should not be possible in normal operation)
         if status_bits.contains(&StatusBit::OperationEnabled) {
-            #[cfg(feature = "trun_off_slaves_setup")]
-            // if the operation is enabled, we need
-            // to disable it before we can set the controlword
-            self.set_controlword(slave_id, ControlWord::DisableOperation.to_u16())?;
-            #[cfg(not(feature = "trun_off_slaves_setup"))]
+            #[cfg(feature = "turn_off_slaves_setup")]
+            {
+                // if the operation is enabled, we need
+                // to disable it before we can set the controlword
+                self.emergency_stop(id)?;
+                log::warn!("Slave {} in OperationEnabled state, turning off", slave_id);
+                self.wait_for_status_bit(
+                    slave_id,
+                    StatusBit::SwitchedOnDisabled,
+                    Duration::from_secs(20),
+                )?; // wait 20s (quick stop can take up to 10s)
+                    // get staus bits
+                status_bits = self.get_status_bits(slave_id)?;
+            }
+            #[cfg(not(feature = "turn_off_slaves_setup"))]
             {
                 log::info!("Slave {}, setup done! Current state: {:?}", slave_id, state);
                 return Ok(());
@@ -435,6 +453,33 @@ impl PoulpeController {
                     requested_torque,
                     actual_torque
                 );
+                let status_bits = self.get_status_bits(slave_id)?;
+                if status_bits.contains(&StatusBit::Fault) {
+                    #[cfg(feature = "allow_fault_on_slave")]
+                    // return ok if the slave is in the fault state - dont try to set the torque
+                    return Ok(());
+
+                    // return error if the slave is in fault state - dont try to set the torque
+                    log::error!("Slave {} in fault state", slave_id);
+                    return Err("Slave in fault state status".into());
+                }
+                #[cfg(not(feature = "switchon_on_turnon"))]
+                if status_bits.contains(&StatusBit::SwitchedOnDisabled) && requested_torque {
+                    #[cfg(feature = "allow_fault_on_slave")]
+                    // return ok if the slave is in switch on disabled state
+                    // the board is probably been turned off by a quick stop
+                    return Ok(());
+
+                    // return error if the slave is in fault state - dont try to set the torque
+                    log::error!(
+                        "Slave {} in SwitchedOnDisabled state, cannot enable torque!",
+                        slave_id
+                    );
+                    return Err(
+                        "Slave in SwitchedOnDisabled state status, cannot enable torque!".into(),
+                    );
+                }
+
                 if actual_torque == requested_torque {
                     return Ok(());
                 } else {
@@ -488,7 +533,7 @@ impl PoulpeController {
                         self.wait_for_status_bit(
                             slave_id,
                             StatusBit::OperationEnabled,
-                            Duration::from_secs(1),
+                            Duration::from_millis(5),
                         )?;
                     } else {
                         // Shutdown
@@ -496,7 +541,7 @@ impl PoulpeController {
                         self.wait_for_status_bit(
                             slave_id,
                             StatusBit::SwitchedOn,
-                            Duration::from_secs(1),
+                            Duration::from_millis(5),
                         )?;
                     }
                 }
@@ -739,5 +784,16 @@ impl PoulpeController {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let slave_id = id as u16;
         self.set_controlword(slave_id, ControlWord::SwitchOn.to_u16())
+    }
+
+    // emergency stop on all slaves connected to the ethercat network
+    pub fn emergency_stop_all(
+        &self,
+        slave_if_error_if: u16,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        for id in self.get_slave_ids() {
+            self.emergency_stop(id as u32)?;
+        }
+        Ok(())
     }
 }

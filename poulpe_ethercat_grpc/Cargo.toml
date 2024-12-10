@@ -24,6 +24,13 @@ name = "server"
 path = "src/server.rs"
 
 [features]
-default = ["stop_stack_on_slave_fault"] # recover_from_error]
-recover_from_error = []
-stop_stack_on_slave_fault = []
+default = ["qucik_stop_on_slave_fault", "stop_client_on_server_timeout"] 
+
+stop_server_on_actuator_error = []  # If this feature is set the server will stop the operation on any error that occurs
+                                    # Server will stop operation if any of the slaves is in fault state
+
+stop_client_on_server_timeout = []  # If this feature is set the client will stop the operation if the server does not respond for more than 1 second
+
+qucik_stop_on_slave_fault = []      # If this feature is set the server will not stop the operation if the slaves are in fault state
+                                    # The server will continue to operate on all slaves but it will send the emergency stop command to the slaves
+                                    # If the feature `stop_server_on_actuator_error` is set the server will stop the operation after then emergency stop command is sent to the slaves

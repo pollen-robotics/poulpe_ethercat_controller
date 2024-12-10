@@ -262,9 +262,10 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
         // and then every other will be after 30s
         let mut report_display_time = 5.0; // seconds
 
-        #[cfg(feature = "stop_stack_on_slave_fault")]
+        let no_slaves: usize = self.controller.get_slave_ids().len();
         // number of errors before stopping the loop
-        let mut nb_errors = 0;
+        let mut nb_errors = vec![0; no_slaves];
+        let mut nb_errors_max = 1000;
 
         while let Some(Ok(req)) = stream.next().await {
             let mut slave_id: u32 = req.commands[0].id as u32;
@@ -276,23 +277,34 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             }
 
             // check if the slave is in fault state
-            #[cfg(feature = "stop_stack_on_slave_fault")]
-            {
-                match self.controller.get_status(slave_id) {
-                    Ok(CiA402State::Fault) | Ok(CiA402State::FaultReactionActive) => {
-                        nb_errors += 1;
-                        if nb_errors > 1000 {
-                            log::error!("Slave {} (name {}) is in fault state for {}ms,\n {:#x?}\nStopping the GRPC master!", 
-                            slave_id,
-                            self.controller.get_slave_name(slave_id as u16).unwrap(),
-                            nb_errors,
-                            self.controller.get_error_flags(slave_id as u16).unwrap());
-                            std::process::exit(10);
-                        }
-                        continue;
+            match self.controller.get_status(slave_id) {
+                Ok(CiA402State::Fault) | Ok(CiA402State::FaultReactionActive) => {
+                    let i = slave_id as usize;
+                    nb_errors[i] += 1;
+                    if nb_errors[i] % nb_errors_max == 0 {
+                        log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}\nStopping the GRPC master!", 
+                        slave_id,
+                        self.controller.get_slave_name(slave_id as u16).unwrap(),
+                        nb_errors[i] as f32 * 1e-3,
+                        self.controller.get_error_flags(slave_id as u16).unwrap());
+
+                        #[cfg(feature = "qucik_stop_on_slave_fault")]
+                        // quick stop on all slaves
+                        self.controller
+                            .emergency_stop_all(slave_id as u16)
+                            .unwrap_or_else(|e| {
+                                log::error!("Failed to quick stop all slaves: {}", e);
+                            });
+
+                        #[cfg(feature = "stop_server_on_actuator_error")]
+                        // stop the stack
+                        std::process::exit(10);
+                        // display the error every 5s
+                        nb_errors_max = 5000;
                     }
-                    _ => {} // do nothing
+                    continue;
                 }
+                _ => {} // do nothing
             }
 
             log::debug!("Got commands {:?}", req);

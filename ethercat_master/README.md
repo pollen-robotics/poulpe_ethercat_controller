@@ -1,0 +1,1 @@
+This repository contains the EtherCAT header files necesasry to compile the `ethercat-rs` crate if the IgH Ethercat master is not installed on the system.

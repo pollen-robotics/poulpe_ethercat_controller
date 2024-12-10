@@ -7,4 +7,4 @@ pkill "server"
 
 ## start the grpc server
 cd $HOME/dev/poulpe_ethercat_controller
-RUST_LOG=info ./target/release/server config/robot.yaml
+RUST_LOG=info ./target/release/server ~/reachy_config/robot_ethercat_config.yaml
