@@ -7,12 +7,13 @@ There are four main crates in the code:
     - It is a wrapper around the `ethercat-rs` crate. This crate enables to create the ethercat master form an ESI xml file.
     - See more in the [ethercat_controller/README.md](ethercat_controller/README.md)
 - `poulpe_ethercat_controller`: This is an abstraction layer on top of the `ethercat_controller` crate. It provides a more user friendly interface to the user with specific functions for poulpe boards.
+    - See more in the [poulpe_ethercat_controller/README.md](poulpe_ethercat_controller/README.md)
 - `poulpe_ethercat_grpc`: This crate uses the `poulpe_ethercat_controller` to allow for reading assynchronously from multiple poulpe boards connected to the same ethercat master. It is based on the `grpc` protocol. It allows for creating a single server that can be accessed by multiple clients.
     - See more in the [poulpe_ethercat_grpc/README.md](poulpe_ethercat_grpc/README.md)
 - `python_client`: This is a python wrapper of the `poulpe_ethercat_grpc` crate's client side. It allows for reading from multiple poulpe boards connected to the same ethercat master from python and in that way enables quick prototyping.
     - See more in the [python_client/README.md](python_client/README.md)
 - `config`: This is a directory that contains the configuration files for the poulpe boards. It contains the eeprom configuration files for the LN9252 chip on the poulpe boards as well as the EtherCAT networks slave configuration yaml files that are used to create the ethercat master.
-
+    - See more in the [config/README.md](config/README.md)
 
 The full stack looks something like this:
 
@@ -466,3 +467,8 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
     - `orbita3d_control` - [see on github](https://github.com/pollen-robotics/orbita3d_control) 
 - The ROS packages are used to control the orbita2d and orbita3d actuators, implementing the kinematics of the actuators enabling to control them in joint space or cartesian space.
 - Also, `orbita2d_control` and `orbita3d_control` are ROS packages that use the `poulpe_ethercat_grpc` crate to connect to the GRPC server and control the poulpe boards connected to the network.
+
+
+## Safety features
+
+Each layer of the code has its own safety features. The `ethercat_controller` deals with the EtherCAT communication safety features (see more in the [ethercat_controller/README.md](ethercat_controller/README.md#main-features)). The `poulpe_ethercat_controller` crate has its own safety features that are specific to the poulpe boards (see more in the [poulpe_ethercat_controller/README.md](poulpe_ethercat_controller/README.md#safety-features)). The `poulpe_ethercat_grpc` crate has its own safety features that are specific to the GRPC communication (see more in the [poulpe_ethercat_grpc/README.md](poulpe_ethercat_grpc/README.md#safety-features)).
