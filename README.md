@@ -22,8 +22,38 @@ The full stack looks something like this:
 `ethercat_controller` creates the direct connection to the EtherCAT master deamon (which communicates with the poulpe boards). `poulpe_ethercat_controller` provides the abstraction layer for the poulpe boards around the `ethercat_controller`. Finally, `poulpe_ethercat_grpc` creates the `server` that can be accessed by multiple `client` instances. 
 
 
+## Safety features
+
+Each layer of the code has its own safety features. The `ethercat_controller` deals with the EtherCAT communication safety features (see more in the [ethercat_controller/README.md](ethercat_controller/README.md#main-features)). The `poulpe_ethercat_controller` crate has its own safety features that are specific to the poulpe boards (see more in the [poulpe_ethercat_controller/README.md](poulpe_ethercat_controller/README.md#safety-features)). The `poulpe_ethercat_grpc` crate has its own safety features that are specific to the GRPC communication (see more in the [poulpe_ethercat_grpc/README.md](poulpe_ethercat_grpc/README.md#safety-features)).
+
+`ethercat_controller` crate has the following safety features:
+- At the statup
+    - Checks if the master and all the slaves are oprational
+    - Checks if all the slaves are configured properly
+- During the operation
+    - Checks if the master and all the slaves are oprational
+    - Checks if all the slaves are connected to the master
+    - Checks if new slaves are connected to the master
+
+`poulpe_ethercat_controller` crate has the following safety features:
+- At the statup
+    - Checks if ethercat network is operational and the topology is correct
+    - Checks if all the boards are in the correct state
+- During the operation
+    - Checks if the boards are in the correct state and only allows turning them on if they are in the correct state
+
+`poulpe_ethercat_grpc` crate has the following safety features:
+- Real-time communication
+    - All server and client messages are time stamped to ensure that the communication is real-time
+    - The server discards all the client messages that are too old
+    - The client that receives the messages that are too old will not process them and consider that the server is down
+- Safety features
+    - The server checks if the boards are in the fault state and if any of them is it sends the emergency stop signal to all the boards
+    - The server continues the operation, reading the baoards states but not sending any commands to the boards
+
 ## Contents
 
+- [Safety features](#safety-features)
 - [Install and configure EtherCAT](#install-and-configure-ethercat)
     - [Installing EtherCAT](#installing-ethercat)
     - [Configuring the Poulpe board for the EtherCAT network](#configuring-the-poulpe-board-for-the-ethercat-network)
@@ -467,8 +497,3 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
     - `orbita3d_control` - [see on github](https://github.com/pollen-robotics/orbita3d_control) 
 - The ROS packages are used to control the orbita2d and orbita3d actuators, implementing the kinematics of the actuators enabling to control them in joint space or cartesian space.
 - Also, `orbita2d_control` and `orbita3d_control` are ROS packages that use the `poulpe_ethercat_grpc` crate to connect to the GRPC server and control the poulpe boards connected to the network.
-
-
-## Safety features
-
-Each layer of the code has its own safety features. The `ethercat_controller` deals with the EtherCAT communication safety features (see more in the [ethercat_controller/README.md](ethercat_controller/README.md#main-features)). The `poulpe_ethercat_controller` crate has its own safety features that are specific to the poulpe boards (see more in the [poulpe_ethercat_controller/README.md](poulpe_ethercat_controller/README.md#safety-features)). The `poulpe_ethercat_grpc` crate has its own safety features that are specific to the GRPC communication (see more in the [poulpe_ethercat_grpc/README.md](poulpe_ethercat_grpc/README.md#safety-features)).
