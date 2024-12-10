@@ -18,7 +18,8 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
     - Fails if a slave is disconnected in runtime
     - Fails if a new slave is connected in runtime
     - Fails if one of the slaves is not operational in runtime
-    - These fails can be recoverable if feature `recover_from_error` is enabled
+    - These fails result in stopping the operation of the master if the feature `stop_opeation_on_error` is enabled
+    - Otherwise, the master will continue to operate but will be in the non-operational state
 - Uses mailbox PDOs to ensure proper communication with the slaves 
     - Behind the feature `verify_mailboxes` (enabled by default) 
     - Fails if the slave does nor write the mailbox entries in some predefined time 
@@ -30,6 +31,16 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
         - default 500ms
         - considered not operational
     
+
+## List of features
+
+feature | description | enabled by default
+--- | --- | ---
+`verify_mailboxes` | Verify the mailbox PDOs | yes
+`enable_watchdog` | Enable the watchdog | yes
+`stop_opeation_on_error` | Stop the operation if a slave is not operational | no
+
+
 ### Mailbox PDOs
 
 Mailbox PDOs are used to establish a communication between the master and the slave devices that implements a handshake, ensuring that the data is read and written properly. If the slave has not written the data, the master will not read the old data but will read zeros. 

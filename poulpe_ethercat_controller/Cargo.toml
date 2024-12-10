@@ -16,16 +16,21 @@ env_logger = "0.9.0"
 
 
 [features]
-default = ["verify_orbita_type", "allow_partial_network", "safe_turn_on", "trun_off_slaves_setup"]
-verify_orbita_type = [] # This feature is used to verify the type of the Orbita device connected to the EtherCAT network
-                        # Verifies if the yaml file specifies the correct type of the Orbita device connected to the network (orbita2d = 2 and orbita3d = 3)
-                        # If not specified this check is not performed
+default = ["verify_orbita_type", "allow_partial_network", "safe_turn_on", "turn_off_slaves_setup", "allow_fault_on_slave"]
+verify_orbita_type = []     # This feature is used to verify the type of the Orbita device connected to the EtherCAT network
+                            # Verifies if the yaml file specifies the correct type of the Orbita device connected to the network (orbita2d = 2 and orbita3d = 3)
+                            # If not specified this check is not performed
 
 allow_partial_network = []  # This feature enables to instantiate the ethercat master that talks to only a part of the EtherCAT slaves connected to the network 
                             # If not specified yaml file should specify all the slaves connected to the network
 
-safe_turn_on = [] # setting the current position to the target position on torque on
+allow_fault_on_slave = []   # If this feature is set the controller will allow the slaves and will not throw an error any of the slaves is in fault state
 
-switchon_on_turnon = [] # on eacth turn on call the switch on command is sent to the slaves as well (this is not recommended but can be used for debugging or to make the switch on more robust)
+safe_turn_on = []           # Setting the current position to the target position on torque on, and making sure that it has been set before turning on the slave
 
-trun_off_slaves_setup = [] # This feature is used to turn off the slaves connected to the network
+switchon_on_turnon = []     # On eacth turn on call the turn on, the switch on command is sent to the slaves as well 
+                            # This allows the slaves to be recovered from the SwitchOnDisabled state 
+                            # -> This is not recommended but can be used for debugging or to make the switch on more robust
+
+turn_off_slaves_setup = []  # This feature is used to turn off the slaves connected to the network
+                            # If slaves were in OperationEnabled state (have the voltage applied to their motors) the slaves will be turned off
