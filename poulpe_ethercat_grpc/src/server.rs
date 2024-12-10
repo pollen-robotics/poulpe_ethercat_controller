@@ -281,7 +281,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 Ok(CiA402State::Fault) | Ok(CiA402State::FaultReactionActive) => {
                     let i = slave_id as usize;
                     nb_errors[i] += 1;
-                    if nb_errors[i] % nb_errors_max ==0 {
+                    if nb_errors[i] % nb_errors_max == 0 {
                         log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}\nStopping the GRPC master!", 
                         slave_id,
                         self.controller.get_slave_name(slave_id as u16).unwrap(),
@@ -290,9 +290,11 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 
                         #[cfg(feature = "qucik_stop_on_slave_fault")]
                         // quick stop on all slaves
-                        self.controller.emergency_stop_all(slave_id as u16).unwrap_or_else(|e| {
-                            log::error!("Failed to quick stop all slaves: {}", e);
-                        });
+                        self.controller
+                            .emergency_stop_all(slave_id as u16)
+                            .unwrap_or_else(|e| {
+                                log::error!("Failed to quick stop all slaves: {}", e);
+                            });
 
                         #[cfg(feature = "stop_server_on_actuator_error")]
                         // stop the stack
