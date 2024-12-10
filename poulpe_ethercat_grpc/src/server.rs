@@ -288,14 +288,15 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                         nb_errors[i] as f32 * 1e-3,
                         self.controller.get_error_flags(slave_id as u16).unwrap());
 
-                        #[cfg(feature = "stop_opeation_on_error")]
-                        // stop the stack
-                        std::process::exit(10);
                         #[cfg(feature = "qucik_stop_on_slave_fault")]
                         // quick stop on all slaves
                         self.controller.emergency_stop_all(slave_id as u16).unwrap_or_else(|e| {
                             log::error!("Failed to quick stop all slaves: {}", e);
                         });
+
+                        #[cfg(feature = "stop_server_on_actuator_error")]
+                        // stop the stack
+                        std::process::exit(10);
                         // display the error every 5s
                         nb_errors_max = 5000;
                     }
