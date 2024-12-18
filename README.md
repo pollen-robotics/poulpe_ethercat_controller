@@ -66,7 +66,7 @@ Each layer of the code has its own safety features. The `ethercat_controller` de
         - [Read poulpe states](#read-poulpe-states)
         - [Running a simple sinusoide trajectory](#running-a-simple-sinusoide-trajectory)
     - [Running the GRPC server](#running-the-grpc-server)
-        - [Rust GRPC client examples](#running-the-rust-grpc-client)
+        - [Rust GRPC client examples](#rust-grpc-client-examples)
         - [Python GRPC client](#python-grpc-client)
         - [Orbita2d and Orbita3d control clients](#orbita2d-and-orbita3d-control-clients)
 
@@ -431,7 +431,7 @@ $ RUST_LOG=info cargo run --release -- config/orbita3d.yaml
 - The simplest example is the `client_listener` example. This example connects to the server and listens for the states of the poulpe boards connected to the network.
 
 ```shell
-RUST_LOG=info cargo run --release --example client_listener # add the slave id ex. 0
+RUST_LOG=info cargo run --release --example client_listener # add the slave id (ex. 0) or slave name (ex. LeftWristOrbita3d)
 ```
 
 ex. 
@@ -449,7 +449,7 @@ $ RUST_LOG=info cargo run --release --example client_listener 0 # slave id 0
 - Another example is the `client_sinus` example. This example connects to the server and sends a simple sinusoide trajectory to the poulpe boards connected to the network.
 
 ```shell
-RUST_LOG=info cargo run --release --example client_sinus # add the slave id ex. 0
+RUST_LOG=info cargo run --release --example client_sinus # add the slave id (ex. 0) or slave name (ex. LeftWristOrbita3d)
 ```
 
 

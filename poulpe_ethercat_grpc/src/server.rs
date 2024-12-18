@@ -1,9 +1,5 @@
 use std::{
-    env,
-    f32::consts::E,
-    mem::take,
-    sync::Arc,
-    time::{Duration, SystemTime},
+    env, f32::consts::E, mem::take, sync::Arc, task::Context, time::{Duration, SystemTime}
 };
 
 use poulpe_ethercat_controller::{state_machine::CiA402State, PoulpeController};
@@ -174,13 +170,26 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
     ) -> Result<Response<Self::GetStatesStream>, Status> {
         let (tx, rx) = mpsc::channel(2);
 
-        let controller = self.controller.clone();
+        let controller = Arc::clone(&self.controller);
+        
+        let ids = request.get_ref().ids.clone();
+        for id in ids.clone() {
+            let slave_id = id as u32;
+            log::info!("Setup Slave {} (id: {})...", controller.get_slave_name(slave_id as u16).unwrap(), slave_id);
+            match controller.setup(slave_id) {
+                Ok(_) => log::info!("Done!"),
+                Err(e) => {
+                    log::error!("Failed to setup slave {}: {}", slave_id, e);
+                    return Err(Status::internal("Failed to setup slaves"));
+                }
+            }
+        }
 
         log::info!(
             "New client - update period of {}s",
             request.get_ref().update_period
         );
-
+        
         tokio::spawn(async move {
             let request = request.get_ref();
             // fixed frequency
@@ -532,16 +541,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let controller = PoulpeController::connect(filename)?;
 
-    for slave_id in controller.get_slave_ids() {
-        log::info!("Setup Slave {}...", slave_id);
-        match controller.setup(slave_id) {
-            Ok(_) => log::info!("Done!"),
-            Err(e) => {
-                log::error!("Failed to setup slave {}: {}", slave_id, e);
-                Err(e)?;
-            }
-        }
-    }
+    // for slave_id in controller.get_slave_ids() {
+    //     log::info!("Setup Slave {}...", slave_id);
+    //     match controller.setup(slave_id) {
+    //         Ok(_) => log::info!("Done!"),
+    //         Err(e) => {
+    //             log::error!("Failed to setup slave {}: {}", slave_id, e);
+    //             Err(e)?;
+    //         }
+    //     }
+    // }
 
     log::info!("POULPE controller ready!");
 

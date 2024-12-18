@@ -45,6 +45,20 @@ impl ControlWord {
     }
 }
 
+
+pub enum CiA402ModeOfOperation {
+    ProfilePositionMode = 1,
+    VelocityMode = 2,
+    ProfileVelocityMode = 3,
+    ProfileTorqueMode = 4,
+    HomingMode = 6,
+    InterpolatedPositionMode = 7,
+    CyclicSynchronousPositionMode = 8,
+    CyclicSynchronousVelocityMode = 9,
+    CyclicSynchronousTorqueMode = 10,
+    Reserved = 15,
+}
+
 // Error codes for the motors, we will have one error code per motor
 // - None - no error
 // - ConfigFail - error during the configuration of the motor

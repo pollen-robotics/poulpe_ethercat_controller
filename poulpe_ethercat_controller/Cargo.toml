@@ -16,13 +16,14 @@ env_logger = "0.9.0"
 
 
 [features]
-default = ["verify_orbita_type", "allow_partial_network", "safe_turn_on", "turn_off_slaves_setup", "allow_fault_on_slave"]
+default = ["verify_orbita_type", "verify_slave_in_network", "safe_turn_on", "turn_off_slaves_setup", "allow_fault_on_slave"]
 verify_orbita_type = []     # This feature is used to verify the type of the Orbita device connected to the EtherCAT network
                             # Verifies if the yaml file specifies the correct type of the Orbita device connected to the network (orbita2d = 2 and orbita3d = 3)
                             # If not specified this check is not performed
 
-allow_partial_network = []  # This feature enables to instantiate the ethercat master that talks to only a part of the EtherCAT slaves connected to the network 
-                            # If not specified yaml file should specify all the slaves connected to the network
+verify_slave_in_network = []  # This feature is used to verify the slave in the EtherCAT network
+                              # If it is set the controller that the ethercat network slaves have good ids and that thre are no repetitions
+                              # also it will verify that the slaves are present in the network before connecting to them
 
 allow_fault_on_slave = []   # If this feature is set the controller will allow the slaves and will not throw an error any of the slaves is in fault state
 

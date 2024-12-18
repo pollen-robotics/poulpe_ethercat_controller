@@ -10,6 +10,7 @@ use std::collections::HashMap;
 pub type PdoOffsets = HashMap<String, Vec<(PdoEntryIdx, u8, Offset)>>;
 pub type SlaveOffsets = HashMap<SlavePos, PdoOffsets>;
 pub type SlaveNames = HashMap<String, SlavePos>;
+pub type SlaveSetup = HashMap<SlavePos, bool>;
 pub type MailboxEntries = HashMap<SlavePos, Vec<String>>;
 
 mod mailboxes;

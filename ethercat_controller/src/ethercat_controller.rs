@@ -15,7 +15,7 @@ use ethercat::{
 
 use crossbeam_channel::{bounded, Receiver, Sender};
 
-use crate::{watchdog, MailboxEntries, PdoOffsets, SlaveNames, SlaveOffsets};
+use crate::{watchdog, MailboxEntries, PdoOffsets, SlaveNames, SlaveOffsets, SlaveSetup};
 
 #[cfg(feature = "verify_mailboxes")]
 use crate::mailboxes::{init_mailbox_verification, verify_mailboxes};
@@ -33,6 +33,9 @@ pub struct EtherCatController {
     slave_states_condvar: Arc<(Mutex<Vec<u8>>, Condvar)>,
 
     cmd_buff: Sender<(Range<usize>, Vec<u8>)>,
+
+    // is poulpe setup 
+    setup_condvar: Arc<(Mutex<SlaveSetup>, Condvar)>,
 
     pub command_drop_time_us: u32,
 }
@@ -69,6 +72,16 @@ impl EtherCatController {
         // ethercat slave states mutex
         let slave_states_condvar = Arc::new((Mutex::new(vec![0]), Condvar::new()));
         let sstate_condvar = Arc::clone(&slave_states_condvar);
+
+
+        // ethercat slave is setup mutex
+        let mut is_poulpe_setup: SlaveSetup = HashMap::new();
+        for i in 0..slave_names.len() {
+            is_poulpe_setup.insert(SlavePos::from(i as u16), false);
+        }
+        let slave_setup_condvar = Arc::new((Mutex::new(is_poulpe_setup), Condvar::new()));
+        let setup_condvar = Arc::clone(&slave_setup_condvar);
+
 
         // get the slave number
         let slave_number = slave_names.len() as u32;
@@ -385,6 +398,7 @@ impl EtherCatController {
             ready_condvar,
             cycle_condvar,
             slave_states_condvar,
+            setup_condvar,
             cmd_buff: tx,
             command_drop_time_us,
         })
@@ -499,6 +513,22 @@ impl EtherCatController {
         self
     }
 
+    pub fn get_slave_setup(&self, slave_id: u16) -> bool {
+        {
+            let (lock, _cvar) = &*self.setup_condvar;
+            let setup = lock.lock().unwrap();
+            *setup.get(&SlavePos::from(slave_id)).unwrap_or(&false) 
+        }
+    }
+
+    pub fn set_slave_setup(&self, slave_id: u16, setup: bool) {
+        {
+            let (lock, cvar) = &*self.setup_condvar;
+            let mut setup_lock = lock.lock().unwrap();
+            *setup_lock.get_mut(&SlavePos::from(slave_id)).unwrap() = setup;
+        }
+    }
+
     fn get_reg_addr_range(&self, slave_id: u16, register: &String, index: usize) -> Range<usize> {
         get_reg_addr_range(&self.offsets, slave_id, register, index)
     }
@@ -517,6 +547,14 @@ impl EtherCatController {
     pub fn get_slave_id(&self, slave_name: &String) -> Option<u16> {
         self.slave_names.get(slave_name).map(|id| u16::from(*id))
     }
+
+    pub fn get_slave_ids_and_names(&self) -> Vec<(u16, String)> {
+        self.slave_names
+            .iter()
+            .map(|(name, id)| (u16::from(*id), name.clone()))
+            .collect()
+    }
+
 }
 
 pub fn get_reg_addr_range(

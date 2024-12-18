@@ -4,8 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
-    pub ethercat: EthercatConfig,
-    pub slaves: Vec<SlaveConfig>,
+    pub ethercat: EthercatConfig
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
