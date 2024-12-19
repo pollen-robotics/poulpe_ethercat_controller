@@ -16,7 +16,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use bitvec::prelude::*;
+use bitvec::{prelude::*, ptr::read};
 
 use ethercat_controller::{
     config::{PoulpeKind, SlaveConfig},
@@ -51,26 +51,53 @@ impl PoulpeController {
         let slaves = controller.get_slave_ids_and_names();
 
         // construct the map of connected poulpe boards
-        for slave in slaves {
-            if slave.1.contains("Orbita2d") {
+        for (slave_id, slave_name) in slaves {
+            // check if the slave is a poulpe board
+            if !slave_name.contains("Orbita") {
+                log::warn!(
+                    "Slave {} with name {:?} maybe not a poulpe board! Skipping configuration!",
+                    slave_id,
+                    slave_name
+                );
+            }
+
+            // from this point on we are sure we are dealing with a poulpe boards
+
+            // check if slave with the same name already exists in the slave list
+            // if it does, throw an error and return
+            if poulpe_config
+                .values()
+                .any(|p: &PoulpeKind| p.name == slave_name)
+            {
+                log::error!(
+                    "Slave {} with name {:?} already connected, possible duplicate names at ids: {} and {}",
+                    slave_id,
+                    slave_name,
+                    slave_id,
+                    poulpe_config.iter().find(|(_, v)| v.name == slave_name).unwrap().0
+                );
+                return Err("Duplicate slave!".into());
+            }
+
+            if slave_name.contains("Orbita2d") {
                 let poulpe = PoulpeKind {
-                    id: slave.0,
-                    name: slave.1.clone(),
+                    id: slave_id,
+                    name: slave_name.clone(),
                     orbita_type: 2,
                 };
-                poulpe_config.insert(slave.0, poulpe);
-            } else if slave.1.contains("Orbita3d") {
+                poulpe_config.insert(slave_id, poulpe);
+            } else if slave_name.contains("Orbita3d") {
                 let poulpe = PoulpeKind {
-                    id: slave.0,
-                    name: slave.1.clone(),
+                    id: slave_id,
+                    name: slave_name.clone(),
                     orbita_type: 3,
                 };
-                poulpe_config.insert(slave.0, poulpe);
+                poulpe_config.insert(slave_id, poulpe);
             } else {
                 log::warn!(
                     "Slave {} with name {:?} maybe not a poulpe board!",
-                    slave.0,
-                    slave.1
+                    slave_id,
+                    slave_name
                 );
             }
         }
@@ -260,8 +287,19 @@ impl PoulpeController {
             return Ok(());
         }
 
-        #[cfg(not(feature = "verify_slave_in_network"))]
+        #[cfg(not(feature = "verify_network_on_slave_setup"))]
         {
+            // check if slave_id exists in the slaves list built on startup
+            // if not there
+            if !self.get_slave_ids().contains(&id) {
+                log::error!(
+                    "Slave {} with name {:?} was not found in the slaves list built on startup!",
+                    id,
+                    self.get_slave_name(slave_id).unwrap()
+                );
+                return Err("Slave was not found in the slaves list built on startup!".into());
+            }
+
             // check if slave_id exists in etheract network
             // also check that the slave name is correct
             if !self.inner.get_slave_ids().contains(&slave_id) {
@@ -272,34 +310,6 @@ impl PoulpeController {
                 );
                 return Err("Slave not connected!".into());
             }
-            match self.inner.get_slave_name(slave_id) {
-                Some(name) => {
-                    if self.poulpe_config[&slave_id].name != name {
-                        log::error!(
-                            "Slave {} Name mismatch: expected {:?}, got {:?}",
-                            slave_id,
-                            self.poulpe_config[&slave_id].name,
-                            name
-                        );
-                        return Err("Name mismatch".into());
-                    }
-                }
-                _ => {
-                    log::error!("Slave {} name not found, check connection!", slave_id);
-                    return Err("Name not found, check connection!".into());
-                }
-            }
-
-            // check if slave_id exists in the
-            if !self.get_slave_ids().contains(&id) {
-                log::error!(
-                    "Slave {} with name {:?} not found in config, check config yaml file!",
-                    id,
-                    self.get_slave_name(slave_id).unwrap()
-                );
-                return Err("Slave not in yaml!".into());
-            }
-
             match self.inner.get_slave_name(slave_id) {
                 Some(name) => {
                     if self.poulpe_config[&slave_id].name != name {
