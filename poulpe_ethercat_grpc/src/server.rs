@@ -1,5 +1,10 @@
 use std::{
-    env, f32::consts::E, mem::take, sync::Arc, task::Context, time::{Duration, SystemTime}
+    env,
+    f32::consts::E,
+    mem::take,
+    sync::Arc,
+    task::Context,
+    time::{Duration, SystemTime},
 };
 
 use poulpe_ethercat_controller::{state_machine::CiA402State, PoulpeController};
@@ -171,11 +176,15 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
         let (tx, rx) = mpsc::channel(2);
 
         let controller = Arc::clone(&self.controller);
-        
+
         let ids = request.get_ref().ids.clone();
         for id in ids.clone() {
             let slave_id = id as u32;
-            log::info!("Setup Slave {} (id: {})...", controller.get_slave_name(slave_id as u16).unwrap(), slave_id);
+            log::info!(
+                "Setup Slave {} (id: {})...",
+                controller.get_slave_name(slave_id as u16).unwrap(),
+                slave_id
+            );
             match controller.setup(slave_id) {
                 Ok(_) => log::info!("Done!"),
                 Err(e) => {
@@ -189,7 +198,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
             "New client - update period of {}s",
             request.get_ref().update_period
         );
-        
+
         tokio::spawn(async move {
             let request = request.get_ref();
             // fixed frequency
@@ -291,11 +300,13 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     let i = slave_id as usize;
                     nb_errors[i] += 1;
                     if nb_errors[i] % nb_errors_max == 0 {
-                        log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}", 
-                        slave_id,
-                        self.controller.get_slave_name(slave_id as u16).unwrap(),
-                        nb_errors[i] as f32 * 1e-3,
-                        self.controller.get_error_flags(slave_id as u16).unwrap());
+                        log::error!(
+                            "Slave {} (name {}) is in fault state for {}s,\n {:#x?}",
+                            slave_id,
+                            self.controller.get_slave_name(slave_id as u16).unwrap(),
+                            nb_errors[i] as f32 * 1e-3,
+                            self.controller.get_error_flags(slave_id as u16).unwrap()
+                        );
 
                         #[cfg(feature = "qucik_stop_on_slave_fault")]
                         {

@@ -37,7 +37,6 @@ pub struct PoulpeRemoteClient {
 }
 
 impl PoulpeRemoteClient {
-        
     pub fn connect_with_name(
         addr: Uri,
         poulpe_names: Vec<String>,
@@ -45,7 +44,7 @@ impl PoulpeRemoteClient {
     ) -> Result<Self, std::io::Error> {
         // read all slave ids and names in the network
         let id_client = PoulpeIdClient::new(addr.clone());
-        let (all_ids, all_names) = match id_client.get_slaves(){
+        let (all_ids, all_names) = match id_client.get_slaves() {
             Ok((ids, names)) => (ids, names),
             Err(e) => {
                 log::error!("Failed to connect to the server: {}", e);
@@ -58,9 +57,9 @@ impl PoulpeRemoteClient {
 
         // verify the names
         let mut poulpe_ids = vec![];
-        for name in poulpe_names{
+        for name in poulpe_names {
             let id = all_names.iter().position(|n| n == &name);
-            match id{
+            match id {
                 Some(id) => poulpe_ids.push(all_ids[id]),
                 None => {
                     log::error!("Invalid poulpe name: {}", name);
@@ -73,13 +72,8 @@ impl PoulpeRemoteClient {
         }
 
         // create the client
-        PoulpeRemoteClient::connect(
-            addr,
-            poulpe_ids,
-            update_period,
-        )
+        PoulpeRemoteClient::connect(addr, poulpe_ids, update_period)
     }
-
 
     pub fn connect(
         addr: Uri,
@@ -120,8 +114,11 @@ impl PoulpeRemoteClient {
                         "Invalid poulpe_ids",
                     ));
                 }
-                // ids are good, 
-                names = common_ids.iter().map(|id| available_names[*id as usize].clone()).collect();
+                // ids are good,
+                names = common_ids
+                    .iter()
+                    .map(|id| available_names[*id as usize].clone())
+                    .collect();
             }
             Err(e) => {
                 log::error!(
@@ -454,21 +451,15 @@ pub async fn get_poulpe_ids_async(
     Ok((ids, names))
 }
 
-
-
-
 #[derive(Debug)]
 pub struct PoulpeIdClient {
     rt: Arc<Runtime>,
     addr: Uri,
 }
-impl PoulpeIdClient{
+impl PoulpeIdClient {
     pub fn new(addr: Uri) -> Self {
         let rt = Arc::new(Builder::new_multi_thread().enable_all().build().unwrap());
-        PoulpeIdClient {
-            rt,
-            addr,
-        }
+        PoulpeIdClient { rt, addr }
     }
 
     pub fn get_slaves(&self) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {

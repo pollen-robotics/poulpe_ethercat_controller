@@ -12,10 +12,9 @@ use poulpe_ethercat_grpc::PoulpeRemoteClient;
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    
     // args
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2  {
+    if args.len() != 2 {
         log::error!("Usage:\n{}  <id> \nor \n{} slave_name", args[0], args[0]);
         return Err("Invalid number of arguments".into());
     }
@@ -44,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             };
             client
-        },
+        }
         (None, Some(name)) => {
             log::info!("Connecting to the slave with name: {}", name);
             let client = match PoulpeRemoteClient::connect_with_name(
@@ -59,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             };
             client
-        },
+        }
         _ => {
             log::error!("Usage:\n{}  <id> \nor \n{} slave_name", args[0], args[0]);
             return Err("Invalid number of arguments".into());

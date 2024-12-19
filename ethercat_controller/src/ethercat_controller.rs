@@ -34,7 +34,7 @@ pub struct EtherCatController {
 
     cmd_buff: Sender<(Range<usize>, Vec<u8>)>,
 
-    // is poulpe setup 
+    // is poulpe setup
     setup_condvar: Arc<(Mutex<SlaveSetup>, Condvar)>,
 
     pub command_drop_time_us: u32,
@@ -73,7 +73,6 @@ impl EtherCatController {
         let slave_states_condvar = Arc::new((Mutex::new(vec![0]), Condvar::new()));
         let sstate_condvar = Arc::clone(&slave_states_condvar);
 
-
         // ethercat slave is setup mutex
         let mut is_poulpe_setup: SlaveSetup = HashMap::new();
         for i in 0..slave_names.len() {
@@ -81,7 +80,6 @@ impl EtherCatController {
         }
         let slave_setup_condvar = Arc::new((Mutex::new(is_poulpe_setup), Condvar::new()));
         let setup_condvar = Arc::clone(&slave_setup_condvar);
-
 
         // get the slave number
         let slave_number = slave_names.len() as u32;
@@ -517,7 +515,7 @@ impl EtherCatController {
         {
             let (lock, _cvar) = &*self.setup_condvar;
             let setup = lock.lock().unwrap();
-            *setup.get(&SlavePos::from(slave_id)).unwrap_or(&false) 
+            *setup.get(&SlavePos::from(slave_id)).unwrap_or(&false)
         }
     }
 
@@ -554,7 +552,6 @@ impl EtherCatController {
             .map(|(name, id)| (u16::from(*id), name.clone()))
             .collect()
     }
-
 }
 
 pub fn get_reg_addr_range(

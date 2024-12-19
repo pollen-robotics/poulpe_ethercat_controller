@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // args
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2  {
+    if args.len() != 2 {
         log::error!("Usage:\n{}  <id> \nor \n{} slave_name", args[0], args[0]);
         return Err("Invalid number of arguments".into());
     }
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             };
             client
-        },
+        }
         (None, Some(name)) => {
             log::info!("Connecting to the slave with name: {}", name);
             let client = match PoulpeRemoteClient::connect_with_name(
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             };
             client
-        },
+        }
         _ => {
             log::error!("Usage:\n{}  <id> \nor \n{} slave_name", args[0], args[0]);
             return Err("Invalid number of arguments".into());
@@ -72,13 +72,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Slave name: {}", name);
 
     thread::sleep(Duration::from_millis(100));
-    match client.get_mode_of_operation(id){
+    match client.get_mode_of_operation(id) {
         Ok(mode) => {
             log::info!("Mode of operation: {:?}", mode);
             if mode != CiA402ModeOfOperation::ProfilePositionMode as u32 {
                 log::info!("Setting mode of operation to ProfilePositionMode");
                 client.turn_off(id);
-                while client.is_on(id).unwrap(){
+                while client.is_on(id).unwrap() {
                     thread::sleep(Duration::from_millis(100));
                 }
                 client.set_mode_of_operation(id, CiA402ModeOfOperation::ProfilePositionMode as u32);
@@ -86,12 +86,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         Err(e) => log::error!("Failed to get mode of operation:"),
     }
-    
-
 
     log::info!("Turn on slave {}", id);
     client.turn_on(id);
-
 
     let amp = 1.0;
     let freq = 0.2;

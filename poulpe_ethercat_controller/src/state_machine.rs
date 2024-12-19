@@ -45,7 +45,6 @@ impl ControlWord {
     }
 }
 
-
 pub enum CiA402ModeOfOperation {
     ProfilePositionMode = 1,
     VelocityMode = 2,

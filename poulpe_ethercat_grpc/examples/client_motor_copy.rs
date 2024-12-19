@@ -29,11 +29,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Turn off slave {}", passiv_id);
     client.turn_off(passiv_id);
 
-
     client.set_velocity_limit(active_id, vec![1.0; 3]);
     client.set_torque_limit(active_id, vec![1.0; 3]);
-    client.set_mode_of_operation(active_id, CiA402ModeOfOperation::ProfilePositionMode as u32); 
-    
+    client.set_mode_of_operation(active_id, CiA402ModeOfOperation::ProfilePositionMode as u32);
+
     client.set_target_position(active_id, vec![0.0; 3]);
     log::info!("Turn on slave {}", active_id);
     client.turn_on(active_id);

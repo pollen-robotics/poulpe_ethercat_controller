@@ -29,7 +29,7 @@ use register::PdoRegister;
 #[derive(Debug)]
 pub struct PoulpeController {
     pub inner: EtherCatController,
-    pub poulpe_config: HashMap<u16, PoulpeKind>
+    pub poulpe_config: HashMap<u16, PoulpeKind>,
 }
 
 impl PoulpeController {
@@ -50,32 +50,34 @@ impl PoulpeController {
         // get the list of connected slaves
         let slaves = controller.get_slave_ids_and_names();
 
-        
-
         // construct the map of connected poulpe boards
         for slave in slaves {
-            if slave.1.contains("Orbita2d"){
+            if slave.1.contains("Orbita2d") {
                 let poulpe = PoulpeKind {
                     id: slave.0,
                     name: slave.1.clone(),
                     orbita_type: 2,
                 };
                 poulpe_config.insert(slave.0, poulpe);
-            }else if slave.1.contains("Orbita3d"){
+            } else if slave.1.contains("Orbita3d") {
                 let poulpe = PoulpeKind {
                     id: slave.0,
                     name: slave.1.clone(),
                     orbita_type: 3,
                 };
                 poulpe_config.insert(slave.0, poulpe);
-            }else{
-                log::warn!("Slave {} with name {:?} maybe not a poulpe board!", slave.0, slave.1);
+            } else {
+                log::warn!(
+                    "Slave {} with name {:?} maybe not a poulpe board!",
+                    slave.0,
+                    slave.1
+                );
             }
         }
 
         Ok(Self {
             inner: controller,
-            poulpe_config
+            poulpe_config,
         })
     }
 
@@ -270,7 +272,7 @@ impl PoulpeController {
                 );
                 return Err("Slave not connected!".into());
             }
-            match self.inner.get_slave_name(slave_id){
+            match self.inner.get_slave_name(slave_id) {
                 Some(name) => {
                     if self.poulpe_config[&slave_id].name != name {
                         log::error!(
@@ -281,23 +283,22 @@ impl PoulpeController {
                         );
                         return Err("Name mismatch".into());
                     }
-                },
+                }
                 _ => {
                     log::error!("Slave {} name not found, check connection!", slave_id);
                     return Err("Name not found, check connection!".into());
                 }
             }
 
-                // check if slave_id exists in the 
-                if !self.get_slave_ids().contains(&id) {
-                    log::error!(
-                        "Slave {} with name {:?} not found in config, check config yaml file!",
-                        id,
-                        self.get_slave_name(slave_id).unwrap()
-                    );
-                    return Err("Slave not in yaml!".into());
-                }
-            
+            // check if slave_id exists in the
+            if !self.get_slave_ids().contains(&id) {
+                log::error!(
+                    "Slave {} with name {:?} not found in config, check config yaml file!",
+                    id,
+                    self.get_slave_name(slave_id).unwrap()
+                );
+                return Err("Slave not in yaml!".into());
+            }
 
             match self.inner.get_slave_name(slave_id) {
                 Some(name) => {
@@ -795,10 +796,7 @@ impl PoulpeController {
     }
 
     // emergency stop on all slaves connected to the ethercat network
-    pub fn emergency_stop_all(
-        &self,
-        slave_id: u16,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn emergency_stop_all(&self, slave_id: u16) -> Result<(), Box<dyn std::error::Error>> {
         for id in self.get_slave_ids() {
             self.emergency_stop(id as u32)?;
         }
