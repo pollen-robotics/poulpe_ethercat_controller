@@ -497,3 +497,10 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
     - `orbita3d_control` - [see on github](https://github.com/pollen-robotics/orbita3d_control) 
 - The ROS packages are used to control the orbita2d and orbita3d actuators, implementing the kinematics of the actuators enabling to control them in joint space or cartesian space.
 - Also, `orbita2d_control` and `orbita3d_control` are ROS packages that use the `poulpe_ethercat_grpc` crate to connect to the GRPC server and control the poulpe boards connected to the network.
+
+## Support 
+
+This project adheres to the Contributor [code of conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [contact@pollen-robotics.com](mailto:contact@pollen-robotics.com).
+
+Visit [pollen-robotics.com](https://pollen-robotics.com) to learn more or join our [Dicord community](https://discord.gg/vnYD6GAqJR) if you have any questions or want to share your ideas.
+Follow [@PollenRobotics](https://twitter.com/pollenrobotics) on Twitter for important announcements.
