@@ -163,7 +163,7 @@ impl PyPoulpeRemoteClient {
 }
 
 #[pymodule]
-fn python_client(_py: Python, m: &PyModule) -> PyResult<()> {
+fn python_client(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyPoulpeRemoteClient>()?;
     Ok(())
 }

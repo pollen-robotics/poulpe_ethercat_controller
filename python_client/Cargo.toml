@@ -5,7 +5,7 @@ edition = "2021"
 
 
 [dependencies]
-pyo3 = { version = "0.21.2", features = ["extension-module"] }
+pyo3 = { version = "0.23.4", features = ["extension-module"] }
 poulpe_ethercat_grpc = { path = "../poulpe_ethercat_grpc" }
 log = "0.4.17"
 env_logger = {version = "0.9.0"}
@@ -13,7 +13,7 @@ tonic = "0.8.0"
 prost = "0.11.0"
 tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread"] }
 tokio-stream = "0.1.9"
-async-stream = "0.3.3" 
+async-stream = "0.3.3"
 
 [lib]
 name = "python_client"
