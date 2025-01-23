@@ -21,7 +21,7 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
     - These fails result in stopping the operation of the master if the feature `stop_opeation_on_error` is enabled
     - Otherwise, the master will continue to operate but will be in the non-operational state
 - Uses mailbox PDOs to ensure proper communication with the slaves 
-    - Behind the feature `verify_mailboxes` (enabled by default) 
+    - Behind the feature `verify_mailbox_pdos` (enabled by default) 
     - Fails if the slave does nor write the mailbox entries in some predefined time 
         - default 1s
         - considered not operational 
@@ -36,7 +36,7 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
 
 feature | description | enabled by default
 --- | --- | ---
-`verify_mailboxes` | Verify the mailbox PDOs | yes
+`verify_mailbox_pdos` | Verify the mailbox PDOs | yes
 `enable_watchdog` | Enable the watchdog | yes
 `stop_opeation_on_error` | Stop the operation if a slave is not operational | no
 

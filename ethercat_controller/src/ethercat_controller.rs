@@ -9,18 +9,19 @@ use std::{
 };
 
 use ethercat::{
-    AlState, DomainIdx, Master, MasterAccess, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo,
-    PdoEntryPos, PdoIdx, PdoPos, SlaveAddr, SlaveId, SlavePos, SmCfg, SmIdx,
+    AlState, DataType, DomainIdx, Master, MasterAccess, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, PdoIdx, PdoPos, SdoData, SdoIdx, SdoPos, SlaveAddr, SlaveId, SlavePos, SmCfg, SmIdx, SubIdx
 };
 
 use crossbeam_channel::{bounded, Receiver, Sender};
 
-use crate::{watchdog, MailboxEntries, PdoOffsets, SlaveNames, SlaveOffsets, SlaveSetup};
+use crate::{watchdog, MailboxPdoEntries, PdoOffsets, SlaveNames, SlaveOffsets, SlaveSetup};
 
-#[cfg(feature = "verify_mailboxes")]
-use crate::mailboxes::{init_mailbox_verification, verify_mailboxes};
+#[cfg(feature = "verify_mailbox_pdos")]
+use crate::mailboxes::{init_mailbox_pdo_verification, verify_mailbox_pdos};
 #[cfg(feature = "enable_watchdog")]
 use crate::watchdog::{init_watchdog_settings, verify_watchdog};
+
+use crate::mailboxes::mailbox_sdo_read;
 
 #[derive(Debug)]
 pub struct EtherCatController {
@@ -40,6 +41,7 @@ pub struct EtherCatController {
     pub command_drop_time_us: u32,
 }
 
+
 impl EtherCatController {
     pub fn open(
         master_id: u32,
@@ -48,8 +50,33 @@ impl EtherCatController {
         watchdog_timeout_ms: u32,
         mailbox_wait_time_ms: u32,
     ) -> Result<Self, io::Error> {
-        let (mut master, domain_idx, offsets, slave_names, mailbox_entries) =
+        let (mut master, domain_idx, offsets, slave_names, mailbox_pdo_entries) =
             init_master(master_id)?;
+
+        // read the slave info using SDOs
+        // IMPORTANT !!!!!!!
+        // must be done before master.activate()
+        for slave_id in 0..slave_names.len() {
+            let mut data = vec![0u8; 1];
+            match mailbox_sdo_read(&master, slave_id as u16, 0x201, 0x1, &mut data){
+                Ok(_) => {
+                    log::info!("Slave {}, DXL_ID: {:?}", slave_id, data[0]);
+                },
+                Err(_) => {
+                    log::warn!("Slave {}, DXL_ID unknown!", slave_id);
+                }
+            }
+
+            let mut data = vec![0u8; 40];
+            match mailbox_sdo_read(&master, slave_id as u16, 0x200, 0x1, &mut data){
+                Ok(_) => {
+                    log::info!("Slave {} firmware version: {:?}", slave_id, String::from_utf8(data).unwrap());
+                },
+                Err(_) => {
+                    log::warn!("Slave {}, firmware version unknown!", slave_id);
+                }
+            }
+        }
 
         master.activate()?;
 
@@ -94,16 +121,16 @@ impl EtherCatController {
             Receiver<(Range<usize>, Vec<u8>)>,
         ) = bounded(buffer_size);
 
-        #[cfg(feature = "verify_mailboxes")]
+        #[cfg(feature = "verify_mailbox_pdos")]
         // initialize the mailbox verification
         let (
-            mut slave_mailbox_offsets,
-            mut slave_mailbox_timestamps,
-            mut slave_is_mailbox_responding,
-            mut slave_mailbox_data_buffer,
-        ) = init_mailbox_verification(
+            mut slave_mailbox_pdo_offsets,
+            mut slave_mailbox_pdo_timestamps,
+            mut slave_is_mailbox_pdo_responding,
+            mut slave_mailbox_pdo_data_buffer,
+        ) = init_mailbox_pdo_verification(
             slave_number,
-            &mailbox_entries,
+            &mailbox_pdo_entries,
             &offsets,
             &get_reg_addr_ranges,
         );
@@ -162,7 +189,7 @@ impl EtherCatController {
                 let mut data = master.domain_data(domain_idx).unwrap();
 
                 // verify that the poulpes are still writing
-                // for each slave check if the mailbox mailbox entries are updated
+                // for each slave check if the mailbox mailbox pdo entries are updated
                 // the mailbox data is being written by slaves at arounf 10Hz
                 // if the mailbox data is not updated for more than 1s
                 // the slave is considered not as responding
@@ -171,17 +198,17 @@ impl EtherCatController {
                 //
                 // if the slaves are responding it will update the data buffer
                 // with the mailbox data (which might have been read some time ago (but less than 1s ago))
-                #[cfg(feature = "verify_mailboxes")]
-                let all_slaves_responding = verify_mailboxes(
+                #[cfg(feature = "verify_mailbox_pdos")]
+                let all_slaves_responding = verify_mailbox_pdos(
                     slave_number,
                     &mut data,
-                    &mut slave_mailbox_offsets,
-                    &mut slave_mailbox_timestamps,
-                    &mut slave_is_mailbox_responding,
-                    &mut slave_mailbox_data_buffer,
+                    &mut slave_mailbox_pdo_offsets,
+                    &mut slave_mailbox_pdo_timestamps,
+                    &mut slave_is_mailbox_pdo_responding,
+                    &mut slave_mailbox_pdo_data_buffer,
                     mailbox_wait_time_ms,
                 );
-
+                
                 // write the data to the data lock
                 if let Ok(mut write_guard) = write_data_lock.write() {
                     *write_guard = Some(data.to_vec());
@@ -223,7 +250,7 @@ impl EtherCatController {
 
                 // get the master state
                 let m_state = master.state().unwrap();
-                #[cfg(not(feature = "verify_mailboxes"))]
+                #[cfg(not(feature = "verify_mailbox_pdos"))]
                 // get the slave states without mailbox verification
                 let all_slaves_responding = m_state.slaves_responding == slave_number;
                 #[cfg(not(feature = "enable_watchdog"))]
@@ -278,13 +305,13 @@ impl EtherCatController {
                             log_master_state(
                                 &master,
                                 slave_number,
-                                #[cfg(feature = "verify_mailboxes")]
+                                #[cfg(feature = "verify_mailbox_pdos")]
                                 mailbox_wait_time_ms,
                                 #[cfg(feature = "enable_watchdog")]
                                 watchdog_timeout_ms,
                                 &slave_name_from_id,
-                                #[cfg(feature = "verify_mailboxes")]
-                                &slave_is_mailbox_responding,
+                                #[cfg(feature = "verify_mailbox_pdos")]
+                                &slave_is_mailbox_pdo_responding,
                                 #[cfg(feature = "enable_watchdog")]
                                 &slave_is_watchdog_responding,
                             );
@@ -323,8 +350,8 @@ impl EtherCatController {
                                     &master,
                                     SlavePos::from(i as u16),
                                     &slave_name_from_id,
-                                    #[cfg(feature = "verify_mailboxes")]
-                                    slave_is_mailbox_responding[i as usize],
+                                    #[cfg(feature = "verify_mailbox_pdos")]
+                                    slave_is_mailbox_pdo_responding[i as usize],
                                     #[cfg(feature = "enable_watchdog")]
                                     slave_is_watchdog_responding[i as usize],
                                 )
@@ -369,8 +396,8 @@ impl EtherCatController {
                                     &master,
                                     SlavePos::from(i as u16),
                                     &slave_name_from_id,
-                                    #[cfg(feature = "verify_mailboxes")]
-                                    slave_is_mailbox_responding[i as usize],
+                                    #[cfg(feature = "verify_mailbox_pdos")]
+                                    slave_is_mailbox_pdo_responding[i as usize],
                                     #[cfg(feature = "enable_watchdog")]
                                     slave_is_watchdog_responding[i as usize],
                                 )
@@ -586,9 +613,101 @@ fn get_reg_addr_ranges(
     ranges
 }
 
+
+pub fn init_master_for_foe(
+    idx: u32,
+) -> Result<Master, io::Error> {
+    // try to open the master
+    // if it fails return error
+    let mut master = match Master::open(idx, MasterAccess::ReadWrite) {
+        Ok(master) => master,
+        Err(_) => {
+            log::error!("Failed to connecitng to master! Is ethercat master started?");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to connect to master",
+            ));
+        }
+    };
+    log::debug!("Reserve master");
+    master.reserve()?;
+    log::debug!("Create domain");
+    let domain_idx = master.create_domain()?;
+
+    let slave_num = master.get_info().unwrap().slave_count;
+    log::info!("Found {:?} slaves", slave_num);
+
+    // if there are no slaves connected return error
+    if slave_num == 0 {
+        log::error!("No slaves found, check slave connections!");
+        return Err(io::Error::new(io::ErrorKind::Other, "No slaves found"));
+    }
+
+    for i in 0..slave_num {
+        let slave_info = master.get_slave_info(SlavePos::from(i as u16)).unwrap();
+        log::info!("Slave {:?} at position {:?}", slave_info.name, i);
+        log::debug!("Found device {:?}", slave_info);
+        log::debug!(
+            "Vendor ID: {:X}, Product Code: {:X}, SM count {:?}",
+            slave_info.id.vendor_id,
+            slave_info.id.product_code,
+            slave_info.sync_count
+        );
+        let slave_addr = SlaveAddr::ByPos(i as u16);
+        let slave_id = SlaveId {
+            vendor_id: slave_info.id.vendor_id,
+            product_code: slave_info.id.product_code,
+        };
+
+        for j in 0..slave_info.sync_count {
+            let sm_idx = SmIdx::new(j);
+            let sm_info = master.get_sync(SlavePos::from(i as u16), sm_idx).unwrap();
+            log::info!("Found sm {:?}, pdo_count {:?}", sm_info, sm_info.pdo_count);
+
+            // sanity check
+            if sm_info.pdo_count == 0 {
+                log::info!("No PDOs found for SM {:?}", sm_idx);
+            }
+
+            // check if second bit is set
+            // if it is its in mailbox mode
+            if sm_info.control_register & 0b10 != 0 {
+                log::debug!("SM is in mailbox mode!");
+            } else {
+                log::debug!("SM is in buffered mode!");
+                continue;
+            }
+
+            if sm_info.control_register & 0b100 != 0 {
+                log::debug!("Input SM!");
+            } else {
+                log::debug!("Output SM!");
+            }
+
+            master.configure_sync(SlavePos::from(i as u16), sm_info);
+
+        }
+
+        let mut config = master.configure_slave(slave_addr, slave_id)?;
+
+        let cfg_index = config.index();
+
+        let cfg_info = master.get_config_info(cfg_index)?;
+        log::info!("Config info: {:#?}", cfg_info);
+        if cfg_info.slave_position.is_none() {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Unable to configure slave",
+            ));
+        }
+    }
+
+    Ok(master)
+}
+
 pub fn init_master(
     idx: u32,
-) -> Result<(Master, DomainIdx, SlaveOffsets, SlaveNames, MailboxEntries), io::Error> {
+) -> Result<(Master, DomainIdx, SlaveOffsets, SlaveNames, MailboxPdoEntries), io::Error> {
     // try to open the master
     // if it fails return error
     let mut master = match Master::open(idx, MasterAccess::ReadWrite) {
@@ -608,7 +727,7 @@ pub fn init_master(
     let mut offsets: SlaveOffsets = HashMap::new();
     let mut slave_names: SlaveNames = HashMap::new();
 
-    let mut mailboxes: MailboxEntries = HashMap::new();
+    let mut mailbox_pdos: MailboxPdoEntries = HashMap::new();
 
     let slave_num = master.get_info().unwrap().slave_count;
     log::info!("Found {:?} slaves", slave_num);
@@ -636,7 +755,7 @@ pub fn init_master(
             product_code: slave_info.id.product_code,
         };
 
-        let mut pdos = vec![];
+        let mut pdos: Vec<Vec<PdoCfg>> = vec![];
         let mut sms = vec![];
         let mut mailbox = vec![];
         let mut direction = vec![];
@@ -647,10 +766,8 @@ pub fn init_master(
             log::debug!("Found sm {:?}, pdo_count {:?}", sm_info, sm_info.pdo_count);
 
             // sanity check
-            if sm_info.pdo_count > 1 {
-                log::error!("Only support 1 pdo per sync manager, treating as 1 pdo!");
-            } else if sm_info.pdo_count == 0 {
-                log::error!("No pdo found in sync manager");
+            if sm_info.pdo_count == 0 {
+                log::debug!("No pdo found in sync manager, skipping!");
                 continue;
             }
 
@@ -672,81 +789,91 @@ pub fn init_master(
                 direction.push(-1);
             }
 
-            let pdo_cfg: PdoCfg = {
-                let pdo_info = master
-                    .get_pdo(SlavePos::from(i as u16), sm_idx, PdoPos::new(0))
-                    .unwrap();
-                log::debug!(
-                    "Found pdo {:?}, entry_count {:?}",
-                    pdo_info,
-                    pdo_info.entry_count
-                );
+            let mut pdo_cfgs = vec![];
+            for pdo_ind in 0..sm_info.pdo_count {
+                let pdo_cfg: PdoCfg = {
+                    let pdo_info = master
+                        .get_pdo(SlavePos::from(i as u16), sm_idx, PdoPos::new(pdo_ind))
+                        .unwrap();
+                    log::debug!(
+                        "Found pdo {:?}, entry_count {:?}",
+                        pdo_info,
+                        pdo_info.entry_count
+                    );
 
-                let pdo_entries = (0..pdo_info.entry_count)
-                    .map(|e| {
-                        let entry_info = master
-                            .get_pdo_entry(
-                                SlavePos::from(i as u16),
-                                sm_idx,
-                                PdoPos::new(0),
-                                PdoEntryPos::new(e),
-                            )
-                            .unwrap();
-                        log::debug!(
-                            "Found entry {:?}, bit_len {:?}",
-                            entry_info,
-                            entry_info.bit_len
-                        );
-                        PdoEntryInfo {
-                            entry_idx: entry_info.entry_idx,
-                            bit_len: entry_info.bit_len as u8,
-                            name: entry_info.name.clone(),
-                            pos: PdoEntryPos::from(e as u8),
-                        }
-                    })
-                    .collect();
-                PdoCfg {
-                    idx: PdoIdx::new(pdo_info.idx.into()),
-                    entries: pdo_entries,
-                }
-            };
-            pdos.push(pdo_cfg);
-            sms.push(sm_info)
+                    let pdo_entries = (0..pdo_info.entry_count)
+                        .map(|e| {
+                            let entry_info = master
+                                .get_pdo_entry(
+                                    SlavePos::from(i as u16),
+                                    sm_idx,
+                                    PdoPos::new(pdo_ind),
+                                    PdoEntryPos::new(e),
+                                )
+                                .unwrap();
+                            log::debug!(
+                                "Found entry {:?}, bit_len {:?}",
+                                entry_info,
+                                entry_info.bit_len
+                            );
+                            PdoEntryInfo {
+                                entry_idx: entry_info.entry_idx,
+                                bit_len: entry_info.bit_len as u8,
+                                name: entry_info.name.clone(),
+                                pos: PdoEntryPos::from(e as u8),
+                            }
+                        })
+                        .collect();
+                    PdoCfg {
+                        idx: PdoIdx::new(pdo_info.idx.into()),
+                        entries: pdo_entries,
+                    }
+                };
+                pdo_cfgs.push(pdo_cfg.clone());
+            }
+            pdos.push(pdo_cfgs.clone());
+            sms.push(sm_info);
         }
 
         let mut config = master.configure_slave(slave_addr, slave_id)?;
         let mut entry_offsets: PdoOffsets = HashMap::new();
 
-        for i in 0..pdos.len() {
-            let pdo = pdos[i].clone();
+        for i in 0..sms.len() {
+            let pds = pdos[i].clone();
             let sm = sms[i].clone();
 
             // check if second bit is set
             // if it is its in input mode
             if direction[i] > 0 {
-                config.config_sm_pdos(SmCfg::output(sm.idx), &[pdo.clone()])?;
+                config.config_sm_pdos(SmCfg::output(sm.idx), &pds)?;
                 // Positions of TX PDO
-                log::debug!("Positions of TX PDO 0x{:X}:", u16::from(pdo.idx));
-            } else {
-                config.config_sm_pdos(SmCfg::input(sm.idx), &[pdo.clone()])?;
-                // Positions of RX PDO
-                log::debug!("Positions of RX PDO 0x{:X}:", u16::from(pdo.idx));
-            }
-            for entry in &pdo.entries {
-                let offset = config.register_pdo_entry(entry.entry_idx, domain_idx)?;
-                let name = entry.name.clone();
-                if entry_offsets.contains_key(&name) {
-                    entry_offsets.get_mut(&name).unwrap().push((
-                        entry.entry_idx,
-                        entry.bit_len,
-                        offset,
-                    ));
-                } else {
-                    entry_offsets.insert(name, vec![(entry.entry_idx, entry.bit_len, offset)]);
+                for pdo in &pds {
+                    log::debug!("Positions of TX PDO 0x{:X}:", u16::from(pdo.idx));
                 }
-                if mailbox[i] && direction[i] < 0 {
-                    // add the input mailbox to the list
-                    mailbox_entires.push(entry.name.clone());
+            } else {
+                config.config_sm_pdos(SmCfg::input(sm.idx), &pds)?;
+                // Positions of RX PDO
+                for pdo in &pds {
+                    log::debug!("Positions of RX PDO 0x{:X}:", u16::from(pdo.idx));
+                }
+            }
+            for pdo in pds {
+                for entry in &pdo.entries {
+                    let offset = config.register_pdo_entry(entry.entry_idx, domain_idx)?;
+                    let name = entry.name.clone();
+                    if entry_offsets.contains_key(&name) {
+                        entry_offsets.get_mut(&name).unwrap().push((
+                            entry.entry_idx,
+                            entry.bit_len,
+                            offset,
+                        ));
+                    } else {
+                        entry_offsets.insert(name, vec![(entry.entry_idx, entry.bit_len, offset)]);
+                    }
+                    if mailbox[i] && direction[i] < 0 {
+                        // add the input mailbox to the list
+                        mailbox_entires.push(entry.name.clone());
+                    }
                 }
             }
         }
@@ -762,10 +889,10 @@ pub fn init_master(
             ));
         }
         offsets.insert(SlavePos::new(i as u16), entry_offsets);
-        mailboxes.insert(SlavePos::new(i as u16), mailbox_entires);
+        mailbox_pdos.insert(SlavePos::new(i as u16), mailbox_entires);
     }
 
-    Ok((master, domain_idx, offsets, slave_names, mailboxes))
+    Ok((master, domain_idx, offsets, slave_names, mailbox_pdos))
 }
 
 // log the pdo offsets
@@ -827,11 +954,11 @@ fn get_slave_current_state(
     master: &Master,
     slave_pos: SlavePos,
     slave_name_from_id: &impl Fn(u16) -> String,
-    #[cfg(feature = "verify_mailboxes")] slave_is_mailbox_responding: bool,
+    #[cfg(feature = "verify_mailbox_pdos")] slave_is_mailbox_pdo_responding: bool,
     #[cfg(feature = "enable_watchdog")] slave_is_watchdog_responding: bool,
 ) -> u8 {
-    #[cfg(feature = "verify_mailboxes")]
-    if !slave_is_mailbox_responding {
+    #[cfg(feature = "verify_mailbox_pdos")]
+    if !slave_is_mailbox_pdo_responding {
         log::error!(
             "Slave {:?} (pos: {:?}) is not responding (mailbox check failed)!",
             slave_name_from_id(slave_pos.into()),
@@ -877,10 +1004,10 @@ fn get_slave_current_state(
 fn log_master_state(
     master: &Master,
     slave_number: u32,
-    #[cfg(feature = "verify_mailboxes")] maibox_timeout_ms: u32,
+    #[cfg(feature = "verify_mailbox_pdos")] maibox_timeout_ms: u32,
     #[cfg(feature = "enable_watchdog")] watchdog_timeout_ms: u32,
     slave_name_from_id: &impl Fn(u16) -> String,
-    #[cfg(feature = "verify_mailboxes")] slave_is_mailbox_responding: &Vec<bool>,
+    #[cfg(feature = "verify_mailbox_pdos")] slave_is_mailbox_pdo_responding: &Vec<bool>,
     #[cfg(feature = "enable_watchdog")] slave_is_watchdog_responding: &Vec<bool>,
 ) {
     let m_state = master.state().unwrap();
@@ -912,12 +1039,43 @@ fn log_master_state(
         );
     }
 
+    // print the state of each slave
+    log::info!("Connected slaves:");
+    for i in 0..slave_number {
+        match master.get_slave_info(SlavePos::from(i as u16)) {
+            Ok(info) => {
+                if info.al_state == AlState::Op {
+                    log::info!(
+                        "Slave {:?} (id: {}) is connected and operational! State: {:?}",
+                        info.name,
+                        i,
+                        info.al_state
+                    );
+                } else {
+                    log::warn!(
+                        "Slave {:?} (id: {}) is connected but not operational! State: {:?}",
+                        info.name,
+                        i,
+                        info.al_state
+                    );
+                }
+            }
+            Err(_) => {
+                log::error!(
+                    "Slave {:?} not connected!",
+                    i
+                );
+            }
+        }
+    }
+
+
     // notify the operational state to the master
-    #[cfg(feature = "verify_mailboxes")]
-    if !slave_is_mailbox_responding.iter().all(|&r| r) {
+    #[cfg(feature = "verify_mailbox_pdos")]
+    if !slave_is_mailbox_pdo_responding.iter().all(|&r| r) {
         log::error!("Not all slaves are responding!");
         for i in 0..slave_number {
-            if !slave_is_mailbox_responding[i as usize] {
+            if !slave_is_mailbox_pdo_responding[i as usize] {
                 log::error!(
                     "Poulpe {:?} (pos: {:?}) not responding for more than {}ms",
                     slave_name_from_id(i as u16),
