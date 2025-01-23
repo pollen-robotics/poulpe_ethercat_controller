@@ -13,5 +13,5 @@ pub type SlaveNames = HashMap<String, SlavePos>;
 pub type SlaveSetup = HashMap<SlavePos, bool>;
 pub type MailboxPdoEntries = HashMap<SlavePos, Vec<String>>;
 
-mod mailboxes;
+pub mod mailboxes;
 mod watchdog;
