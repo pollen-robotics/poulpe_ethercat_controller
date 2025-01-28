@@ -9,12 +9,15 @@ use std::{
 };
 
 use ethercat::{
-    AlState, DataType, DomainIdx, Master, MasterAccess, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, PdoIdx, PdoPos, SdoData, SdoIdx, SdoPos, SlaveAddr, SlaveId, SlavePos, SmCfg, SmIdx, SubIdx
+    AlState, DataType, DomainIdx, Master, MasterAccess, Offset,SmInfo, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, PdoIdx, PdoPos, SdoData, SdoIdx, SdoPos, SlaveAddr, SlaveId, SlavePos, SmCfg, SmIdx, SubIdx
 };
 
 use crossbeam_channel::{bounded, Receiver, Sender};
 
 use crate::{watchdog, MailboxPdoEntries, PdoOffsets, SlaveNames, SlaveOffsets, SlaveSetup};
+
+// function not available in the ethercat-rs crate
+use crate::ethercat_patch::master_configure_sync;
 
 #[cfg(feature = "verify_mailbox_pdos")]
 use crate::mailboxes::{init_mailbox_pdo_verification, verify_mailbox_pdos};
@@ -683,7 +686,7 @@ pub fn init_master_for_foe(
                 log::debug!("Output SM!");
             }
 
-            master.configure_sync(SlavePos::from(i as u16), sm_info);
+            master_configure_sync(&mut master, SlavePos::from(i as u16), sm_info);
 
         }
 

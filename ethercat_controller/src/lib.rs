@@ -15,3 +15,5 @@ pub type MailboxPdoEntries = HashMap<SlavePos, Vec<String>>;
 
 pub mod mailboxes;
 mod watchdog;
+
+pub mod ethercat_patch;
