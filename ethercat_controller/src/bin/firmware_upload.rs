@@ -11,7 +11,7 @@ fn main() -> Result<(), std::io::Error> {
 
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 3 {
-        log::error!("Usage: foe-read <slave-position> <file>");
+        log::error!("Usage: firmware_upload <slave-position> <file>");
         return Err(std::io::Error::new(
             std::io::ErrorKind::Other,
             "Not enough arguments",
