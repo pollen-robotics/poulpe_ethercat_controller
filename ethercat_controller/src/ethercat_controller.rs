@@ -662,11 +662,10 @@ pub fn init_master_for_foe(
         for j in 0..slave_info.sync_count {
             let sm_idx = SmIdx::new(j);
             let sm_info = master.get_sync(SlavePos::from(i as u16), sm_idx).unwrap();
-            log::info!("Found sm {:?}, pdo_count {:?}", sm_info, sm_info.pdo_count);
 
             // sanity check
             if sm_info.pdo_count == 0 {
-                log::info!("No PDOs found for SM {:?}", sm_idx);
+                log::debug!("No PDOs found for SM {:?}", sm_idx);
             }
 
             // check if second bit is set
@@ -693,7 +692,6 @@ pub fn init_master_for_foe(
         let cfg_index = config.index();
 
         let cfg_info = master.get_config_info(cfg_index)?;
-        log::info!("Config info: {:#?}", cfg_info);
         if cfg_info.slave_position.is_none() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
