@@ -40,4 +40,4 @@ jobs:
           ./configure --disable-8139too
 
       - name: Build
-        run: ETHERCAT_PATH=$(pwd)/ethercat-hg cargo build
+        run: ETHERCAT_PATH=$(pwd)/ethercat-hg cargo build --release
