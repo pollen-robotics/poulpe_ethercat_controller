@@ -35,7 +35,7 @@ jobs:
         run: |
           hg clone http://hg.code.sf.net/p/etherlabmaster/code ethercat-hg
           cd ethercat-hg
-          hg update stable-1.6
+          hg update stable-1.5
           ./bootstrap
           ./configure --disable-8139too
 
