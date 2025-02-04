@@ -34,7 +34,7 @@ See the and configure the features in the [Cargo.toml](Cargo.toml) file.
 
 ### Client-server communication
 
-<img src="../docs/grpc.png" width="500">
+<img src="../docs/images/grpc.png" width="500">
 
 The server communicates with the ethercat master reading and writing the data to the poulpe boards.
 

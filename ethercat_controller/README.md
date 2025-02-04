@@ -7,7 +7,7 @@ This crate is a wrapper around the `ethercat-rs` crate that provides a more user
 
 The crate is desigend to work with poulpe boards as slaves, detecting them at startup and monitoring them at runtime. It also implements a watchdog and mailbox PDOs to ensure proper communication with the slaves as well as numerous safety checks to ensure that all the slaves are operational.
 
-<img src="../docs/ethercat_controller.png" width="500">
+<img src="../docs/images/ethercat_controller.png" width="500">
 
 
 ### Main features
@@ -51,7 +51,7 @@ The watchdog is implemented in a way where the master sends the watchdog counter
 
 Therefore, as opposed to mailboxes, the watchdog is however used in bidirectinal manner. It is a signal to the slave that the master is operational and is sending the commands, and the signal to the master that the slave is operational and is reading the commands. The poulpe firmware is listenning to the watchdog and if it is not updated in some predefined time (by default 100ms), the slave will consider the master not operational and will stop the motors.
 
-<img src="../docs/watchdog.png">
+<img src="../docs/images/watchdog.png">
 
 The watchdog is communicated at the frequency of the EtherCAT loop (1kHz).
 
@@ -64,7 +64,7 @@ This feature is used in the `ethercat_controller` crate to ensure that the slave
 
 In the firmware_poulpe v1.0 the mailbox PDOs are used for the status data and are sent from the slave to the master at the frequency of around 10Hz.
 
-<img src="../docs/mailbox.png">
+<img src="../docs/images/mailbox.png">
 
 Fromt the firmware version v1.5 the mailbox PDOs are no longer used and the status data is sent through the regular PDOs and SDOs.
 
@@ -74,13 +74,13 @@ The crate also supports the SDO communication with the slaves. The SDO is used t
 > IMPORTANT!!!!!
 > The SDOs cannot be read in runtime, only at the when the LAN9252 is in the `PREOP` state. 
 
-<img src="../docs/ethercat_sdo.png">
+<img src="../docs/images/ethercat_sdo.png">
 
 ### Firmware update over EtherCAT (FoE) support
 
 The crate also supports the firmware update over EtherCAT (FoE) protocol. The FoE is used to update the firmware of the slaves using the EtherCAT communication. As the SDOs it is only available in the `PREOP` state. 
 
-<img src="../docs/ethercat_foe.png">
+<img src="../docs/images/ethercat_foe.png">
 
 THe crate has a bin executable code that falshes the firmware to the slave using the FoE protocol. The code is located in the `bin` directory and is called `firmware_upload`. You can use it by
 

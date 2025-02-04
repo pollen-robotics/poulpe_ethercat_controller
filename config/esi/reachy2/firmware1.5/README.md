@@ -70,7 +70,7 @@ Sync manager | Type | Address | Name | Frequency | Size | Description
 
 # PDOs structure
 
-The full CiA402 design specification can be found here: [dsp402.pdf](../../docs/dsp402.pdf)
+The full CiA402 design specification can be found here: [dsp402.pdf](../../docs/images/dsp402.pdf)
 
 Here is a summary of the commonly used PDO structures:
 - RxPDOs: [some nice docs](https://doc.synapticon.com/node/sw5.1/object_dict/pdo/rxpdo.html)

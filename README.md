@@ -17,7 +17,7 @@ There are four main crates in the code:
 
 The full stack looks something like this:
 
-<img src="docs/grpc_full_stack.png" width="900">
+<img src="docs/images/grpc_full_stack.png" width="900">
 
 `ethercat_controller` creates the direct connection to the EtherCAT master deamon (which communicates with the poulpe boards). `poulpe_ethercat_controller` provides the abstraction layer for the poulpe boards around the `ethercat_controller`. Finally, `poulpe_ethercat_grpc` creates the `server` that can be accessed by multiple `client` instances.
 
