@@ -27,11 +27,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (all_ids, all_names) = client.get_poulpe_ids_sync()?;
 
     // show asscoiated names
-    all_ids.iter().for_each(|id|{
+    all_ids.iter().for_each(|id| {
         log::info!("id: {}, name: {}", id, all_names[*id as usize]);
     });
 
-    all_ids.iter().for_each(|id|{
+    all_ids.iter().for_each(|id| {
         client.emergency_stop(*id);
         log::info!("Emergency stop for id: {}", id);
         thread::sleep(Duration::from_millis(100));

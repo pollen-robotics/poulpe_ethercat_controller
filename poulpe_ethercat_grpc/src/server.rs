@@ -282,11 +282,13 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     let i = slave_id as usize;
                     nb_errors[i] += 1;
                     if nb_errors[i] % nb_errors_max == 0 {
-                        log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}", 
-                        slave_id,
-                        self.controller.get_slave_name(slave_id as u16).unwrap(),
-                        nb_errors[i] as f32 * 1e-3,
-                        self.controller.get_error_flags(slave_id as u16).unwrap());
+                        log::error!(
+                            "Slave {} (name {}) is in fault state for {}s,\n {:#x?}",
+                            slave_id,
+                            self.controller.get_slave_name(slave_id as u16).unwrap(),
+                            nb_errors[i] as f32 * 1e-3,
+                            self.controller.get_error_flags(slave_id as u16).unwrap()
+                        );
 
                         #[cfg(feature = "qucik_stop_on_slave_fault")]
                         {
