@@ -172,7 +172,8 @@ There are two main steps to prepare the poulpe board for the ethercat network:
 `firmware_poulpe` version | `poulpe_etehract_controller` version
 --- | ---
 v0.9.x | v0.9.x
-v1.0.x | v1.0.x
+v1.0.x | v1.0.x or higher
+v1.5.x | v1.5.x 
 
 ### LAN9252 configuration
 - Make sure that the poulpe board is configured properly for the ethercat network.

@@ -368,6 +368,14 @@ impl PoulpeController {
         // get staus bits
         let mut status_bits = self.get_status_bits(slave_id)?;
 
+        if status_bits.contains(&StatusBit::Warning) {
+            log::warn!(
+                "Slave {} in Warning state \n {:#x?}",
+                slave_id,
+                self.get_error_flags(slave_id)?,
+            );
+        }   
+
         // verify if not in fault state
         if status_bits.contains(&StatusBit::Fault) {
             log::error!(

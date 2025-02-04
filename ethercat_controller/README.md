@@ -58,14 +58,14 @@ The watchdog is communicated at the frequency of the EtherCAT loop (1kHz).
 
 ### Mailbox PDOs (optional) 
 
-Mailbox PDOs are used to establish a communication between the master and the slave devices that implements a handshake, ensuring that the data is read and written properly. If the slave has not written the data, the master will not read the old data but will read zeros. 
+In some cases, using the mailbox PDOs is a better strategy than the watchdog. The mailbox PDOs are used to establish a communication between the master and the slave devices that implements a handshake, ensuring that the data is read and written properly. If the slave has not written the data, the master will not read the old data but will read zeros. 
 
 This feature is used in the `ethercat_controller` crate to ensure that the slave is operational aand it sends the data in real-time. If the slave does not write the data in some predefined time (by default is 1s), the master will consider the slave not operational and will fail. 
 
+In the firmware_poulpe v1.0 the mailbox PDOs are used for the status data and are sent from the slave to the master at the frequency of around 10Hz.
 <img src="../docs/mailbox.png">
 
-The mailbox PDOs are sent from the slave to the master at the frequency of around 10Hz.
-
+Fromt the firmware version v1.5 the mailbox PDOs are no longer used and the status data is sent through the regular PDOs and SDOs.
 
 ### SDO support
 
@@ -73,9 +73,13 @@ The crate also supports the SDO communication with the slaves. The SDO is used t
 > IMPORTANT!!!!!
 > The SDOs cannot be read in runtime, only at the when the LAN9252 is in the `PREOP` state. 
 
+<img src="../docs/ethercat_sdo.png">
+
 ### Firmware update over EtherCAT (FoE) support
 
 The crate also supports the firmware update over EtherCAT (FoE) protocol. The FoE is used to update the firmware of the slaves using the EtherCAT communication. As the SDOs it is only available in the `PREOP` state. 
+
+<img src="../docs/ethercat_foe.png">
 
 THe crate has a bin executable code that falshes the firmware to the slave using the FoE protocol. The code is located in the `bin` directory and is called `firmware_upload`. You can use it by
 
