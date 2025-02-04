@@ -3,12 +3,8 @@
 use ethercat::{Master, SlavePos, SmInfo};
 use std::io;
 
-use std::{
-    convert::TryFrom,
-    ffi::CStr,
-    fs::{OpenOptions}
-};
 use std::os::fd::AsRawFd;
+use std::{convert::TryFrom, ffi::CStr, fs::OpenOptions};
 
 macro_rules! ioctl {
     ($m:expr, $f:expr) => { ioctl!($m, $f,) };
@@ -23,7 +19,11 @@ macro_rules! ioctl {
 }
 
 use ethercat_sys as ec;
-pub fn master_configure_sync(master: &mut Master, slave_pos: SlavePos, sm: SmInfo) -> Result<(),ethercat::Error> {
+pub fn master_configure_sync(
+    master: &mut Master,
+    slave_pos: SlavePos,
+    sm: SmInfo,
+) -> Result<(), ethercat::Error> {
     let mut sync = ec::ec_ioctl_slave_sync_t::default();
     sync.slave_position = u16::from(slave_pos);
     sync.sync_index = u8::from(sm.idx) as u32;

@@ -1,6 +1,6 @@
+use core::net;
 use ethercat_controller::EtherCatController;
 use log;
-use core::net;
 use std::env;
 use std::time::Duration;
 
@@ -41,16 +41,16 @@ fn main() {
 
     std::thread::sleep(Duration::from_secs(1));
     // send switch on command
-    ec.set_pdo_register(id, &"controlword".into(), 0, SHUT_DOWN.to_le_bytes().to_vec());
+    ec.set_pdo_register(
+        id,
+        &"controlword".into(),
+        0,
+        SHUT_DOWN.to_le_bytes().to_vec(),
+    );
 
     std::thread::sleep(Duration::from_secs(1));
     // set the mode of operation to profile position mode
-    ec.set_pdo_register(
-        id,
-        &"mode_of_operation".into(),
-        0,
-        vec![POSITION_MODE],
-    );
+    ec.set_pdo_register(id, &"mode_of_operation".into(), 0, vec![POSITION_MODE]);
 
     let t0 = std::time::Instant::now();
     std::thread::sleep(Duration::from_secs(1));
@@ -59,7 +59,12 @@ fn main() {
     let n_axis = p.len();
 
     // send switch on command
-    ec.set_pdo_register(id, &"controlword".into(), 0, SWITCH_ON.to_le_bytes().to_vec());
+    ec.set_pdo_register(
+        id,
+        &"controlword".into(),
+        0,
+        SWITCH_ON.to_le_bytes().to_vec(),
+    );
     loop {
         let status = ec.get_pdo_register(id, &"statusword".into(), 0);
         let orbita_type = ec.get_pdo_register(id, &"actuator_type".into(), 0);
@@ -125,23 +130,28 @@ fn main() {
         let sin_target = 0.5 * f32::sin(0.001 * time);
         log::debug!("{}, {}", time, sin_target);
         // enable the first motor (by setring 1 to the 0th bit of the torque_state register)
-        ec.set_pdo_register(id, &"controlword".into(), 0, ENABLE_OPERATION.to_le_bytes().to_vec());
+        ec.set_pdo_register(
+            id,
+            &"controlword".into(),
+            0,
+            ENABLE_OPERATION.to_le_bytes().to_vec(),
+        );
         // set the target position to the first motor (index 0)
         ec.set_pdo_registers(
             id,
             &"target_position".into(),
-            vec![sin_target.to_le_bytes().to_vec(); n_axis]
+            vec![sin_target.to_le_bytes().to_vec(); n_axis],
         );
         // set the torque and velocity limit
         ec.set_pdo_registers(
             id,
             &"velocity_limit".into(),
-            vec![1.0f32.to_le_bytes().to_vec(); n_axis]
+            vec![1.0f32.to_le_bytes().to_vec(); n_axis],
         );
         ec.set_pdo_registers(
             id,
             &"torque_limit".into(),
-            vec![1.0f32.to_le_bytes().to_vec(); n_axis]
+            vec![1.0f32.to_le_bytes().to_vec(); n_axis],
         );
     }
 }

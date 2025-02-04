@@ -9,7 +9,9 @@ use std::{
 };
 
 use ethercat::{
-    AlState, DataType, DomainIdx, Master, MasterAccess, Offset,SmInfo, PdoCfg, PdoEntryIdx, PdoEntryInfo, PdoEntryPos, PdoIdx, PdoPos, SdoData, SdoIdx, SdoPos, SlaveAddr, SlaveId, SlavePos, SmCfg, SmIdx, SubIdx
+    AlState, DataType, DomainIdx, Master, MasterAccess, Offset, PdoCfg, PdoEntryIdx, PdoEntryInfo,
+    PdoEntryPos, PdoIdx, PdoPos, SdoData, SdoIdx, SdoPos, SlaveAddr, SlaveId, SlavePos, SmCfg,
+    SmIdx, SmInfo, SubIdx,
 };
 
 use crossbeam_channel::{bounded, Receiver, Sender};
@@ -44,7 +46,6 @@ pub struct EtherCatController {
     pub command_drop_time_us: u32,
 }
 
-
 impl EtherCatController {
     pub fn open(
         master_id: u32,
@@ -61,20 +62,24 @@ impl EtherCatController {
         // must be done before master.activate()
         for slave_id in 0..slave_names.len() {
             let mut data = vec![0u8; 1];
-            match mailbox_sdo_read(&master, slave_id as u16, 0x201, 0x1, &mut data){
+            match mailbox_sdo_read(&master, slave_id as u16, 0x201, 0x1, &mut data) {
                 Ok(_) => {
                     log::info!("Slave {}, DXL_ID: {:?}", slave_id, data[0]);
-                },
+                }
                 Err(_) => {
                     log::warn!("Slave {}, DXL_ID unknown!", slave_id);
                 }
             }
 
             let mut data = vec![0u8; 40];
-            match mailbox_sdo_read(&master, slave_id as u16, 0x200, 0x1, &mut data){
+            match mailbox_sdo_read(&master, slave_id as u16, 0x200, 0x1, &mut data) {
                 Ok(_) => {
-                    log::info!("Slave {} firmware version: {:?}", slave_id, String::from_utf8(data).unwrap());
-                },
+                    log::info!(
+                        "Slave {} firmware version: {:?}",
+                        slave_id,
+                        String::from_utf8(data).unwrap()
+                    );
+                }
                 Err(_) => {
                     log::warn!("Slave {}, firmware version unknown!", slave_id);
                 }
@@ -211,7 +216,7 @@ impl EtherCatController {
                     &mut slave_mailbox_pdo_data_buffer,
                     mailbox_wait_time_ms,
                 );
-                
+
                 // write the data to the data lock
                 if let Ok(mut write_guard) = write_data_lock.write() {
                     *write_guard = Some(data.to_vec());
@@ -616,10 +621,7 @@ fn get_reg_addr_ranges(
     ranges
 }
 
-
-pub fn init_master_for_foe(
-    idx: u32,
-) -> Result<Master, io::Error> {
+pub fn init_master_for_foe(idx: u32) -> Result<Master, io::Error> {
     // try to open the master
     // if it fails return error
     let mut master = match Master::open(idx, MasterAccess::ReadWrite) {
@@ -687,7 +689,6 @@ pub fn init_master_for_foe(
             }
 
             master_configure_sync(&mut master, SlavePos::from(i as u16), sm_info);
-
         }
 
         let mut config = master.configure_slave(slave_addr, slave_id)?;
@@ -708,7 +709,16 @@ pub fn init_master_for_foe(
 
 pub fn init_master(
     idx: u32,
-) -> Result<(Master, DomainIdx, SlaveOffsets, SlaveNames, MailboxPdoEntries), io::Error> {
+) -> Result<
+    (
+        Master,
+        DomainIdx,
+        SlaveOffsets,
+        SlaveNames,
+        MailboxPdoEntries,
+    ),
+    io::Error,
+> {
     // try to open the master
     // if it fails return error
     let mut master = match Master::open(idx, MasterAccess::ReadWrite) {
@@ -1062,14 +1072,10 @@ fn log_master_state(
                 }
             }
             Err(_) => {
-                log::error!(
-                    "Slave {:?} not connected!",
-                    i
-                );
+                log::error!("Slave {:?} not connected!", i);
             }
         }
     }
-
 
     // notify the operational state to the master
     #[cfg(feature = "verify_mailbox_pdos")]
