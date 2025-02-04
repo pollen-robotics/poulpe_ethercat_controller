@@ -3,7 +3,7 @@
 This is the code that manages the communication between the orbita2d and orbita3d actuators and the ethercat master. The code is written in rust. It is intended to communicate with poulpe boards running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe).
 
 There are four main crates in the code:
-- `ethercat_controller`: This is the main crate that does the heavy lifting of the communication with the ethercat master. 
+- `ethercat_controller`: This is the main crate that does the heavy lifting of the communication with the ethercat master.
     - It is a wrapper around the `ethercat-rs` crate. This crate enables to create the ethercat master form an ESI xml file.
     - See more in the [ethercat_controller/README.md](ethercat_controller/README.md)
 - `poulpe_ethercat_controller`: This is an abstraction layer on top of the `ethercat_controller` crate. It provides a more user friendly interface to the user with specific functions for poulpe boards.
@@ -19,7 +19,7 @@ The full stack looks something like this:
 
 <img src="docs/grpc_full_stack.png" width="900">
 
-`ethercat_controller` creates the direct connection to the EtherCAT master deamon (which communicates with the poulpe boards). `poulpe_ethercat_controller` provides the abstraction layer for the poulpe boards around the `ethercat_controller`. Finally, `poulpe_ethercat_grpc` creates the `server` that can be accessed by multiple `client` instances. 
+`ethercat_controller` creates the direct connection to the EtherCAT master deamon (which communicates with the poulpe boards). `poulpe_ethercat_controller` provides the abstraction layer for the poulpe boards around the `ethercat_controller`. Finally, `poulpe_ethercat_grpc` creates the `server` that can be accessed by multiple `client` instances.
 
 
 ## Safety features
@@ -83,11 +83,11 @@ sudo apt-get install -y protobuf-compiler libprotobuf-dev
 ### Installing the EtherCAT master
 
 - Install the dependencies (on ubuntu):
-    - `sudo apt install autoconf libtool pkg-config` 
+    - `sudo apt install autoconf libtool pkg-config`
 - Install the [ethercat master](https://etherlab.org/en/ethercat/)
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
     - `cd ethercat`
-    - use the `stable-1.5` branch `git checkout stable-1.5`
+    - use the `stable-1.6` branch `git checkout stable-1.6`
     - `./bootstrap`
     - `./configure --enable-generic --disable-8139too`
     - `make all modules`
@@ -96,7 +96,7 @@ sudo apt-get install -y protobuf-compiler libprotobuf-dev
     - add the path to the `ethercat` binary to the `ETHERCAT_PATH` variable (ex. `export ETHERCAT_PATH=$HOME/ethercat`)
 
 ### Configure EtherCAT master
-In order configure the `ethercat` we need to give the master the MAC address of the PC/ehternet port. 
+In order configure the `ethercat` we need to give the master the MAC address of the PC/ehternet port.
 
 - run `ip a` to find the mac address of the ethernet port:
 
@@ -104,21 +104,21 @@ In order configure the `ethercat` we need to give the master the MAC address of 
     2: enp8s0f2: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default qlen 1000
         link/ether d0:63:b4:05:47:37 brd ff:ff:ff:ff:ff:ff
     ```
-- Modify the file `/usr/local/etc/ethercat.conf` 
+- Modify the file `/usr/local/etc/ethercat.conf`
     - `MASTER0_DEVICE` - set the mac address (ex. `d0:63:b4:05:47:37`) or the name of the port (ex. `enp8s0f2`)
     - `DEVICE_MODULES` set to `”generic”`
 - Then condifure the udev rules for `/dev/EtherCAT0`(go to the mode `0666`)
     - create the ethercat rule: `sudo nano /etc/udev/rules.d/99-EtherCAT.rules`
     - add the following line:
     `KERNEL == "EtherCAT[0-9]*" , MODE ="0666", GROUP ="users"`
-    - reload the rules: 
+    - reload the rules:
     `sudo udevadm control --reload-rules && sudo udevadm trigger`
 
     </details>
 
 
 > There are some helpful notion pages with a bit more info on the ethercat setup:
-> -  [Setup EtherCAT](https://www.notion.so/pollen-robotics/Setup-EtherCAT-1ecce786847e495bb1b4b399740727af) 
+> -  [Setup EtherCAT](https://www.notion.so/pollen-robotics/Setup-EtherCAT-1ecce786847e495bb1b4b399740727af)
 > - [Integration to Bedrock](https://www.notion.so/pollen-robotics/EtherCAT-9864e7348e0341b592b2cf95acaf1bc2?pvs=4#f3a010c9cd474eea92a9f0dfe609a203) (a bit more recent)
 > - Also the [ethercat docs](https://etherlab.org/download/ethercat/ethercat-1.5.2.pdf) are very helpful
 
@@ -177,7 +177,7 @@ v1.5.x | v1.5.x
 
 ### LAN9252 configuration
 - Make sure that the poulpe board is configured properly for the ethercat network.
-    - The EEPROM of the LAN9252 chip on the poulpe board needs to be flashed with the appropriate configuration file. 
+    - The EEPROM of the LAN9252 chip on the poulpe board needs to be flashed with the appropriate configuration file.
 
 - If the board is not configured, once connected to the ethercat network, you it will not display its proper name when you run `ethercat slave`
 
@@ -199,7 +199,7 @@ $ ethercat slave
 0  0:0  OP  +  Orbita2d
 ```
 
-- You can also check the available PDO mappings with `ethercat pdos`. 
+- You can also check the available PDO mappings with `ethercat pdos`.
 
 <details><summary>Example for version v0.9.x</summary>
 
@@ -429,7 +429,7 @@ $ RUST_LOG=info cargo run --release -- config/my_network_config.yaml # or config
 RUST_LOG=info cargo run --release --example client_listener # add the slave id (ex. 0) or slave name (ex. LeftWristOrbita3d)
 ```
 
-ex. 
+ex.
 ```shell
 $ RUST_LOG=info cargo run --release --example client_listener 0 # slave id 0
 
@@ -452,7 +452,7 @@ RUST_LOG=info cargo run --release --example client_sinus # add the slave id (ex.
 ### Python GRPC client
 
 - The `poulpe_ethercat_grpc` crate has a python client that can be used to connect to the GRPC server and read the states of the poulpe boards connected to the network. The python client is a wrapper around the GRPC client that is generated in the `python_client` crate. See the [python_client/README.md](python_client/README.md) for more info.
-- The python client uses the `maturin` package to build the python wheel. 
+- The python client uses the `maturin` package to build the python wheel.
 - See the [python_client/README.md](python_client/README.md) for instructions on how to build the python client.
 
 
@@ -488,8 +488,15 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
 
 ### Orbita2d and Orbita3d control clients
 
-- Once you have your GRPC server running you can connect to it using the 
+- Once you have your GRPC server running you can connect to it using the
     - `orbita2d_control` - [see on github](https://github.com/pollen-robotics/orbita2d_control)
-    - `orbita3d_control` - [see on github](https://github.com/pollen-robotics/orbita3d_control) 
+    - `orbita3d_control` - [see on github](https://github.com/pollen-robotics/orbita3d_control)
 - The ROS packages are used to control the orbita2d and orbita3d actuators, implementing the kinematics of the actuators enabling to control them in joint space or cartesian space.
 - Also, `orbita2d_control` and `orbita3d_control` are ROS packages that use the `poulpe_ethercat_grpc` crate to connect to the GRPC server and control the poulpe boards connected to the network.
+
+## Support
+
+This project adheres to the Contributor [code of conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [contact@pollen-robotics.com](mailto:contact@pollen-robotics.com).
+
+Visit [pollen-robotics.com](https://pollen-robotics.com) to learn more or join our [Dicord community](https://discord.gg/vnYD6GAqJR) if you have any questions or want to share your ideas.
+Follow [@PollenRobotics](https://twitter.com/pollenrobotics) on Twitter for important announcements.
