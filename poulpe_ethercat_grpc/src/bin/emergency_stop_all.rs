@@ -36,7 +36,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-
     all_ids.iter().for_each(|id| {
         client.emergency_stop(*id);
         log::info!("Emergency stop for id: {}", id);
