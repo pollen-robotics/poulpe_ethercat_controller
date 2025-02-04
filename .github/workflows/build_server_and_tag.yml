@@ -81,6 +81,7 @@ jobs:
         run: |
           echo "Building server"
           cargo build --release
+          cargo build --release --bin emergency_stop_all
           echo "Server built"
         env:
             ETHERCAT_PATH: /home/runner/work/poulpe_ethercat_controller/poulpe_ethercat_controller/ethercat_master
@@ -99,6 +100,7 @@ jobs:
                 git status --porcelain target/release/server
                 # git status
                 git add -f target/release/server
+                git add -f target/release/emergency_stop_all
                 git commit -m "Update to ${{  needs.compute-next-version-tag.outputs.next_tag }}  : ${{ github.event.inputs.tag-annotation }}"
                 git push
             else

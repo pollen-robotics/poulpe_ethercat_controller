@@ -66,7 +66,7 @@ Each layer of the code has its own safety features. The `ethercat_controller` de
         - [Read poulpe states](#read-poulpe-states)
         - [Running a simple sinusoide trajectory](#running-a-simple-sinusoide-trajectory)
     - [Running the GRPC server](#running-the-grpc-server)
-        - [Rust GRPC client examples](#running-the-rust-grpc-client)
+        - [Rust GRPC client examples](#rust-grpc-client-examples)
         - [Python GRPC client](#python-grpc-client)
         - [Orbita2d and Orbita3d control clients](#orbita2d-and-orbita3d-control-clients)
 
@@ -172,7 +172,8 @@ There are two main steps to prepare the poulpe board for the ethercat network:
 `firmware_poulpe` version | `poulpe_etehract_controller` version
 --- | ---
 v0.9.x | v0.9.x
-v1.0.x | v1.0.x
+v1.0.x | v1.0.x or higher
+v1.5.x | v1.5.x 
 
 ### LAN9252 configuration
 - Make sure that the poulpe board is configured properly for the ethercat network.
@@ -381,11 +382,11 @@ $ RUST_LOG=info cargo run --release --example poulpe_sinus 0
 - Run the GRPC server code
 
 ```shell
-RUST_LOG=info cargo run --release # add the yaml config file ex. config/Orbita3d.yaml
+RUST_LOG=info cargo run --release # add the yaml config file ex. config/robot.yaml
 ```
 
 - The yaml file contains the configuration of the ethercat network and the poulpe boards connected to the network. The typical yaml file is located in the `config` directory. See the [config/README.md](config/README.md) for more info.
-- The GPRC server runns at the ip address of your pc with the port `50098` (ex. `192.168.0.67:50098`)
+- The GPRC server runs at the ip address of your pc with the port `50098` (ex. `192.168.0.67:50098`)
 
 - Once the server is up and running you can connect to it with the GRPC client, either directly from the examples in this repo or through the ROS stack using `orbita2d_control` or `orbita3d_control` packages.
 
@@ -396,22 +397,16 @@ For example, if you have one one poulpe board connected to the network (ex. one 
 ```yaml
 ethercat:
   master_id: 0
-  cycle_time_us: 1000 # us
-  command_drop_time_us: 5000 # us (5ms default)
+  cycle_time_us: 1000 # us - cycle time of the ethercat 1/frequency
+  command_drop_time_us: 5000 # us (5ms default) 
   watchdog_timeout_ms: 500 # ms (500ms default)
   mailbox_wait_time_ms: 10000 #ms  (1s default)
-
-slaves:
-  - !Poulpe
-    id: 0
-    orbita_type: 3
-    name: "NeckOrbita3d"
 ```
 
 You can run the server with:
 
 ```shell
-$ RUST_LOG=info cargo run --release -- config/orbita3d.yaml
+$ RUST_LOG=info cargo run --release -- config/my_network_config.yaml # or config/robot.yaml for defualt config
 
 [2024-12-03T07:58:37Z INFO  ethercat_controller::ethercat_controller] Found 1 slaves
 [2024-12-03T07:58:37Z INFO  ethercat_controller::ethercat_controller] Slave "NeckOrbita3d" at position 0
@@ -431,7 +426,7 @@ $ RUST_LOG=info cargo run --release -- config/orbita3d.yaml
 - The simplest example is the `client_listener` example. This example connects to the server and listens for the states of the poulpe boards connected to the network.
 
 ```shell
-RUST_LOG=info cargo run --release --example client_listener # add the slave id ex. 0
+RUST_LOG=info cargo run --release --example client_listener # add the slave id (ex. 0) or slave name (ex. LeftWristOrbita3d)
 ```
 
 ex.
@@ -444,12 +439,13 @@ $ RUST_LOG=info cargo run --release --example client_listener 0 # slave id 0
 [2024-12-03T08:21:13Z INFO  client_listener] Compliant: false,	 Target position: [0.0, 0.0, 0.0],	 Current position: [0.441356, 0.43080845, -3.891907]
 [2024-12-03T08:21:13Z INFO  client_listener] Compliant: false,	 Target position: [0.0, 0.0, 0.0],	 Current position: [0.441356, 0.43080845, -3.891907]
 ...
+
 ```
 
 - Another example is the `client_sinus` example. This example connects to the server and sends a simple sinusoide trajectory to the poulpe boards connected to the network.
 
 ```shell
-RUST_LOG=info cargo run --release --example client_sinus # add the slave id ex. 0
+RUST_LOG=info cargo run --release --example client_sinus # add the slave id (ex. 0) or slave name (ex. LeftWristOrbita3d)
 ```
 
 
