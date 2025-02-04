@@ -3,6 +3,7 @@ use std::{
     f32::consts::E,
     mem::take,
     sync::Arc,
+    task::Context,
     time::{Duration, SystemTime},
 };
 
@@ -174,7 +175,24 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
     ) -> Result<Response<Self::GetStatesStream>, Status> {
         let (tx, rx) = mpsc::channel(2);
 
-        let controller = self.controller.clone();
+        let controller = Arc::clone(&self.controller);
+
+        let ids = request.get_ref().ids.clone();
+        for id in ids.clone() {
+            let slave_id = id as u32;
+            log::info!(
+                "Setup Slave {} (id: {})...",
+                controller.get_slave_name(slave_id as u16).unwrap(),
+                slave_id
+            );
+            match controller.setup(slave_id) {
+                Ok(_) => log::info!("Done!"),
+                Err(e) => {
+                    log::error!("Failed to setup slave {}: {}", slave_id, e);
+                    return Err(Status::internal("Failed to setup slaves"));
+                }
+            }
+        }
 
         log::info!(
             "New client - update period of {}s",
@@ -282,11 +300,13 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                     let i = slave_id as usize;
                     nb_errors[i] += 1;
                     if nb_errors[i] % nb_errors_max == 0 {
-                        log::error!("Slave {} (name {}) is in fault state for {}s,\n {:#x?}", 
-                        slave_id,
-                        self.controller.get_slave_name(slave_id as u16).unwrap(),
-                        nb_errors[i] as f32 * 1e-3,
-                        self.controller.get_error_flags(slave_id as u16).unwrap());
+                        log::error!(
+                            "Slave {} (name {}) is in fault state for {}s,\n {:#x?}",
+                            slave_id,
+                            self.controller.get_slave_name(slave_id as u16).unwrap(),
+                            nb_errors[i] as f32 * 1e-3,
+                            self.controller.get_error_flags(slave_id as u16).unwrap()
+                        );
 
                         #[cfg(feature = "qucik_stop_on_slave_fault")]
                         {
@@ -532,16 +552,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let controller = PoulpeController::connect(filename)?;
 
-    for slave_id in controller.get_slave_ids() {
-        log::info!("Setup Slave {}...", slave_id);
-        match controller.setup(slave_id) {
-            Ok(_) => log::info!("Done!"),
-            Err(e) => {
-                log::error!("Failed to setup slave {}: {}", slave_id, e);
-                Err(e)?;
-            }
-        }
-    }
+    // for slave_id in controller.get_slave_ids() {
+    //     log::info!("Setup Slave {}...", slave_id);
+    //     match controller.setup(slave_id) {
+    //         Ok(_) => log::info!("Done!"),
+    //         Err(e) => {
+    //             log::error!("Failed to setup slave {}: {}", slave_id, e);
+    //             Err(e)?;
+    //         }
+    //     }
+    // }
 
     log::info!("POULPE controller ready!");
 

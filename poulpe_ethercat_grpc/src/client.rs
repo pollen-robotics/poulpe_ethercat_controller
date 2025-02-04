@@ -28,7 +28,8 @@ enum Command {
 
 #[derive(Debug)]
 pub struct PoulpeRemoteClient {
-    ids: Vec<u16>,
+    pub ids: Vec<u16>,
+    pub names: Vec<String>,
     rt: Arc<Runtime>,
     addr: Uri,
     state: Arc<RwLock<HashMap<u16, PoulpeState>>>,
@@ -36,6 +37,44 @@ pub struct PoulpeRemoteClient {
 }
 
 impl PoulpeRemoteClient {
+    pub fn connect_with_name(
+        addr: Uri,
+        poulpe_names: Vec<String>,
+        update_period: Duration,
+    ) -> Result<Self, std::io::Error> {
+        // read all slave ids and names in the network
+        let id_client = PoulpeIdClient::new(addr.clone());
+        let (all_ids, all_names) = match id_client.get_slaves() {
+            Ok((ids, names)) => (ids, names),
+            Err(e) => {
+                log::error!("Failed to connect to the server: {}", e);
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::ConnectionRefused,
+                    "Error in connecting to the server! Check if server is up!!!",
+                ));
+            }
+        };
+
+        // verify the names
+        let mut poulpe_ids = vec![];
+        for name in poulpe_names {
+            let id = all_names.iter().position(|n| n == &name);
+            match id {
+                Some(id) => poulpe_ids.push(all_ids[id]),
+                None => {
+                    log::error!("Invalid poulpe name: {}", name);
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "Invalid poulpe name",
+                    ));
+                }
+            }
+        }
+
+        // create the client
+        PoulpeRemoteClient::connect(addr, poulpe_ids, update_period)
+    }
+
     pub fn connect(
         addr: Uri,
         poulpe_ids: Vec<u16>,
@@ -50,22 +89,18 @@ impl PoulpeRemoteClient {
         // let rt = Builder::new_multi_thread().enable_all().build().unwrap();
         let rt = Arc::new(Builder::new_multi_thread().enable_all().build().unwrap());
 
+        // nemes of the poulpe slaves to read the states from
+        let mut names = vec![];
+
         // Validate poulpe_ids
-        let client = PoulpeRemoteClient {
-            ids: poulpe_ids.clone(),
-            rt: rt.clone(),
-            addr: addr.clone(),
-            state: state.clone(),
-            command_buff: command_buff.clone(),
-        };
+        let client = PoulpeIdClient::new(addr.clone());
 
         let url = addr.to_string();
         let ids = poulpe_ids.clone();
         // check if the id is valid and the server is up
         // check if poulpe_ids are valid
-        match client.get_poulpe_ids_sync() {
-            Ok(available_ids) => {
-                let available_ids = available_ids.0;
+        match client.get_slaves() {
+            Ok((available_ids, available_names)) => {
                 let mut common_ids = available_ids.clone();
                 common_ids.retain(|id| poulpe_ids.contains(id));
                 if common_ids.len() != poulpe_ids.len() {
@@ -79,6 +114,11 @@ impl PoulpeRemoteClient {
                         "Invalid poulpe_ids",
                     ));
                 }
+                // ids are good,
+                names = common_ids
+                    .iter()
+                    .map(|id| available_names[*id as usize].clone())
+                    .collect();
             }
             Err(e) => {
                 log::error!(
@@ -155,6 +195,7 @@ impl PoulpeRemoteClient {
 
         Ok(PoulpeRemoteClient {
             ids,
+            names,
             rt,
             addr,
             state,
@@ -408,4 +449,23 @@ pub async fn get_poulpe_ids_async(
         .map(|name: String| name as String)
         .collect();
     Ok((ids, names))
+}
+
+#[derive(Debug)]
+pub struct PoulpeIdClient {
+    rt: Arc<Runtime>,
+    addr: Uri,
+}
+impl PoulpeIdClient {
+    pub fn new(addr: Uri) -> Self {
+        let rt = Arc::new(Builder::new_multi_thread().enable_all().build().unwrap());
+        PoulpeIdClient { rt, addr }
+    }
+
+    pub fn get_slaves(&self) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
+        self.rt.block_on(async {
+            let mut client = PoulpeMultiplexerClient::connect(self.addr.to_string()).await?;
+            get_poulpe_ids_async(&mut client).await
+        })
+    }
 }

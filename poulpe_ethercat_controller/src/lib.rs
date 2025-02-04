@@ -16,7 +16,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-use bitvec::prelude::*;
+use bitvec::{prelude::*, ptr::read};
 
 use ethercat_controller::{
     config::{PoulpeKind, SlaveConfig},
@@ -29,7 +29,7 @@ use register::PdoRegister;
 #[derive(Debug)]
 pub struct PoulpeController {
     pub inner: EtherCatController,
-    poulpe_config: HashMap<u16, PoulpeKind>,
+    pub poulpe_config: HashMap<u16, PoulpeKind>,
 }
 
 impl PoulpeController {
@@ -47,57 +47,58 @@ impl PoulpeController {
 
         let mut poulpe_config = HashMap::new();
 
-        for slave in config.slaves {
-            if let SlaveConfig::Poulpe(poulpe) = slave {
-                poulpe_config.insert(poulpe.id, poulpe);
-            }
-        }
+        // get the list of connected slaves
+        let slaves = controller.get_slave_ids_and_names();
 
-        // if the feature allow_partial_network is enabled, we do not check if the slave is in the config file
-        // if the feature is not enabled, we check if the slave is in the config file as the whole network should be defined in the config file
-        #[cfg(not(feature = "allow_partial_network"))]
-        {
-            // check if all slaves are connected
-            // check if the names of the slaves are correct
-            let slave_ids = controller.get_slave_ids();
-            for slave_id in slave_ids {
-                if poulpe_config.get(&slave_id).is_none() {
-                    log::error!(
-                        "Slave {} with name {:?} not found in config, check config yaml file!",
-                        slave_id,
-                        controller.get_slave_name(slave_id).unwrap()
-                    );
-                    return Err("Slave not in yaml!".into());
-                } else if let Some(name) = controller.get_slave_name(slave_id) {
-                    if poulpe_config[&slave_id].name != name {
-                        log::error!(
-                            "Slave {} Name mismatch: expected {:?}, got {:?}",
-                            slave_id,
-                            poulpe_config[&slave_id].name,
-                            name
-                        );
-                        return Err("Name mismatch".into());
-                    } else {
-                        log::error!("Slave {} with name {:?} name not found on EtherCAT network, check connection!", slave_id, poulpe_config[&slave_id].name);
-                        return Err("Name not found, check connection!".into());
-                    }
-                }
+        // construct the map of connected poulpe boards
+        for (slave_id, slave_name) in slaves {
+            // check if the slave is a poulpe board
+            if !slave_name.contains("Orbita") {
+                log::warn!(
+                    "Slave {} with name {:?} maybe not a poulpe board! Skipping configuration!",
+                    slave_id,
+                    slave_name
+                );
             }
 
-            // check if the number of slaves is correct
-            let slave_ids = controller.get_slave_ids();
-            let mut all_connected = true;
-            if slave_ids.len() != poulpe_config.len() {
-                for p in poulpe_config.keys() {
-                    let name = controller.get_slave_name(*p);
-                    if name.is_none() {
-                        log::error!("Slave {} with name {:?} not found in Ethercat network, check connection!", p, poulpe_config[p].name);
-                        all_connected = false;
-                    }
-                }
+            // from this point on we are sure we are dealing with a poulpe boards
+
+            // check if slave with the same name already exists in the slave list
+            // if it does, throw an error and return
+            if poulpe_config
+                .values()
+                .any(|p: &PoulpeKind| p.name == slave_name)
+            {
+                log::error!(
+                    "Slave {} with name {:?} already connected, possible duplicate names at ids: {} and {}",
+                    slave_id,
+                    slave_name,
+                    slave_id,
+                    poulpe_config.iter().find(|(_, v)| v.name == slave_name).unwrap().0
+                );
+                return Err("Duplicate slave!".into());
             }
-            if all_connected == false {
-                return Err("Number of slaves in config and in network do not match!".into());
+
+            if slave_name.contains("Orbita2d") {
+                let poulpe = PoulpeKind {
+                    id: slave_id,
+                    name: slave_name.clone(),
+                    orbita_type: 2,
+                };
+                poulpe_config.insert(slave_id, poulpe);
+            } else if slave_name.contains("Orbita3d") {
+                let poulpe = PoulpeKind {
+                    id: slave_id,
+                    name: slave_name.clone(),
+                    orbita_type: 3,
+                };
+                poulpe_config.insert(slave_id, poulpe);
+            } else {
+                log::warn!(
+                    "Slave {} with name {:?} maybe not a poulpe board!",
+                    slave_id,
+                    slave_name
+                );
             }
         }
 
@@ -139,6 +140,14 @@ impl PoulpeController {
             .values()
             .map(|x| x.name.clone())
             .collect()
+    }
+
+    pub fn is_poulpe_setup(&self, id: u32) -> bool {
+        self.inner.get_slave_setup(id as u16)
+    }
+
+    pub fn set_poulpe_setup(&self, id: u32, value: bool) {
+        self.inner.set_slave_setup(id as u16, value);
     }
 
     pub fn is_slave_ready(&self, id: u16) -> bool {
@@ -273,48 +282,55 @@ impl PoulpeController {
     pub fn setup(&self, id: u32) -> Result<(), Box<dyn Error>> {
         let slave_id = id as u16;
 
-        // check if slave_id exists in etheract network
-        if !self.inner.get_slave_ids().contains(&slave_id) {
-            log::error!(
-                "Slave {} with name {:?} not found in Ethercat network, check connection!",
-                id,
-                self.poulpe_config[&slave_id].name
-            );
-            return Err("Slave not connected!".into());
+        if self.is_poulpe_setup(id) {
+            log::info!("Slave {} already setup", id);
+            return Ok(());
         }
 
-        #[cfg(not(feature = "allow_partial_network"))]
+        #[cfg(not(feature = "verify_network_on_slave_setup"))]
         {
-            // check if slave_id exists in config
+            // check if slave_id exists in the slaves list built on startup
+            // if not there
             if !self.get_slave_ids().contains(&id) {
                 log::error!(
-                    "Slave {} with name {:?} not found in config, check config yaml file!",
+                    "Slave {} with name {:?} was not found in the slaves list built on startup!",
                     id,
                     self.get_slave_name(slave_id).unwrap()
                 );
-                return Err("Slave not in yaml!".into());
+                return Err("Slave was not found in the slaves list built on startup!".into());
             }
-        }
 
-        match self.inner.get_slave_name(slave_id) {
-            Some(name) => {
-                if self.poulpe_config[&slave_id].name != name {
-                    log::error!(
-                        "Slave {} Name mismatch: expected {:?}, got {:?}",
-                        slave_id,
-                        self.poulpe_config[&slave_id].name,
-                        name
-                    );
-                    return Err("Name mismatch".into());
+            // check if slave_id exists in etheract network
+            // also check that the slave name is correct
+            if !self.inner.get_slave_ids().contains(&slave_id) {
+                log::error!(
+                    "Slave {} with name {:?} not found in Ethercat network, check connection!",
+                    id,
+                    self.poulpe_config[&slave_id].name
+                );
+                return Err("Slave not connected!".into());
+            }
+            match self.inner.get_slave_name(slave_id) {
+                Some(name) => {
+                    if self.poulpe_config[&slave_id].name != name {
+                        log::error!(
+                            "Slave {} Name mismatch: expected {:?}, got {:?}",
+                            slave_id,
+                            self.poulpe_config[&slave_id].name,
+                            name
+                        );
+                        return Err("Name mismatch".into());
+                    }
+                }
+                _ => {
+                    log::error!("Slave {} name not found, check connection!", slave_id);
+                    return Err("Name not found, check connection!".into());
                 }
             }
-            _ => {
-                log::error!("Slave {} name not found, check connection!", slave_id);
-                return Err("Name not found, check connection!".into());
-            }
         }
 
-        // verify that the orbita type is the same as in the config file
+        // verify that the orbita type is the same as it is indicated in the name
+        // that was read from the ethercat network (Orbita2d or Orbita3d)
         // orbita type is the number of axes
         // - orbita2s has 2 axes
         // - orbita3s has 3 axes
@@ -351,6 +367,14 @@ impl PoulpeController {
 
         // get staus bits
         let mut status_bits = self.get_status_bits(slave_id)?;
+
+        if status_bits.contains(&StatusBit::Warning) {
+            log::warn!(
+                "Slave {} in Warning state \n {:#x?}",
+                slave_id,
+                self.get_error_flags(slave_id)?,
+            );
+        }
 
         // verify if not in fault state
         if status_bits.contains(&StatusBit::Fault) {
@@ -429,6 +453,9 @@ impl PoulpeController {
 
         let state: CiA402State = self.get_status(slave_id as u32)?;
         log::info!("Slave {}, setup done! Current state: {:?}", slave_id, state);
+
+        // set the slave as setup
+        self.set_poulpe_setup(id, true);
 
         Ok(())
     }
@@ -787,10 +814,7 @@ impl PoulpeController {
     }
 
     // emergency stop on all slaves connected to the ethercat network
-    pub fn emergency_stop_all(
-        &self,
-        slave_if_error_if: u16,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn emergency_stop_all(&self, slave_id: u16) -> Result<(), Box<dyn std::error::Error>> {
         for id in self.get_slave_ids() {
             self.emergency_stop(id as u32)?;
         }

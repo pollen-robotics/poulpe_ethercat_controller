@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ethercat = "0.2.4"
+ethercat = "0.3.1"
 ethercat-esi = "0.2.0"
+ethercat-sys = "0.3.1"
 log = "0.4.17"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.11"
@@ -16,8 +17,8 @@ crossbeam-channel = "0.5"
 tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["verify_mailboxes", "enable_watchdog" ]#, "stop_opeation_on_error"]
-verify_mailboxes = []           # If this feature is set the ethercat controller will automatically extract the mailbox PDOS
+default = ["enable_watchdog" ,"verify_mailbox_pdos",  "stop_opeation_on_error"]
+verify_mailbox_pdos = []           # If this feature is set the ethercat controller will automatically extract the mailbox PDOS
                                 # from the slave configuration and verify in real time that the slaves are setting the mailbox data
                                 # If the mailbox data is not set for more than 1 second the controller will go to the non operational state
 

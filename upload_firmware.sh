@@ -1,0 +1,1 @@
+RUST_LOG=info cargo run --release --bin firmware_upload -- $1 $2
