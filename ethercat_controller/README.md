@@ -63,6 +63,7 @@ In some cases, using the mailbox PDOs is a better strategy than the watchdog. Th
 This feature is used in the `ethercat_controller` crate to ensure that the slave is operational aand it sends the data in real-time. If the slave does not write the data in some predefined time (by default is 1s), the master will consider the slave not operational and will fail. 
 
 In the firmware_poulpe v1.0 the mailbox PDOs are used for the status data and are sent from the slave to the master at the frequency of around 10Hz.
+
 <img src="../docs/mailbox.png">
 
 Fromt the firmware version v1.5 the mailbox PDOs are no longer used and the status data is sent through the regular PDOs and SDOs.
