@@ -374,7 +374,7 @@ impl PoulpeController {
                 slave_id,
                 self.get_error_flags(slave_id)?,
             );
-        }   
+        }
 
         // verify if not in fault state
         if status_bits.contains(&StatusBit::Fault) {
