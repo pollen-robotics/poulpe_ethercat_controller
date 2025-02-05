@@ -1,4 +1,4 @@
-# Poulpe ehtercat controller
+# Poulpe ethercat controller
 
 [![Build Status]][actions]
 
