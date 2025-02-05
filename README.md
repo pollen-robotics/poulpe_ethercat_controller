@@ -1,5 +1,11 @@
 # Poulpe ehtercat controller
 
+[![Build Status]][actions]
+
+[Build Status]: https://img.shields.io/github/actions/workflow/status/pollen-robotics/poulpe_ethercat_controller/rust.yml?branch=develop
+[actions]: https://github.com/pollen-robotics/poulpe_ethercat_controller/actions?query=branch%3Adevelop
+
+
 This is the code that manages the communication between the orbita2d and orbita3d actuators and the ethercat master. The code is written in rust. It is intended to communicate with poulpe boards running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe).
 
 The full stack looks something like this:
@@ -45,7 +51,7 @@ cargo build --release
 
 Make sure you have your EteherCAT master running and the poulpe boards connected.
 
-To run the server, you need to have the ethercat master running. 
+To run the server, you need to have the ethercat master running.
 
 ```shell
 RUST_LOG=info cargo run --release config/ethercat.yaml
