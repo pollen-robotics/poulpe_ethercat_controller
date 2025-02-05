@@ -1,0 +1,100 @@
+name: Compute Next Version Tag
+
+on:
+  workflow_call:
+    inputs:
+      version-index:
+        description: 'The version index to bump (1 for major, 2 for minor, 3 for patch)'
+        required: true
+        default: "3"
+        type: string
+      debug-version:
+        description: 'Optional: Specify a version directly to bypass git fetching, e.g., "1.2.3"'
+        required: false
+        type: string
+    outputs:
+      next_tag:
+        description: 'The next computed version tag'
+        value: ${{ jobs.generate-next-tag.outputs.next_tag }}
+  workflow_dispatch:
+    inputs:
+      version-index:
+        description: 'The version index to bump (1 for major, 2 for minor, 3 for patch)'
+        required: true
+        default: "3"
+      debug-version:
+        description: 'Optional: Specify a version directly to bypass git fetching, e.g., "1.2.3"'
+        required: false
+
+jobs:
+  generate-next-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      next_tag: ${{ steps.do-the-math.outputs.next_tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Git
+        run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+
+      - name: Print args
+        run: |
+          echo "Version index: ${{ inputs.version-index }}"
+          echo "Debug version: ${{ inputs.debug-version }}"
+      
+      - name: Fetch tags and generate next version tag
+        id: do-the-math
+        run: |
+          DEBUG_VERSION="${{ inputs.debug-version }}"
+          VERSION_INDEX="${{ inputs.version-index }}"
+          VERSION_INDEX=$((VERSION_INDEX-1))  # Adjust index for zero-based array access
+
+          if [ -z "$DEBUG_VERSION" ]; then
+            # Fetch tags and sort them if debug-version is not provided
+            git fetch --tags origin '+refs/heads/*:refs/remotes/origin/*'
+            git fetch --tags --unshallow
+            mapfile -t SORTED_TAGS < <(git tag --list | sed 's/^v//' | sort -V)
+
+            # Get the latest tag
+            LATEST_TAG="${SORTED_TAGS[-1]}"
+          else
+            # Use debug-version as the latest tag
+            LATEST_TAG="$DEBUG_VERSION"
+          fi
+
+          echo "Latest tag: $LATEST_TAG"
+
+          # Split the version into parts
+          IFS='.' read -r -a TAG_PARTS <<< "$LATEST_TAG"
+
+          # if size of the array is less than VERSION_INDEX + 1, then add 0 to the array, else increment the value at VERSION_INDEX
+          if [ ${#TAG_PARTS[@]} -lt $((VERSION_INDEX+1)) ]; then
+            TAG_PARTS[$VERSION_INDEX]=0
+          else
+            TAG_PARTS[$VERSION_INDEX]=$((TAG_PARTS[VERSION_INDEX]+1))
+          fi
+
+          # Reset subsequent parts to 0
+          for (( i = VERSION_INDEX + 1; i < ${#TAG_PARTS[@]}; i++ )); do
+            TAG_PARTS[$i]=0
+          done
+
+          # Construct the next version tag
+          NEXT_TAG="${TAG_PARTS[0]}"
+          for (( i = 1; i < ${#TAG_PARTS[@]}; i++ )); do
+            NEXT_TAG+=".${TAG_PARTS[i]}"
+          done
+
+          # Print the next tag
+          echo "Next tag version: $NEXT_TAG"
+          echo "NEXT_TAG=$NEXT_TAG" >> $GITHUB_ENV
+          echo "NEXT_TAG=$NEXT_TAG" >> $GITHUB_OUTPUT
+
+
+
+      - name: Use the next tag
+        run: |
+            echo "The next version tag will be: ${{ env.NEXT_TAG }}"
