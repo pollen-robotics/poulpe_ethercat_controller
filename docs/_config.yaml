@@ -1,23 +1,28 @@
 title: Poulpe EtherCAT
 description: A quick guide to the Poulpe Ethercat controller
-#theme: just-the-docs
-remote_theme: carlosperate/jekyll-theme-rtd
+theme: just-the-docs
 
 # GitHub Pages base URL
 baseurl: "/poulpe_ethercat_controller" # Change this to match your GitHub repository name
 url: "https://pollen-robotics.github.io"
 
-# Specific to this theme
-site_author: Carlos Pereira Atencio
-repo_url: 'https://github.com/pollen-robotics/poulpe_ethercat_controller'
-edit_on_github: true
-github_docs_folder: true
-# logo: 'https://your.url/image.png'
-# site_favicon: 'https://your.url/here.ico'
-sticky_navigation: true
-prev_next_buttons_location: None
-prev_next_buttons_location: top
-prev_next_buttons_location: bottom
-prev_next_buttons_location: both
+# Build settings
+permalink: pretty
+markdown: kramdown
+highlighter: rouge
+
+# Enable search
+search_enabled: true
+
+# Exclude files from Jekyll build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle
+  - vendor/cache
+  - vendor/gems
+  - vendor/ruby
+
 aux_links:
   Github Repository: https://github.com/pollen-robotics/poulpe_ethercat_controller

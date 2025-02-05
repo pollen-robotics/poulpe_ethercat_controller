@@ -1,6 +1,6 @@
 ---
 title: Starting with the poulpe ethercat controller
-layout: page
+layout: default
 back_to_top: true
 back_to_top_text: "Back to top"
 ---

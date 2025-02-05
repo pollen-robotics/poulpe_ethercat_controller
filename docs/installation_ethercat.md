@@ -1,6 +1,6 @@
 ---
 title: Installing EtherCAT master
-layout: page
+layout: default
 position: 2
 ---
 

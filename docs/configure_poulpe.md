@@ -1,6 +1,6 @@
 ---
 title: Configure Poulpes for EtherCAT
-layout: page
+layout: default
 ---
 
 ## Configuring the Poulpe board for the EtherCAT network
