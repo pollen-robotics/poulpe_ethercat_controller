@@ -1,9 +1,10 @@
 ---
-title: Configure Poulpes for EtherCAT
+title: Configure Poulpes
+parent: Installation and configuration
 layout: default
 ---
 
-## Configuring the Poulpe board for the EtherCAT network
+# Configuring the Poulpe board for the EtherCAT network
 
 Once you have the ethercat master running and you connected your poulpe board to the network, you need to configure the poulpe board to work with the network.
 
@@ -11,7 +12,7 @@ There are two main steps to prepare the poulpe board for the ethercat network:
 - Make sure the poulpe is running the appropriate version of the firmware
 - Make sure the EEPROM of the LAN9252 chip on the poulpe board is flashed with the appropriate configuration file.
 
-### Firmware version
+## Firmware version
 
 - Make sure that the poulpe board is running the appropriate version of the firmware.
 
@@ -21,7 +22,7 @@ v0.9.x | v0.9.x
 v1.0.x | v1.0.x or higher
 v1.5.x | v1.5.x 
 
-### LAN9252 configuration
+## LAN9252 configuration
 - Make sure that the poulpe board is configured properly for the ethercat network.
     - The EEPROM of the LAN9252 chip on the poulpe board needs to be flashed with the appropriate configuration file.
 
@@ -32,7 +33,7 @@ $ ethercat slave
 0  0:0  OP  +  00000000:00000000
 ```
 
-- This means that the EEPROM is not configured. TTo configure it youn need to flush the binary config file to the EEPROM using the `ethercat sii_write` command.
+- This means that the EEPROM is not configured. To configure it youn need to flush the binary config file to the EEPROM using the `ethercat sii_write` command.
     - ex. `ethercat sii_write -p0 Orbita2d.bin` (may need sudo)
         - If there is an error in the transfer try disconnecting and reconnecting the the ethernet cable.
         - **Make sure to restart the board after this (diconnect the power)**

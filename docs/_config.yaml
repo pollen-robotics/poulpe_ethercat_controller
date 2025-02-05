@@ -17,6 +17,7 @@ search_enabled: true
 # Enable or disable heading anchors
 heading_anchors: true
 
+color_scheme: dark
 
 # Exclude files from Jekyll build
 exclude:
@@ -28,5 +29,20 @@ exclude:
   - vendor/gems
   - vendor/ruby
 
+
+callouts:
+  info:
+    title: Info
+    color: blue
+  alert:
+    title: Alert
+    color: red
+  warning:
+    title: Warning
+    color: yellow
+
 aux_links:
   Github Repository: https://github.com/pollen-robotics/poulpe_ethercat_controller
+
+
+footer_content: "Copyright &copy; 2025 Pollen Robotics"

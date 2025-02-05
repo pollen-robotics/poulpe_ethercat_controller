@@ -1,5 +1,6 @@
 ---
 title: Installing EtherCAT master
+parent: Installation and configuration
 layout: default
 position: 2
 ---
@@ -22,7 +23,7 @@ sudo apt-get install libclang-dev
 sudo apt-get install -y protobuf-compiler libprotobuf-dev
 ```
 
-### Installing the EtherCAT master
+## Installing the EtherCAT master
 
 - Install the dependencies (on ubuntu):
     - `sudo apt install autoconf libtool pkg-config`
@@ -37,7 +38,7 @@ sudo apt-get install -y protobuf-compiler libprotobuf-dev
     - `sudo depmod`
     - add the path to the `ethercat` binary to the `ETHERCAT_PATH` variable (ex. `export ETHERCAT_PATH=$HOME/ethercat`)
 
-### Configure EtherCAT master
+## Configure EtherCAT master
 In order configure the `ethercat` we need to give the master the MAC address of the PC/ehternet port.
 
 - run `ip a` to find the mac address of the ethernet port:
@@ -63,7 +64,7 @@ In order configure the `ethercat` we need to give the master the MAC address of 
 
 
 
-### Start the EtherCAT master
+## Start the EtherCAT master
 
 - `sudo ethercatctl start`
 - verify that `/dev/EtherCAT0` exists (`ls /dev/EtherCAT0`).
