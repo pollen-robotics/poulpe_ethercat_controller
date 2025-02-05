@@ -3,8 +3,8 @@ description: A quick guide to the Poulpe Ethercat controller
 theme: just-the-docs
 
 # GitHub Pages base URL
-baseurl: "/" # Change this to match your GitHub repository name
-url: "https://pollen-robotics.github.io/poulpe_ethercat_controller"
+baseurl: "/poulpe_ethercat_controller" # Change this to match your GitHub repository name
+url: "https://pollen-robotics.github.io/"
 
 # Build settings
 permalink: pretty
@@ -13,6 +13,10 @@ highlighter: rouge
 
 # Enable search
 search_enabled: true
+
+# Enable or disable heading anchors
+heading_anchors: true
+
 
 # Exclude files from Jekyll build
 exclude:
