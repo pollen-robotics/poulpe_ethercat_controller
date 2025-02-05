@@ -228,7 +228,7 @@ impl PoulpeRemoteClient {
     {
         let state = self.rt.block_on(self.state.read());
         let state = state.get(&slave_id).ok_or_else(|| {
-            log::error!("No state found for slave {}", slave_id);
+            log::warn!("No state found for slave {}", slave_id);
         })?;
 
         if let Some(ts) = &state.published_timestamp {
