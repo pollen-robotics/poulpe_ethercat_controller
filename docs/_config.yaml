@@ -1,7 +1,7 @@
 title: Poulpe EtherCAT
 description: A quick guide to the Poulpe Ethercat controller
 #theme: just-the-docs
-theme: jekyll-theme-rtd
+remote_theme: carlosperate/jekyll-theme-rtd
 
 # GitHub Pages base URL
 baseurl: "/poulpe_ethercat_controller" # Change this to match your GitHub repository name
