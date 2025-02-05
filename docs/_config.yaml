@@ -4,7 +4,7 @@ theme: just-the-docs
 
 # GitHub Pages base URL
 baseurl: "/poulpe_ethercat_controller" # Change this to match your GitHub repository name
-url: "https://yourusername.github.io"
+url: "https://pollen-robotics.github.io"
 
 # Build settings
 permalink: pretty
