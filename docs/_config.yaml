@@ -3,8 +3,8 @@ description: A quick guide to the Poulpe Ethercat controller
 theme: just-the-docs
 
 # GitHub Pages base URL
-baseurl: "/poulpe_ethercat_controller" # Change this to match your GitHub repository name
-url: "https://pollen-robotics.github.io"
+baseurl: "/" # Change this to match your GitHub repository name
+url: "https://pollen-robotics.github.io/poulpe_ethercat_controller"
 
 # Build settings
 permalink: pretty
