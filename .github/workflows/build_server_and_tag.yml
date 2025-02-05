@@ -43,7 +43,7 @@ jobs:
 
   compute-next-version-tag:
     needs: convert-upgrade-choice-to-index
-    uses: pollen-robotics/poulpe_ethercat_controller/.github/workflows/Compute-Tag.yml@main
+    uses: pollen-robotics/poulpe_ethercat_controller/.github/workflows/Compute-Tag.yml@develop
     with:
       version-index: ${{ needs.convert-upgrade-choice-to-index.outputs.version_index }}
 
