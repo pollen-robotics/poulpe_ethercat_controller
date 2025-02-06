@@ -3,40 +3,19 @@ title: Home
 layout: default
 nav_order: 1
 ---
-# Poulpe ehtercat controller
+# Poulpe EhterCAT stack
 
-This is the code that manages the communication between the orbita2d and orbita3d actuators and the ethercat master. The code is written in rust. It is intended to communicate with poulpe boards running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe).
+This is the full EtherCAT stack that manages the communication with the poulpe boards through EtherCAT network. The code is written in rust. 
+It is intended to communicate with poulpe boards running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe).
 
+## Crate structure
 
+The code is based on the [EtherCAT IgH stack](https://gitlab.com/etherlab.org/ethercat). The EtherCAT master is implemented in the `ethercat_controller` crate. The `poulpe_ethercat_controller` crate is the main crate that manages the communication with the poulpe boards. The `poulpe_ethercat_grpc` crate is the crate that manages the communication with the GRPC server. Read more about the crate structure in [Crates docs](software)
 
 ## Safety features
 
-Each layer of the code has its own safety features. The `ethercat_controller` deals with the EtherCAT communication safety features (see more in the [ethercat_controller/README.md](ethercat_controller/README.md#main-features)). The `poulpe_ethercat_controller` crate has its own safety features that are specific to the poulpe boards (see more in the [poulpe_ethercat_controller/README.md](poulpe_ethercat_controller/README.md#safety-features)). The `poulpe_ethercat_grpc` crate has its own safety features that are specific to the GRPC communication (see more in the [poulpe_ethercat_grpc/README.md](poulpe_ethercat_grpc/README.md#safety-features)).
+The code implements many safety features in order to ensure the safe operation of the boards. Read more about the safety features in the [Safety features](safety_features) docs.
 
-`ethercat_controller` crate has the following safety features:
-- At the statup
-    - Checks if the master and all the slaves are oprational
-    - Checks if all the slaves are configured properly
-- During the operation
-    - Checks if the master and all the slaves are oprational
-    - Checks if all the slaves are connected to the master
-    - Checks if new slaves are connected to the master
-
-`poulpe_ethercat_controller` crate has the following safety features:
-- At the statup
-    - Checks if ethercat network is operational and the topology is correct
-    - Checks if all the boards are in the correct state
-- During the operation
-    - Checks if the boards are in the correct state and only allows turning them on if they are in the correct state
-
-`poulpe_ethercat_grpc` crate has the following safety features:
-- Real-time communication
-    - All server and client messages are time stamped to ensure that the communication is real-time
-    - The server discards all the client messages that are too old
-    - The client that receives the messages that are too old will not process them and consider that the server is down
-- Safety features
-    - The server checks if the boards are in the fault state and if any of them is it sends the emergency stop signal to all the boards
-    - The server continues the operation, reading the baoards states but not sending any commands to the boards
 
 ## Install and build the `poulpe_ethercat_controller` code
 
@@ -47,12 +26,7 @@ Now that you have the ethercat master running and the poulpe board configured, y
 git clone git@github.com:pollen-robotics/poulpe_ethercat_controller.git
 ```
 
-- Build the code
-```shell
-cargo build --release
-```
-If the build passes that means that the code is working properly.
-
+For more information on how to install and build the code read the [Installation and configuration](installation) docs.
 
 ## Support
 

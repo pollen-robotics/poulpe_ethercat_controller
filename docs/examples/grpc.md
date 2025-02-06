@@ -66,6 +66,8 @@ $ RUST_LOG=info cargo run --release -- config/my_network_config.yaml # or config
 
 </details>
 
+## Running the GRPC clients
+
 ### Rust GRPC client examples
 
 - The simplest example is the `client_listener` example. This example connects to the server and listens for the states of the poulpe boards connected to the network.
@@ -96,10 +98,9 @@ RUST_LOG=info cargo run --release --example client_sinus # add the slave id (ex.
 
 ### Python GRPC client
 
-- The `poulpe_ethercat_grpc` crate has a python client that can be used to connect to the GRPC server and read the states of the poulpe boards connected to the network. The python client is a wrapper around the GRPC client that is generated in the `python_client` crate. See the [python_client/README.md](python_client/README.md) for more info.
+- The `poulpe_ethercat_grpc` crate has a python client that can be used to connect to the GRPC server and read the states of the poulpe boards connected to the network. The python client is a wrapper around the GRPC client that is generated in the `python_client` crate. 
 - The python client uses the `maturin` package to build the python wheel.
-- See the [python_client/README.md](python_client/README.md) for instructions on how to build the python client.
-
+- See the [python_client docs](../../installation/python_client) for instructions on how to build the python client.
 
 Once you have your python bindings you can run the examples from the `python_client/scripts` directory or notebooks from the `python_client/notebooks` directory.
 

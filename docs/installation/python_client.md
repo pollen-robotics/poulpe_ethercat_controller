@@ -17,13 +17,17 @@ To use this client run the following command:
 maturin develop --release
 ```
 
-{: .note }
-> IMPORTANT: We suggest using a conda environment to install the client. 
-
+{: .info }
+> You will hav to use a virtual environment to install the client with the `maturin` command. So make sure to activate the virtual environment before running the command. We suggest using `conda` to create the virtual environment, but you can use `venv` or `virtualenv` as well. 
+> 
 ```bash
-conda create -n poulpe_ethercat python=3.8
-pip install maturin
+conda create -n poulpe_ethercat python=3.10
 conda activate poulpe_ethercat
+```
+
+Once you have the virtual environment activated you can run the following command:
+```bash
+pip install maturin
 maturin develop --release
 ```
 

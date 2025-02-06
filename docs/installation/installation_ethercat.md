@@ -30,13 +30,19 @@ sudo apt-get install -y protobuf-compiler libprotobuf-dev
 - Install the [ethercat master](https://etherlab.org/en/ethercat/)
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
     - `cd ethercat`
-    - use the `stable-1.6` branch `git checkout stable-1.6`
+    - use the `stable-1.6` branch `git checkout stable-1.6` 
+        - if needed `stable-1.5` will work too
     - `./bootstrap`
     - `./configure --enable-generic --disable-8139too`
     - `make all modules`
     - `sudo make modules_install install`
     - `sudo depmod`
-    - add the path to the `ethercat` binary to the `ETHERCAT_PATH` variable (ex. `export ETHERCAT_PATH=$HOME/ethercat`)
+
+{: .info}
+>  Rust stack will need to know where the `ethercat` binary is located.
+>  So add the path to the `ethercat` binary to the `ETHERCAT_PATH` variable  
+>  - either by: `export ETHERCAT_PATH=$HOME/ethercat` 
+>  - or add it to the `.bashrc` file
 
 ## Configure EtherCAT master
 In order configure the `ethercat` we need to give the master the MAC address of the PC/ehternet port.
@@ -57,6 +63,7 @@ In order configure the `ethercat` we need to give the master the MAC address of 
     - reload the rules:
     `sudo udevadm control --reload-rules && sudo udevadm trigger`
 
+{: .info}
 > There are some helpful notion pages with a bit more info on the ethercat setup:
 > -  [Setup EtherCAT](https://www.notion.so/pollen-robotics/Setup-EtherCAT-1ecce786847e495bb1b4b399740727af)
 > - [Integration to Bedrock](https://www.notion.so/pollen-robotics/EtherCAT-9864e7348e0341b592b2cf95acaf1bc2?pvs=4#f3a010c9cd474eea92a9f0dfe609a203) (a bit more recent)
@@ -66,8 +73,15 @@ In order configure the `ethercat` we need to give the master the MAC address of 
 
 ## Start the EtherCAT master
 
-- `sudo ethercatctl start`
-- verify that `/dev/EtherCAT0` exists (`ls /dev/EtherCAT0`).
+Start the `ethercat` master:
+```
+sudo ethercatctl start
+```
+
+Verify that `/dev/EtherCAT0` exists 
+```shell
+ls /dev/EtherCAT0
+```
 
 The output should be something like:
 ```shell

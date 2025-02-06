@@ -139,7 +139,7 @@ SM2: PhysAddr 0x1300, DefaultSize    0, ControlRegister 0x20, Enable 1
 
 </details>
 
-<details markdown="1"><summary>Example for version v1.0.x</summary>
+<details markdown="1"><summary>Example for version v1.5.x</summary>
 
 ```shell
 $ ethercat pdos

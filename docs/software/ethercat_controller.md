@@ -5,6 +5,15 @@ nav_order: 1
 parent: Crates
 ---
 
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
+{:toc}
+</details>
+
 # ethercat_controller crate
 
 This crate is a wrapper around the `ethercat-rs` crate that provides a more user-friendly interface to the IgH Ethercat master. 
@@ -17,8 +26,26 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
 <img src="../../images/ethercat_controller.png" width="500">
 
 
-### Main features
+## Main features
 
+### Communication protocols
+
+- Real-time communication
+    - PDO communication
+    - Mailbox PDO communication - (optional)
+- Non real-time communication
+    - SDO communication (Mailbox protocol with CoE)
+    - FoE communication for file upload - (Mailbox protocol with CoE)
+
+{: .info }
+> - **PDO** - Process Data Objects
+> - **SDO** - Service Data Objects
+> - **CoE** - Can Over Ethercat
+> - **FoE** - Fiile over Ethercat
+
+
+
+### Safety features
 - Automatic slave detection at startup + PDO reading from EEPROM
     - Fails if a slave is not configured properly (no PDOs in EEPROM)
 - Automatic slave monitoring at runtime
@@ -40,7 +67,7 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
         - default 1s
         - considered not operational
 
-## List of features
+### List of Cargo features
 
 feature | description | enabled by default
 --- | --- | ---
@@ -48,7 +75,7 @@ feature | description | enabled by default
 `enable_watchdog` | Enable the watchdog | yes
 `stop_opeation_on_error` | Stop the operation if a slave is not operational | no
 
-### Watchdog
+## Watchdog
 
 Watchdog is used to ensure that the slave is reading and responding to the commands, similar to the strategy using in the mailbox PDOs. If the slave does not update its watchdog entry in some predefined time (by default is 500ms), the master will consider the slave not operational and will fail. 
 
@@ -63,7 +90,7 @@ Therefore, as opposed to mailboxes, the watchdog is however used in bidirectinal
 The watchdog is communicated at the frequency of the EtherCAT loop (1kHz).
 
 
-### Mailbox PDOs (optional) 
+## Mailbox PDOs (optional) 
 
 In some cases, using the mailbox PDOs is a better strategy than the watchdog. The mailbox PDOs are used to establish a communication between the master and the slave devices that implements a handshake, ensuring that the data is read and written properly. If the slave has not written the data, the master will not read the old data but will read zeros. 
 
@@ -75,15 +102,17 @@ In the firmware_poulpe v1.0 the mailbox PDOs are used for the status data and ar
 
 Fromt the firmware version v1.5 the mailbox PDOs are no longer used and the status data is sent through the regular PDOs and SDOs.
 
-### SDO support
+## SDO support
 
 The crate also supports the SDO communication with the slaves. The SDO is used to read and write the data from the slaves using the mailbox protocol and Can Over Ethercat (CoE) protocol. The SDOs are used to read non-real time data from the slaves, like the number of axis, hardware zeros, firmware version, etc. 
+
+{: .warning }
 > IMPORTANT!!!!!
 > The SDOs cannot be read in runtime, only at the when the LAN9252 is in the `PREOP` state. 
 
 <img src="../../images/ethercat_sdo.png">
 
-### Firmware update over EtherCAT (FoE) support
+## Firmware update over EtherCAT (FoE) support
 
 The crate also supports the firmware update over EtherCAT (FoE) protocol. The FoE is used to update the firmware of the slaves using the EtherCAT communication. As the SDOs it is only available in the `PREOP` state. 
 

@@ -31,6 +31,9 @@ exclude:
 
 
 callouts:
+  note:
+    title: Note
+    color: green
   info:
     title: Info
     color: blue

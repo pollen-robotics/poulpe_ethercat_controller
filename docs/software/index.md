@@ -1,14 +1,14 @@
 --- 
 title: Crates
 layout: default
-position: 1
+nav_order: 3
 has_children: true
 ---
 
 # Software architecture
 
 
-`poulpe_ethercat_controller` crate is intended to be used with the poulpe boards that are connected to the network. The crate can be used to communicate with the poulpe boards, read and write the SDO and PDO objects, and update the firmware over the EtherCAT network.
+`poulpe_ethercat_controller` crate is intended to be used with the poulpe boards that are connected to the network. The crate can be used to communicate with the poulpe boards, read and write the SDO and PDO objects, and update the firmware over the EtherCAT network. The endpoint interface is a GRPC server and client interface that can be accessed by multiple clients at the same time, either in rust or python.
 
 ### Crate structure
 
