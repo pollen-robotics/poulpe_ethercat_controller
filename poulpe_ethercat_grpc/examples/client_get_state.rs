@@ -7,18 +7,16 @@ use std::{
 
 use poulpe_ethercat_grpc::PoulpeRemoteClient;
 
+use poulpe_ethercat_controller::state_machine::{
+    parse_homing_error_flags, parse_motor_error_flags, parse_state_from_status_word,
+    parse_status_word, CiA402State,
+};
+
 // takes the salve id as argument
 // and moves the motor in a sinusoidal motion
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    // args
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2 {
-        log::error!("Usage:\n{}  <id> \nor \n{} slave_name", args[0], args[0]);
-        return Err("Invalid number of arguments".into());
-    }
-    
     // args
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 {
@@ -46,33 +44,29 @@ fn main() -> Result<(), Box<dyn Error>> {
         log::error!("Failed to connect to the server: {}", e);
         e
     })?;
-
-    let id = client.ids[0];
-    let name = client.names[0].clone();
+    
+    let id = id.unwrap();
+    let name = name.unwrap();
     log::info!("Slave id: {}", id);
     log::info!("Slave name: {}", name);
 
-    let t0 = SystemTime::now();
+    thread::sleep(Duration::from_secs(1));
 
-    let amp = 1.0;
-    let freq = 0.2;
-
-    thread::sleep(Duration::from_secs(2));
-
-    let ids = client.get_poulpe_ids_sync()?;
-    log::info!("Slave ids in network: {:?}", ids);
-
-    loop {
-        let complient = client.is_on(id).unwrap();
-        let target_position = client.get_target_position(id).unwrap();
-        let current_position = client.get_position_actual_value(id).unwrap();
-        log::info!(
-            "Compliant: {:?},\t Target position: {:?},\t Current position: {:?}",
-            complient,
-            target_position,
-            current_position
-        );
-        thread::sleep(Duration::from_secs_f32(0.001));
+    let state = client.get_cia402_state(id).unwrap();
+    let cia_state: CiA402State = parse_state_from_status_word(state as u16);
+    let status_bits = parse_status_word(state as u16);
+    log::info!(
+        "{}: Board State: {:?}\nStatus bits [{:?}]",
+        name,
+        cia_state,
+        status_bits
+    );
+    let error_codes = client.get_error_codes(id).unwrap();
+    let homing_error_flags = parse_homing_error_flags((error_codes[0] as u16).to_le_bytes());
+    log::info!("{}: homing Error flags: {:?}", name, homing_error_flags);
+    for (i, e) in error_codes.iter().enumerate().skip(1) {
+        let motor_error = parse_motor_error_flags((*e as u16).to_le_bytes());
+        log::info!("{}: motor {} | Error flags: {:?}", name, i, motor_error);
     }
     Ok(())
 }
