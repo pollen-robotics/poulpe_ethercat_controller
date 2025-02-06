@@ -37,7 +37,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             vec![name],
             Duration::from_secs_f32(0.001),
         )
-    }.map_err(|e| {
+    }
+    .map_err(|e| {
         log::error!("Failed to connect to the server: {}", e);
         e
     })?;

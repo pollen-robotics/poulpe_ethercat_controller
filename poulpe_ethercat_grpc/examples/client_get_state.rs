@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         log::error!("Usage:\n{}  <id> \nor \n{} slave_name", args[0], args[0]);
         return Err("Invalid number of arguments".into());
     }
-    
+
     // first element is the nema or the id
     let client = if let Ok(id) = args[1].parse::<u16>() {
         log::info!("Connecting to the slave with id: {}", id);
@@ -40,11 +40,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             vec![name],
             Duration::from_secs_f32(0.001),
         )
-    }.map_err(|e| {
+    }
+    .map_err(|e| {
         log::error!("Failed to connect to the server: {}", e);
         e
     })?;
-    
+
     let id = id.unwrap();
     let name = name.unwrap();
     log::info!("Slave id: {}", id);
