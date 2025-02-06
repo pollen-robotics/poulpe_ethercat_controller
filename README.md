@@ -14,15 +14,15 @@ The full stack looks something like this:
 
 `ethercat_controller` creates the direct connection to the EtherCAT master deamon (which communicates with the poulpe boards). `poulpe_ethercat_controller` provides the abstraction layer for the poulpe boards around the `ethercat_controller`. Finally, `poulpe_ethercat_grpc` creates the `server` that can be accessed by multiple `client` instances.
 
-Fin out more in our docs: [docs](docs/index.md)
+Fin out more in our docs: [docs](https://pollen-robotics.github.io/poulpe_ethercat_controller/)
 
 ## Installation
 
-Se more complete installation guide in the [docs](docs/index.md)
+Se more complete installation guide in the [docs](https://pollen-robotics.github.io/poulpe_ethercat_controller/installation)
 
 ### Prerequisites
 
-For using this code, you need to have the following installed: [Ethercat master](https://gitlab.com/etherlab.org/ethercat)
+For using this code, you need to have the following installed: see the [installation guide](https://pollen-robotics.github.io/poulpe_ethercat_controller/installation/installation_ethercat/)
 
 The you can start the master with:
 ```shell
@@ -40,8 +40,21 @@ Clone the repo
 git clone git@github.com:pollen-robotics/poulpe_ethercat_controller.git
 ```
 
-Make sure to have rust installed: [Rust](https://www.rust-lang.org/tools/install) as well as the Ethercat master.
+Check out the branches that you need, depending on the poulpe firmware version that you are using.
 
+`firmware_poulpe` version | `poulpe_etehract_controller` version
+--- | ---
+v0.9.x | 0.9.x
+v1.0.x | 1.0.x or higher
+v1.5.x | 1.5.x
+
+For example if you are using the v1.5.x firmware version you should check out the 1.5.x branch:
+```shell
+git checkout 1.5.x
+```
+
+
+Make sure to have rust installed: [Rust](https://www.rust-lang.org/tools/install) as well as the Ethercat master.
 
 ```shell
 cargo build --release
