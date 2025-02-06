@@ -20,13 +20,14 @@
         <Name LcId="1033">Orbita2d</Name>
         <GroupType>SSC_Device</GroupType>
         <Fmmu>OrbitaIn</Fmmu>
-        <Fmmu>OrbitaState</Fmmu>
         <Fmmu>OrbitaOut</Fmmu>
-        <Sm StartAddress="#x1000" ControlByte="#x64" Enable="1">OrbitaIn</Sm>
-        <Sm StartAddress="#x1200" ControlByte="#x22" Enable="1">OrbitaState</Sm>
-        <Sm StartAddress="#x1300" ControlByte="#x20" Enable="1">OrbitaOut</Sm>
+        <Fmmu>OrbitaState</Fmmu>
+        <Sm StartAddress="#x1000" DefaultSize="128" ControlByte="#x26" Enable="1">MBoxOut</Sm>
+        <Sm StartAddress="#x1180" DefaultSize="128" ControlByte="#x22" Enable="1">MBoxIn</Sm>
+        <Sm StartAddress="#x1300" ControlByte="#x64" Enable="1">OrbitaIn</Sm>
+        <Sm StartAddress="#x1400" ControlByte="#x20" Enable="1">OrbitaOut</Sm>
         <!--OrbitaIn PDOs-->
-        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
           <Index>#x1600</Index>
           <Name>OrbitaIn</Name>
           <Entry>
@@ -114,84 +115,9 @@
             <DataType>REAL</DataType>
           </Entry>
         </RxPdo>
-        <!--OrbitaState PDOs-->
-        <TxPdo Fixed="1" Mandatory="1" Sm="1">
-          <Index>#x1700</Index>
-          <Name>OrbitaState</Name>
-          <Entry>
-            <Index>#x0x603F</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>16</BitLen>
-            <Name>error_code</Name>
-            <DataType>UINT16</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x603F</Index>
-            <SubIndex>1</SubIndex>
-            <BitLen>16</BitLen>
-            <Name>error_code</Name>
-            <DataType>UINT16</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x603F</Index>
-            <SubIndex>2</SubIndex>
-            <BitLen>16</BitLen>
-            <Name>error_code</Name>
-            <DataType>UINT16</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x6402</Index>
-            <SubIndex>0</SubIndex>
-            <BitLen>8</BitLen>
-            <Name>actuator_type</Name>
-            <DataType>UINT8</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x607C</Index>
-            <SubIndex>1</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>axis_position_zero_offset</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x607C</Index>
-            <SubIndex>2</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>axis_position_zero_offset</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x6500</Index>
-            <SubIndex>1</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>board_temperatures</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x6500</Index>
-            <SubIndex>2</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>board_temperatures</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x6501</Index>
-            <SubIndex>1</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>motor_temperatures</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-          <Entry>
-            <Index>#x0x6501</Index>
-            <SubIndex>2</SubIndex>
-            <BitLen>32</BitLen>
-            <Name>motor_temperatures</Name>
-            <DataType>REAL</DataType>
-          </Entry>
-        </TxPdo>
         <!--OrbitaOut PDOs-->
-        <TxPdo Fixed="1" Mandatory="1" Sm="2">
-          <Index>#x1800</Index>
+        <TxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x1700</Index>
           <Name>OrbitaOut</Name>
           <Entry>
             <Index>#x0x6040</Index>
@@ -264,6 +190,85 @@
             <DataType>REAL</DataType>
           </Entry>
         </TxPdo>
+        <!--OrbitaState PDOs-->
+        <TxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x1800</Index>
+          <Name>OrbitaState</Name>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x603F</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>error_code</Name>
+            <DataType>UINT16</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6402</Index>
+            <SubIndex>0</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>actuator_type</Name>
+            <DataType>UINT8</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607C</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x607C</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>axis_position_zero_offset</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6500</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>board_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x0x6501</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>motor_temperatures</Name>
+            <DataType>REAL</DataType>
+          </Entry>
+        </TxPdo>
+        <Mailbox DataLinkLayer="true">
+          <CoE SdoInfo="true" PdoAssign="false" PdoConfig="false" CompleteAccess="false" SegmentedSdo="true"/>
+          <FoE/>
+        </Mailbox>
         <Dc>
           <OpMode>
             <Name>SM_Sync or Async</Name>
@@ -293,6 +298,8 @@
           <!--0x152   0xFF all GPIO set to out       -->
           <!--0x153   0x00 reserved                  -->
           <!--0x12-13 0x0000 alias address           -->
+          <!--see more here: https://ww1.microchip.com/downloads/en/AppNotes/00001920A.pdf-->
+          <BootStrap>0010800080108000</BootStrap>
         </Eeprom>
       </Device>
     </Devices>
