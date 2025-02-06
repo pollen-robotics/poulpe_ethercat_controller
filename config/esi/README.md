@@ -5,7 +5,7 @@ This directory contains the Ethercat Slave Information (ESI) files for the Ether
 This directory contains:
 - XML ESI files for generic orbita2d/orbita3d (`OrbitaXd.xml`)
 - compiled ESI files for generic orbita2d/orbita3d (`OrbitaXd.bin`)
-- `reachy2` robot directory - [reachy2/README.md](reachy2/README)
+- `reachy2` robot directory - [reachy2/README.md](reachy2/README.md)
     - XML/bin ESI files for all joints
     - XML/bin ESI file generation scripts
     - seaprated per firmware version

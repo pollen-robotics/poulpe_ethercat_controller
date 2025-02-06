@@ -11,5 +11,5 @@ ESI files are a bit different for different firmware_Poulpe versions.
 
 firmware version | ESI folder
 --- | ---
-1.0 | [firmware1.0](firmware1.0)
-1.1 | [firmware1.5](firmware1.5)
+1.0 | [firmware1.0](firmware1.0/README.md)
+1.1 | [firmware1.5](firmware1.5/README.md)

@@ -1,4 +1,4 @@
-# Reacy2 ESI files
+# Reacy2 ESI files - firmware 1.5
 
 This directory has all the necessary EtherCAT slave information (ESI) files for the orbita joints of the reachy2 roobt. 
 It contrains
@@ -7,7 +7,7 @@ It contrains
 - complete robot XML ESI file generator `generate_robot_esi_files.py`
 - bash compilation script for the XML files `compile_esi.sh`
 
-## Generating the ESI files 
+## Generating the ESI files  
 
 This step requires installing: 
 - `pyesi` : https://github.com/pollen-robotics/pyesi

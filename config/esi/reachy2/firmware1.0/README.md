@@ -1,4 +1,4 @@
-# Reacy2 ESI files
+# Reacy2 ESI files - firmware 1.0
 
 This directory has all the necessary EtherCAT slave information (ESI) files for the orbita joints of the reachy2 roobt. 
 It contrains
