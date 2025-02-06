@@ -9,12 +9,6 @@ conda env create -f env.yaml
 conda activate docs
 ```
 
-Once in the environment `docs` install jekyll
-
-```
-gem install jekyll bundler
-```
-
 Then install necessary jekyll dependencies of the simplefoc docs:
 
 ```

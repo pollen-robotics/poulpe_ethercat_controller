@@ -1,1 +1,2 @@
 target/release/server filter=lfs diff=lfs merge=lfs -text
+target/release/emergency_stop_all filter=lfs diff=lfs merge=lfs -text
