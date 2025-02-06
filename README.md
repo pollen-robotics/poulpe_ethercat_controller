@@ -1,12 +1,14 @@
 # Poulpe ethercat controller
 
-[![Build Status]][actions]
+[![Build Status]][actions] [![just-the-docs](https://github.com/pollen-robotics/poulpe_ethercat_controller/actions/workflows/jekyll-gh-pages.yml/badge.svg)](https://pollen-robotics.github.io/poulpe_ethercat_controller/)
 
 [Build Status]: https://img.shields.io/github/actions/workflow/status/pollen-robotics/poulpe_ethercat_controller/rust.yml?branch=develop
 [actions]: https://github.com/pollen-robotics/poulpe_ethercat_controller/actions?query=branch%3Adevelop
 
 
-This is the code that manages the communication between the orbita2d and orbita3d actuators and the ethercat master. The code is written in rust. It is intended to communicate with poulpe boards running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe).
+This is a full EtherCAT stack that manages the communication with the poulpe boards through EtherCAT network primarlly developed for the use in the [Reachy2](https://pollen-robotics.com) robot's [Orbita2d](https://github.com/pollen-robotics/orbita3d_control) and [Orbita3d](https://github.com/pollen-robotics/orbita3d_control) actuators.  
+The code is written in rust. It is intended to communicate with poulpe boards running the [firmware_Poulpe](https://github.com/pollen-robotics/firmware_Poulpe). 
+
 
 The full stack looks something like this:
 
