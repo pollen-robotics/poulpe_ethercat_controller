@@ -49,4 +49,4 @@ feature | description | enabled by default
 `switchon_on_turnon` | Switch on the actuator on turn on (if it is in the `SwitchedOnDisabled` state) | no
 
 
-See the and configure the features in the [Cargo.toml](Cargo.toml) file.
+See the and configure the features in the [Cargo.toml]({{site.github_url}}poulpe_ethercat_controller/Cargo.toml) file.

@@ -1,7 +1,7 @@
 ---
 title: python_client
 layout: default
-position: 4
+nav_order: 6
 parent: Crates
 ---
 

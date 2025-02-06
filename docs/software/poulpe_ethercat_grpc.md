@@ -37,7 +37,7 @@ feature | description | enabled by default
 `qucik_stop_on_slave_fault` | Send the emergency stop to all the actuators if one of them is in the error state | yes
 `stop_server_on_actuator_error` | Stop the server if one of the actuators is in the error state | no
 
-See the and configure the features in the [Cargo.toml](Cargo.toml) file.
+See the and configure the features in the [Cargo.toml]({{site.github_url}}poulpe_ethercat_grpc/Cargo.toml) file.
 
 ### Client-server communication
 

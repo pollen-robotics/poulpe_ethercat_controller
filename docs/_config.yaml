@@ -47,5 +47,7 @@ callouts:
 aux_links:
   Github Repository: https://github.com/pollen-robotics/poulpe_ethercat_controller
 
+# GitHub Repository
+github_url: https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/
 
 footer_content: "Copyright &copy; 2025 Pollen Robotics"

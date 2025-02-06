@@ -22,6 +22,9 @@ v0.9.x | v0.9.x
 v1.0.x | v1.0.x or higher
 v1.5.x | v1.5.x 
 
+{: .note}
+The configuration files for the different versions of the firmware are different and can be found int the `config/esi/reachy2` directory. See the [config/esi/reachy2/README.md]({{site.github_url}}config/esi/reachy2/README.md) for more info.
+
 ## LAN9252 configuration
 - Make sure that the poulpe board is configured properly for the ethercat network.
     - The EEPROM of the LAN9252 chip on the poulpe board needs to be flashed with the appropriate configuration file.
@@ -38,7 +41,7 @@ $ ethercat slave
         - If there is an error in the transfer try disconnecting and reconnecting the the ethernet cable.
         - **Make sure to restart the board after this (diconnect the power)**
     - The configuration files are located in the `config/esi` directory.
-    - See the [config/esi/README.md](config/esi/README.md) for more info.
+    - See the [config/esi/README.md]({{site.github_url}}config/esi/README.md) for more info.
 
 - Then you should have the proper name of the device. For example:
 ```sh

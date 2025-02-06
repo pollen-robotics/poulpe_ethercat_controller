@@ -14,7 +14,7 @@ has_children: true
 
 - `ethercat_controller`: This is the main crate that does the heavy lifting of the communication with the ethercat master.
     - It is a wrapper around the `ethercat-rs` crate. This crate enables to create the ethercat master form an ESI xml file.
-    - See more in [here](ethercat_controller)
+    - See more in [ethercat_controller](ethercat_controller)
 - `poulpe_ethercat_controller`: This is an abstraction layer on top of the `ethercat_controller` crate. It provides a more user friendly interface to the user with specific functions for poulpe boards.
     - See more in the [poulpe_ethercat_controller](poulpe_ethercat_controller)
 - `poulpe_ethercat_grpc`: This crate uses the `poulpe_ethercat_controller` to allow for reading assynchronously from multiple poulpe boards connected to the same ethercat master. It is based on the `grpc` protocol. It allows for creating a single server that can be accessed by multiple clients.
@@ -23,7 +23,6 @@ has_children: true
     - See more in the [python_client](python_client)
 - `config`: This is a directory that contains the configuration files for the poulpe boards. It contains the eeprom configuration files for the LN9252 chip on the poulpe boards as well as the EtherCAT networks slave configuration yaml files that are used to create the ethercat master.
     - See more in the [config](config)
-
 The full stack looks something like this:
 
 <img src="../images/grpc_full_stack.png" width="900">

@@ -75,6 +75,9 @@ feature | description | enabled by default
 `enable_watchdog` | Enable the watchdog | yes
 `stop_opeation_on_error` | Stop the operation if a slave is not operational | no
 
+
+See the and configure the features in the [Cargo.toml]({{site.github_url}}ethercat_controller/Cargo.toml) file.
+
 ## Watchdog
 
 Watchdog is used to ensure that the slave is reading and responding to the commands, similar to the strategy using in the mailbox PDOs. If the slave does not update its watchdog entry in some predefined time (by default is 500ms), the master will consider the slave not operational and will fail. 
