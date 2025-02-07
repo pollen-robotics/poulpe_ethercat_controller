@@ -26,3 +26,17 @@ Just make sure that whenever you open your terminal to generate the website to a
 ```
 conda activate docs
 ```
+
+## Running with pyhton
+
+If you don't want to use the conda environment, you can also run the code using only python. First install the requirements:
+
+```
+pip install -r requirements.txt
+```
+
+And then run the following command from the main directory:
+
+```
+mkdocs serve
+```
