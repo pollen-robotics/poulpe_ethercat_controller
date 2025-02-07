@@ -4,6 +4,9 @@ on:
   push:
     branches: ["develop"]
   workflow_dispatch:
+  workflow_run:
+    workflows: ['Rust build']
+    types: [completed]
 
 permissions:
   contents: read

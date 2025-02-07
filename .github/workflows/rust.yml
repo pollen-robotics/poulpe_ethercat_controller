@@ -41,3 +41,8 @@ jobs:
 
       - name: Build
         run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUST_BACKTRACE=full cargo build --release
+
+      - name: Build Docs
+        run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --target-dir docs/api --workspace --lib
+
+
