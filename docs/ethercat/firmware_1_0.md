@@ -10,6 +10,7 @@ nav_order: 1
 The input/output communication protocol follows the CiA402 design specification can be found here: [dsp402.pdf](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/docs/images/dsp402.pdf)
 
 Here is a summary of the commonly used PDO structures:
+
 - RxPDOs: [some nice docs](https://doc.synapticon.com/node/sw5.1/object_dict/pdo/rxpdo.html)
 - TxPDOs: [some nice docs](https://doc.synapticon.com/node/sw5.1/object_dict/pdo/txpdo.html?tocpath=Software%20Reference%205.1%7CProcess%20Data%20Objects%20(PDO)%7C_____2)
 
