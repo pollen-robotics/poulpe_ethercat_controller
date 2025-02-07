@@ -46,7 +46,7 @@ jobs:
         run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --target-dir docs/api --workspace --lib
 
       - name: Upload Rust Docs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-docs
           path: docs/api
