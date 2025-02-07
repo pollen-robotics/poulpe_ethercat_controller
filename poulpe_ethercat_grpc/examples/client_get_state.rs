@@ -45,9 +45,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         log::error!("Failed to connect to the server: {}", e);
         e
     })?;
-
-    let id = id.unwrap();
-    let name = name.unwrap();
+    
+    let id = client.ids[0];
+    let name = client.names[0].clone();
     log::info!("Slave id: {}", id);
     log::info!("Slave name: {}", name);
 

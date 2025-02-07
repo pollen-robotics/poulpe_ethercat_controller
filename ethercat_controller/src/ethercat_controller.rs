@@ -28,6 +28,9 @@ use crate::watchdog::{init_watchdog_settings, verify_watchdog};
 
 use crate::mailboxes::mailbox_sdo_read;
 
+
+/// The EtherCAT controller is the main struct to interact with the EtherCAT network 
+/// encapsulating the master and exchanging data with the slaves 
 #[derive(Debug)]
 pub struct EtherCatController {
     offsets: SlaveOffsets,
@@ -47,6 +50,22 @@ pub struct EtherCatController {
 }
 
 impl EtherCatController {
+
+    /// This function creates a new EtherCAT controller 
+    /// - It configures the master and the slaves in the EtherCAT network
+    /// - Instantiates a new master thread that continuously reads and writes data to the slaves
+    /// 
+    /// # Arguments
+    /// 
+    /// * `master_id` - The id of the master in the EtherCAT network
+    /// * `cycle_period` - The time between each cycle
+    /// * `command_drop_time_us` - The time to wait for the command to be dropped
+    /// * `watchdog_timeout_ms` - The time to wait for the watchdog to be updated
+    /// * `mailbox_wait_time_ms` - The time to wait for the mailbox to be updated
+    /// 
+    /// # Returns
+    /// 
+    /// * `Result<Self, io::Error>` - The result of the operation
     pub fn open(
         master_id: u32,
         cycle_period: Duration,
@@ -437,6 +456,7 @@ impl EtherCatController {
         })
     }
 
+    /// Get all available slave ids
     pub fn get_slave_ids(&self) -> Vec<u16> {
         let mut ids: Vec<u16> = self
             .offsets
@@ -447,6 +467,17 @@ impl EtherCatController {
         ids
     }
 
+    /// get PDO register entry contents
+    /// 
+    /// # Arguments
+    /// 
+    /// * `slave_id` - The id of the slave
+    /// * `register` - The name of the register
+    /// * `index` - The index of the register
+    /// 
+    /// # Returns
+    /// 
+    /// * `Option<Vec<u8>>` - The contents of the register 
     pub fn get_pdo_register(
         &self,
         slave_id: u16,
@@ -460,12 +491,30 @@ impl EtherCatController {
             .map(|data| data[reg_addr_range].to_vec())
     }
 
+    /// set PDO register entry contents
+    /// 
+    /// # Arguments
+    /// 
+    /// * `slave_id` - The id of the slave
+    /// * `register` - The name of the register
+    /// * `index` - The index of the register
+    /// * `value` - The value to set
     pub fn set_pdo_register(&self, slave_id: u16, register: &String, index: usize, value: Vec<u8>) {
         let reg_addr_range = self.get_reg_addr_range(slave_id, register, index);
 
         self.cmd_buff.send((reg_addr_range, value)).unwrap();
     }
 
+    /// get multiple PDO entries with the same register name
+    /// 
+    /// # Arguments
+    /// 
+    /// * `slave_id` - The id of the slave
+    /// * `register` - The name of the register
+    /// 
+    /// # Returns
+    /// 
+    /// * `Option<Vec<Vec<u8>>>` - The contents of the registers
     pub fn get_pdo_registers(&self, slave_id: u16, register: &String) -> Option<Vec<Vec<u8>>> {
         let reg_addr_ranges = self.get_reg_addr_ranges(slave_id, register);
 
@@ -480,6 +529,13 @@ impl EtherCatController {
         Some(vals)
     }
 
+    /// set multiple PDO entries with the same register name
+    /// 
+    /// # Arguments
+    /// 
+    /// * `slave_id` - The id of the slave
+    /// * `register` - The name of the register
+    /// * `values` - The values to set
     pub fn set_pdo_registers(&self, slave_id: u16, register: &String, values: Vec<Vec<u8>>) {
         let reg_addr_ranges = self.get_reg_addr_ranges(slave_id, register);
 
@@ -496,6 +552,7 @@ impl EtherCatController {
         }
     }
 
+    /// Block until the next cycle
     pub fn wait_for_next_cycle(&self) {
         let (lock, cvar) = &*self.cycle_condvar;
         let mut next_cycle = lock.lock().unwrap();
@@ -506,7 +563,7 @@ impl EtherCatController {
         }
     }
 
-    // check if the master is in the operational state
+    /// check if the master is in the operational state
     pub fn master_operational(self) -> bool {
         {
             let (lock, _cvar) = &*self.ready_condvar;
@@ -515,7 +572,7 @@ impl EtherCatController {
         }
     }
 
-    // true if slave is in the operational state
+    /// Check if the slave is in the operational state
     pub fn is_slave_ready(&self, slave_id: u16) -> bool {
         let states = self.get_slave_states();
         match states.get(slave_id as usize).map(|s| *s) {
@@ -524,7 +581,7 @@ impl EtherCatController {
         }
     }
 
-    // get all the slave states connected/configured to the master
+    /// get all the slave states connected/configured to the master
     pub fn get_slave_states(&self) -> Vec<u8> {
         {
             let (lock, _cvar) = &*self.slave_states_condvar;
@@ -533,6 +590,7 @@ impl EtherCatController {
         }
     }
 
+    /// Blocking wait for the master to be ready
     pub fn wait_for_ready(self) -> Self {
         {
             let (lock, cvar) = &*self.ready_condvar;
@@ -546,6 +604,7 @@ impl EtherCatController {
         self
     }
 
+    /// Check if slave is setup
     pub fn get_slave_setup(&self, slave_id: u16) -> bool {
         {
             let (lock, _cvar) = &*self.setup_condvar;
@@ -553,7 +612,7 @@ impl EtherCatController {
             *setup.get(&SlavePos::from(slave_id)).unwrap_or(&false)
         }
     }
-
+    /// Set slave setup state
     pub fn set_slave_setup(&self, slave_id: u16, setup: bool) {
         {
             let (lock, cvar) = &*self.setup_condvar;
@@ -562,14 +621,17 @@ impl EtherCatController {
         }
     }
 
+    /// Get the addes range of the PDO register in the data buffer
     fn get_reg_addr_range(&self, slave_id: u16, register: &String, index: usize) -> Range<usize> {
         get_reg_addr_range(&self.offsets, slave_id, register, index)
     }
 
+    /// Get the addes ranges of the PDO registers with the same name in the data buffer
     fn get_reg_addr_ranges(&self, slave_id: u16, register: &String) -> Vec<Range<usize>> {
         get_reg_addr_ranges(&self.offsets, slave_id, register)
     }
 
+    /// Get the name of the slave with id
     pub fn get_slave_name(&self, slave_id: u16) -> Option<String> {
         self.slave_names
             .iter()
@@ -577,10 +639,12 @@ impl EtherCatController {
             .map(|(name, _)| name.clone())
     }
 
+    /// Get the id of the slave with the name
     pub fn get_slave_id(&self, slave_name: &String) -> Option<u16> {
         self.slave_names.get(slave_name).map(|id| u16::from(*id))
     }
 
+    /// Get tuples of slave ids and names
     pub fn get_slave_ids_and_names(&self) -> Vec<(u16, String)> {
         self.slave_names
             .iter()
@@ -589,6 +653,7 @@ impl EtherCatController {
     }
 }
 
+/// helping function finding the address range of the PDO register in the data buffer
 pub fn get_reg_addr_range(
     offsets: &SlaveOffsets,
     slave_id: u16,
@@ -604,6 +669,7 @@ pub fn get_reg_addr_range(
     addr..addr + bytes_len
 }
 
+/// helping function finding the address ranges of the PDO registers with the same name in the buffer
 fn get_reg_addr_ranges(
     offsets: &SlaveOffsets,
     slave_id: u16,
@@ -621,6 +687,15 @@ fn get_reg_addr_ranges(
     ranges
 }
 
+
+
+/// Initialises the master for File Over EtherCAT (FOE) communication
+/// 
+/// This function does
+/// - Connect to the master
+/// - Finds the slaves connected to the master
+/// - Configures them for FOE communication
+/// - Returns the master object
 pub fn init_master_for_foe(idx: u32) -> Result<Master, io::Error> {
     // try to open the master
     // if it fails return error
@@ -707,6 +782,32 @@ pub fn init_master_for_foe(idx: u32) -> Result<Master, io::Error> {
     Ok(master)
 }
 
+
+/// Initializing the master and automatically determining the slaves in the network, and their configurations
+/// 
+/// This function does
+/// - Connect to the master
+/// - Create a domain
+/// - Finds the slaves connected to the master
+/// - For each slave:
+///     - Finds the sync managers
+///     - Finds the available  PDO groups 
+///     - Finds the PDO entries
+///     - Configures the masater for the slave
+/// - Returns the master object, domain index, slave offsets, slave names, mailbox pdo entries    
+/// 
+/// # Arguments
+/// 
+/// * `idx` - The index of the master to connect to
+/// 
+/// # Returns
+/// 
+/// * `Master` - The master object to interact with the EtherCAT network
+/// * `DomainIdx` - The domain index
+/// * `SlaveOffsets` - The slave offsets
+/// * `SlaveNames` - The slave names
+/// * `MailboxPdoEntries` - The mailbox pdo entries
+/// 
 pub fn init_master(
     idx: u32,
 ) -> Result<
@@ -906,7 +1007,7 @@ pub fn init_master(
     Ok((master, domain_idx, offsets, slave_names, mailbox_pdos))
 }
 
-// log the pdo offsets
+/// log the pdo offsets
 fn log_pdo_offsets(offsets: &SlaveOffsets) {
     for (s, o) in offsets {
         log::debug!("PDO offsets of Slave {}:", u16::from(*s));
@@ -925,7 +1026,7 @@ fn log_pdo_offsets(offsets: &SlaveOffsets) {
     }
 }
 
-// create a function to map slave id to slave name
+/// create a function to map slave id to slave name
 fn create_slave_name_mapper(slave_names: SlaveNames) -> impl Fn(u16) -> String {
     move |id: u16| -> String {
         slave_names
@@ -937,7 +1038,7 @@ fn create_slave_name_mapper(slave_names: SlaveNames) -> impl Fn(u16) -> String {
     }
 }
 
-// set the ready flag with mutex
+/// set the ready flag with mutex
 fn set_ready_flag(condvar: &Arc<(Mutex<bool>, Condvar)>, flag: bool) {
     let (lock, cvar) = &**condvar;
     let mut ready = lock.lock().unwrap();
@@ -945,7 +1046,7 @@ fn set_ready_flag(condvar: &Arc<(Mutex<bool>, Condvar)>, flag: bool) {
     cvar.notify_one();
 }
 
-// notify the slave state with mutex
+/// notify the slave state with mutex
 fn notify_slave_state(condvar: &Arc<(Mutex<Vec<u8>>, Condvar)>, state: Vec<u8>) {
     let (lock, cvar) = &**condvar;
     let mut sstate = lock.lock().unwrap();
@@ -960,7 +1061,7 @@ fn notify_next_cycle(condvar: &Arc<(Mutex<bool>, Condvar)>) {
     cvar.notify_one();
 }
 
-// Function to get the current state of a slave
+/// Function to get the current state of a slave
 fn get_slave_current_state(
     master: &Master,
     slave_pos: SlavePos,
@@ -1011,7 +1112,7 @@ fn get_slave_current_state(
     }
 }
 
-// Function that logs the current state of the master
+/// Function that logs the current state of the master
 fn log_master_state(
     master: &Master,
     slave_number: u32,

@@ -3,12 +3,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use poulpe_ethercat_grpc::client;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
-use tokio::{
-    runtime::{Builder, Runtime},
-    sync::RwLock,
-    time::sleep,
-};
-use tonic::{transport::Uri, Request};
+use tonic::{transport::Uri};
 
 use poulpe_ethercat_grpc::client::PoulpeRemoteClient;
 

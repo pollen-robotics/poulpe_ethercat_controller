@@ -14,7 +14,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.11"
 env_logger = "0.9.0"
 crossbeam-channel = "0.5"
-tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
 default = ["enable_watchdog" ,"verify_mailbox_pdos",  "stop_opeation_on_error"]

@@ -3,6 +3,7 @@
 members = [
     "ethercat_controller",
     "poulpe_ethercat_controller",
-    "poulpe_ethercat_grpc",
-    "python_client"
+    "poulpe_ethercat_grpc"
 ]
+
+exclude = ["python_client"]
