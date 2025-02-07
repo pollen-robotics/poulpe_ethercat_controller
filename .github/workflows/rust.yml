@@ -25,7 +25,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           profile: minimal
       - name: Install protc
         run: sudo apt install -y protobuf-compiler libprotobuf-dev
@@ -43,6 +43,6 @@ jobs:
         run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUST_BACKTRACE=full cargo build --release
 
       - name: Build Docs
-        run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --target-dir docs/api --workspace --lib
+        run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --target-dir docs/api --workspace --lib
 
 
