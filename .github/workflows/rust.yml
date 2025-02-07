@@ -54,7 +54,7 @@ jobs:
       - name: Build Docs
         run: |
           ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --workspace --lib
-          ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --workspace --package python_client
+          ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --package python_client
           mv target/doc docs/api
 
       - name: Upload Rust Docs
