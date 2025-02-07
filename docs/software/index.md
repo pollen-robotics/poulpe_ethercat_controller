@@ -28,3 +28,7 @@ The full stack looks something like this:
 <img src="../images/grpc_full_stack.png" width="900">
 
 `ethercat_controller` creates the direct connection to the EtherCAT master deamon (which communicates with the poulpe boards). `poulpe_ethercat_controller` provides the abstraction layer for the poulpe boards around the `ethercat_controller`. Finally, `poulpe_ethercat_grpc` creates the `server` that can be accessed by multiple `client` instances.
+
+
+NOTE:
+<i class="fa fa-book fa-lg"></i>  The full software API can be found [here](../api/doc/)

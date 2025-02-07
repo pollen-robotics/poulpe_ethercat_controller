@@ -37,6 +37,9 @@ Additionally on every `turn_on` command for the actuators, which can be dangerou
     - If the actuator is not in the `SwitchedOnDisabled` state, the controller will fail (for example after a power cycle or a emergency stop). 
     - If the feature `switchon_on_turnon` is enabled, the controller will try to switch on the actuator if it is in the `SwitchedOnDisabled` state.
 
+NOTE:
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/poulpe_ethercat_controller)
+
 ## List of features
 
 feature | description | enabled by default
@@ -49,4 +52,5 @@ feature | description | enabled by default
 `switchon_on_turnon` | Switch on the actuator on turn on (if it is in the `SwitchedOnDisabled` state) | no
 
 
-See the and configure the features in the [Cargo.toml]({{site.github_url}}poulpe_ethercat_controller/Cargo.toml) file.
+See the and configure the features in the [Cargo.toml](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/poulpe_ethercat_controller/Cargo.toml) file.
+

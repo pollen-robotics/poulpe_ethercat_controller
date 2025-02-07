@@ -2,25 +2,16 @@
 title: config
 layout: default
 parent: Crates
-nav_order: 5
 ---
 
 # Configuration 
 
 This is a directory that contains the configuration files for EtherCAT network and the poulpe boards. 
 
-<details open markdown="block">
-  <summary>
-    Table of contents
-  </summary>
-  {: .text-delta }
-1. TOC
-{:toc}
-</details>
-
 ## EtherCAT network and GRPC server configuration
 
 It contains an example yaml file configuration for the EtherCAT network `ethercat.yaml` which determins few important varaibles for GRPC server and the EtherCAT master. See more info in the [Running the code](../../examples/grpc#running-the-grpc-server) docs.
+
 ```yaml
 ethercat:
   master_id: 0
@@ -31,6 +22,7 @@ ethercat:
 ```
 
 The contens of the `yaml` file are:
+
 - `master_id`: The id of the EtherCAT master - usually 0 
 - `cycle_time_us`: The cycle time of the EtherCAT master in microseconds. The PDOs will be read and written in this time interval ( frequncy = 1/cycle_time_us).
 - `command_drop_time_us`: The time in microseconds at which the GRPC server will consider that teh GRPC client's command is too old and drop it. 

@@ -10,19 +10,7 @@ back_to_top_text: "Back to top"
 
 The `poulp_ethercat_grpc` crate is a GRPC server that can be used to communicate with the poulpe boards connected to the network. The server can be accessed by multiple clients at the same time. The server is written in Rust and the clients can be written in Rust or Python.
 
-<details open markdown="block">
-  <summary>
-    Table of contents
-  </summary>
-  {: .text-delta }
-1. TOC
-{:toc}
-</details>
-
 ## Running the GRPC server
-
-
-
 
 - Run the GRPC server code
 
@@ -30,7 +18,7 @@ The `poulp_ethercat_grpc` crate is a GRPC server that can be used to communicate
 RUST_LOG=info cargo run --release # add the yaml config file ex. config/robot.yaml
 ```
 
-- The yaml file contains the configuration of the ethercat network and the poulpe boards connected to the network. The typical yaml file is located in the `config` directory. See the [config/README.md]({{site.github_url}}config/README.md) for more info.
+- The yaml file contains the configuration of the ethercat network and the poulpe boards connected to the network. The typical yaml file is located in the `config` directory. See the [config/README.md](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/config/README.md) for more info.
 - The GPRC server runs at the ip address of your pc with the port `50098` (ex. `192.168.0.67:50098`)
 
 - Once the server is up and running you can connect to it with the GRPC client, either directly from the examples in this repo or through the ROS stack using `orbita2d_control` or `orbita3d_control` packages.

@@ -1,5 +1,5 @@
 ---
-title: Update Firmware over EtherCAT
+title: Firmware Update via EtherCAT
 layout: default
 ---
 
@@ -7,8 +7,6 @@ layout: default
 
 You'll need to have the poulpe board with the `firmware_Poulpe` version of at least `v1.5.x` to be able to update the firmware over EtherCAT.
 
-
-## Update the firmware
 
 Once when you have your `firmware_Poulpe` compiled and trasnformed to the binary file, you can update the firmware on the poulpe board over the EtherCAT network.
 

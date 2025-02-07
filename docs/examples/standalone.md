@@ -13,15 +13,6 @@ parent: Running the code
 This page shows how to use the `poulpe_ethercat_controller` crate to communicate with the poulpe boards connected to the network. The examples are standalone and do not require the GRPC server to be running.
 
 
-<details open markdown="block">
-  <summary>
-    Table of contents
-  </summary>
-  {: .text-delta }
-1. TOC
-{:toc}
-</details>
-
 
 ### Scan the network
 

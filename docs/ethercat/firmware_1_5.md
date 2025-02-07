@@ -8,7 +8,7 @@ nav_order: 2
 # Firmware 1.5 communication structure
 
 
-The input/output communication protocol follows the CiA402 design specification can be found here: [dsp402.pdf]({{site.github_url}}docs/images/dsp402.pdf)
+The input/output communication protocol follows the CiA402 design specification can be found here: [dsp402.pdf](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/docs/images/dsp402.pdf)
 
 
 Here is a summary of the commonly used PDO structures:

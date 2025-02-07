@@ -17,7 +17,7 @@ To use this client run the following command:
 maturin develop --release
 ```
 
-{: .info }
+INFO:
 > You will hav to use a virtual environment to install the client with the `maturin` command. So make sure to activate the virtual environment before running the command. We suggest using `conda` to create the virtual environment, but you can use `venv` or `virtualenv` as well. 
 > 
 ```bash

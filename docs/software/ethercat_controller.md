@@ -5,15 +5,6 @@ nav_order: 1
 parent: Crates
 ---
 
-<details open markdown="block">
-  <summary>
-    Table of contents
-  </summary>
-  {: .text-delta }
-1. TOC
-{:toc}
-</details>
-
 # ethercat_controller crate
 
 This crate is a wrapper around the `ethercat-rs` crate that provides a more user-friendly interface to the IgH Ethercat master. 
@@ -25,6 +16,8 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
 
 <img src="../../images/ethercat_controller.png" width="500">
 
+NOTE:
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/ethercat_controller)
 
 ## Main features
 
@@ -37,7 +30,7 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
     - SDO communication (Mailbox protocol with CoE)
     - FoE communication for file upload - (Mailbox protocol with CoE)
 
-{: .info }
+INFO:
 > - **PDO** - Process Data Objects
 > - **SDO** - Service Data Objects
 > - **CoE** - Can Over Ethercat
@@ -76,7 +69,7 @@ feature | description | enabled by default
 `stop_opeation_on_error` | Stop the operation if a slave is not operational | no
 
 
-See the and configure the features in the [Cargo.toml]({{site.github_url}}ethercat_controller/Cargo.toml) file.
+See the and configure the features in the [Cargo.toml](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/ethercat_controller/Cargo.toml) file.
 
 ## Watchdog
 
@@ -109,7 +102,7 @@ Fromt the firmware version v1.5 the mailbox PDOs are no longer used and the stat
 
 The crate also supports the SDO communication with the slaves. The SDO is used to read and write the data from the slaves using the mailbox protocol and Can Over Ethercat (CoE) protocol. The SDOs are used to read non-real time data from the slaves, like the number of axis, hardware zeros, firmware version, etc. 
 
-{: .warning }
+WARNING:
 > IMPORTANT!!!!!
 > The SDOs cannot be read in runtime, only at the when the LAN9252 is in the `PREOP` state. 
 
@@ -147,3 +140,4 @@ An example output of the firmware upload is
 [2025-01-28T11:31:16Z INFO  firmware_upload] Resetting the slave
 [2025-01-28T11:31:17Z INFO  firmware_upload] Slave reset request sent
 ```
+

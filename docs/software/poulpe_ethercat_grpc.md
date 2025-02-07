@@ -37,7 +37,7 @@ feature | description | enabled by default
 `qucik_stop_on_slave_fault` | Send the emergency stop to all the actuators if one of them is in the error state | yes
 `stop_server_on_actuator_error` | Stop the server if one of the actuators is in the error state | no
 
-See the and configure the features in the [Cargo.toml]({{site.github_url}}poulpe_ethercat_grpc/Cargo.toml) file.
+See the and configure the features in the [Cargo.toml](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/poulpe_ethercat_grpc/Cargo.toml) file.
 
 ### Client-server communication
 
@@ -74,3 +74,7 @@ The client sends the `PoulpeCommand` message to the server and receives the `Pou
 - `error_codes` : error codes
 - `compliant` : compliant flag
 - `published_timestamp` : timestamp of the message (timestamp when the message was sent)
+
+
+NOTE:
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/pouple_ethercat_grpc)

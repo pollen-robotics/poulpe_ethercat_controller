@@ -1,0 +1,38 @@
+site_name: Poulpe EtherCAT stack  <br> 
+          <a href="https://pollen-robotics.com"><img src="/img/favicon.ico">Pollen Robotics</a> <br> 
+          <a href="https://github.com/pollen-robotics/poulpe_ethercat_controller"><i class="fa fa-github fa-lg"></i> GitHub repo</a>
+repo_url: https://github.com/pollen-robotics/poulpe_ethercat_controller
+edit_uri: https://github.com/pollen-robotics/poulpe_ethercat_controller/blob/develop/docs/
+# repo_name: poulpe_ethercat_controller
+copyright: |
+  Copyright &copy; 2025 Pollen Robotics
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - rust
+    - shell
+    - bash
+    - python
+    - terminal
+    - console
+  hljs_style: github
+
+
+extra_css:
+  - extras/override.css
+
+markdown_extensions:
+  - callouts
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+plugins:
+  - search
+  
