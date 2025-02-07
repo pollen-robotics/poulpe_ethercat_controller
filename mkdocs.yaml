@@ -19,6 +19,8 @@ theme:
     - console
   hljs_style: github
 
+not_in_nav:
+   api
 
 extra_css:
   - extras/override.css
