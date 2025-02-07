@@ -8,7 +8,7 @@ pub struct Config {
 }
 
 /// Configuration for the Ethercat master
-/// 
+///
 /// The master id is the id of the master in the Ethercat network
 /// The cycle time is the time in microseconds between each cycle
 /// The command drop time is the time in microseconds to wait for the command to be dropped
@@ -30,7 +30,7 @@ pub enum SlaveConfig {
 }
 
 /// Configuration for the Poulpe slave
-/// 
+///
 /// The id is the id of the slave in the Ethercat network
 /// The orbita type is the type of the orbita
 /// The name is the name of the slave
@@ -41,17 +41,15 @@ pub struct PoulpeKind {
     pub name: String,
 }
 
-
 impl Config {
-
     /// Load the configuration from a YAML file
     ///     
     /// # Arguments
-    /// 
+    ///
     /// * `path` - The path to the YAML file
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Result<Self, Box<dyn Error>>` - The result of the operation
     pub fn from_yaml(path: &str) -> Result<Self, Box<dyn Error>> {
         let yaml = fs::read_to_string(path)?;

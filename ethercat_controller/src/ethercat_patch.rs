@@ -9,7 +9,7 @@ use std::{convert::TryFrom, ffi::CStr, fs::OpenOptions};
 use ethercat_sys as ec;
 
 /// ioctl macro to call the ioctl function
-/// 
+///
 /// Copied from the ethercat-rs crate
 macro_rules! ioctl {
     ($m:expr, $f:expr) => { ioctl!($m, $f,) };
@@ -23,20 +23,19 @@ macro_rules! ioctl {
     }}
 }
 
-
 /// Function that configures the sync manager of the master
 /// It is missing from the ethercat-rs crate
-/// 
+///
 /// # Arguments
 ///
 /// * `master` - A mutable reference to the master
 /// * `slave_pos` - The slave position
 /// * `sm` - The sync manager information
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Result<(), ethercat::Error>` - The result of the operation
-/// 
+///
 pub fn master_configure_sync(
     master: &mut Master,
     slave_pos: SlavePos,

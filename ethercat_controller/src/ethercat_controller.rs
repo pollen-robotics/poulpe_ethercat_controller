@@ -28,9 +28,8 @@ use crate::watchdog::{init_watchdog_settings, verify_watchdog};
 
 use crate::mailboxes::mailbox_sdo_read;
 
-
-/// The EtherCAT controller is the main struct to interact with the EtherCAT network 
-/// encapsulating the master and exchanging data with the slaves 
+/// The EtherCAT controller is the main struct to interact with the EtherCAT network
+/// encapsulating the master and exchanging data with the slaves
 #[derive(Debug)]
 pub struct EtherCatController {
     offsets: SlaveOffsets,
@@ -50,21 +49,20 @@ pub struct EtherCatController {
 }
 
 impl EtherCatController {
-
-    /// This function creates a new EtherCAT controller 
+    /// This function creates a new EtherCAT controller
     /// - It configures the master and the slaves in the EtherCAT network
     /// - Instantiates a new master thread that continuously reads and writes data to the slaves
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `master_id` - The id of the master in the EtherCAT network
     /// * `cycle_period` - The time between each cycle
     /// * `command_drop_time_us` - The time to wait for the command to be dropped
     /// * `watchdog_timeout_ms` - The time to wait for the watchdog to be updated
     /// * `mailbox_wait_time_ms` - The time to wait for the mailbox to be updated
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Result<Self, io::Error>` - The result of the operation
     pub fn open(
         master_id: u32,
@@ -468,16 +466,16 @@ impl EtherCatController {
     }
 
     /// get PDO register entry contents
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `slave_id` - The id of the slave
     /// * `register` - The name of the register
     /// * `index` - The index of the register
-    /// 
+    ///
     /// # Returns
-    /// 
-    /// * `Option<Vec<u8>>` - The contents of the register 
+    ///
+    /// * `Option<Vec<u8>>` - The contents of the register
     pub fn get_pdo_register(
         &self,
         slave_id: u16,
@@ -492,9 +490,9 @@ impl EtherCatController {
     }
 
     /// set PDO register entry contents
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `slave_id` - The id of the slave
     /// * `register` - The name of the register
     /// * `index` - The index of the register
@@ -506,14 +504,14 @@ impl EtherCatController {
     }
 
     /// get multiple PDO entries with the same register name
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `slave_id` - The id of the slave
     /// * `register` - The name of the register
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Option<Vec<Vec<u8>>>` - The contents of the registers
     pub fn get_pdo_registers(&self, slave_id: u16, register: &String) -> Option<Vec<Vec<u8>>> {
         let reg_addr_ranges = self.get_reg_addr_ranges(slave_id, register);
@@ -530,9 +528,9 @@ impl EtherCatController {
     }
 
     /// set multiple PDO entries with the same register name
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `slave_id` - The id of the slave
     /// * `register` - The name of the register
     /// * `values` - The values to set
@@ -687,10 +685,8 @@ fn get_reg_addr_ranges(
     ranges
 }
 
-
-
 /// Initialises the master for File Over EtherCAT (FOE) communication
-/// 
+///
 /// This function does
 /// - Connect to the master
 /// - Finds the slaves connected to the master
@@ -782,32 +778,31 @@ pub fn init_master_for_foe(idx: u32) -> Result<Master, io::Error> {
     Ok(master)
 }
 
-
 /// Initializing the master and automatically determining the slaves in the network, and their configurations
-/// 
+///
 /// This function does
 /// - Connect to the master
 /// - Create a domain
 /// - Finds the slaves connected to the master
 /// - For each slave:
 ///     - Finds the sync managers
-///     - Finds the available  PDO groups 
+///     - Finds the available  PDO groups
 ///     - Finds the PDO entries
 ///     - Configures the masater for the slave
 /// - Returns the master object, domain index, slave offsets, slave names, mailbox pdo entries    
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `idx` - The index of the master to connect to
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Master` - The master object to interact with the EtherCAT network
 /// * `DomainIdx` - The domain index
 /// * `SlaveOffsets` - The slave offsets
 /// * `SlaveNames` - The slave names
 /// * `MailboxPdoEntries` - The mailbox pdo entries
-/// 
+///
 pub fn init_master(
     idx: u32,
 ) -> Result<

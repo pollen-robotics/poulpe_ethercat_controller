@@ -10,7 +10,7 @@ use crate::{MailboxPdoEntries, SlaveOffsets, SlavePos};
 /// flag to check if the slave is responding
 /// buffer to store the mailbox data (that are read asynchronusly from the slaves)
 ///
-/// **Note:**  mailbox PDOs are different from the normal buffered PDOs and they are not always present 
+/// **Note:**  mailbox PDOs are different from the normal buffered PDOs and they are not always present
 pub fn init_mailbox_pdo_verification(
     slave_number: u32,
     mailbox_pdo_entries: &MailboxPdoEntries,

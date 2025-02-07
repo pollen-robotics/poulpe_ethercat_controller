@@ -1,18 +1,16 @@
 use crate::SlaveOffsets;
 use std::ops::Range;
 
-
-
 /// watchdog is added to the manufcturer specific data of the statusword
 /// bits 8, 14 and 15
 /// parse the 3bit watchdog counter from the statusword
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `statusword` - The statusword of the slave
 ///
 /// # Returns
-/// 
+///
 /// * `u8` - The watchdog counter
 fn parse_watchdog_from_status(statusword: Vec<u8>) -> u8 {
     // bit 8
@@ -25,16 +23,16 @@ fn parse_watchdog_from_status(statusword: Vec<u8>) -> u8 {
 
 /// write the watchdog counter to the controlword
 /// to the bits 11-15 which are manufacturer specific
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `control_word` - The controlword of the slave
 /// * `watchdog_counter` - The watchdog counter to be written
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Vec<u8>` - The controlword with the watchdog counter written
-/// 
+///
 fn write_watchdog_to_control(control_word: Vec<u8>, watchdog_counter: u8) -> Vec<u8> {
     let mut control_word = control_word;
     // clear the bits 11-15
@@ -52,9 +50,9 @@ fn write_watchdog_to_control(control_word: Vec<u8>, watchdog_counter: u8) -> Vec
 ///      - if it is the same for more than 1s the slave is considered not responding
 /// - if the counter is different, update the timestamp
 /// - write the watchdog counter to the controlword
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `slave_number` - The number of slaves
 /// * `data` - The domain data
 /// * `watchdog_timeout_ms` - The timeout for the watchdog in milliseconds
@@ -65,9 +63,9 @@ fn write_watchdog_to_control(control_word: Vec<u8>, watchdog_counter: u8) -> Vec
 /// * `slave_is_watchdog_responding` - The flag to check if each slave is responding
 /// * `slave_previous_watchdog_counter` - The buffer to store the previous watchdog counter for each slave
 /// * `slave_name_from_id` - A function to get the slave name from the id
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `bool` - The flag to check if all the slaves are responding
 pub fn verify_watchdog(
     slave_number: u32,
@@ -138,21 +136,21 @@ pub fn verify_watchdog(
 /// initialize the watchdog settings
 /// find the offsets of the controlword and statusword data in the domain data
 /// initialize the timestamp, flag and buffer for the watchdog data
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `slave_number` - The number of slaves
 /// * `offsets` - The slave offsets
 /// * `get_reg_addr_ranges` - A function to get the register address ranges
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Vec<Vec<Range<usize>>>` - The controlword offsets
 /// * `Vec<Vec<Range<usize>>>` - The statusword offsets
 /// * `Vec<std::time::Instant>` - The timestamps
 /// * `Vec<bool>` - The flag to check if the slave is responding
 /// * `Vec<u8>` - The buffer to store the watchdog data
-/// 
+///
 pub fn init_watchdog_settings(
     slave_number: u32,
     offsets: &SlaveOffsets,
