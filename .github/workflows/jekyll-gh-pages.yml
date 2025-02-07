@@ -22,6 +22,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
+      - name: Download Rust Docs
+        uses: actions/download-artifact@v3
+        with:
+          name: rust-docs
+          path: docs/api
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:

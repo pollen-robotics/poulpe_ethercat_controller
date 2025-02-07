@@ -45,4 +45,10 @@ jobs:
       - name: Build Docs
         run: ETHERCAT_PATH=$(pwd)/ethercat-hg RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps --target-dir docs/api --workspace --lib
 
+      - name: Upload Rust Docs
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-docs
+          path: docs/api
+          retention-days: 1  # Keep for 5 days
 
