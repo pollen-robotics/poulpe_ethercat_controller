@@ -1,6 +1,8 @@
 # Poulpe ethercat controller
 
-[![Build Status]][actions] [![just-the-docs](https://github.com/pollen-robotics/poulpe_ethercat_controller/actions/workflows/jekyll-gh-pages.yml/badge.svg)](https://pollen-robotics.github.io/poulpe_ethercat_controller/)
+[![Build Status]][actions] ![GitHub Tag](https://img.shields.io/github/v/tag/pollen-robotics/poulpe_ethercat_controller) ![GitHub Release Date](https://img.shields.io/github/release-date/pollen-robotics/poulpe_ethercat_controller)
+
+
 
 [Build Status]: https://img.shields.io/github/actions/workflow/status/pollen-robotics/poulpe_ethercat_controller/rust.yml?branch=develop
 [actions]: https://github.com/pollen-robotics/poulpe_ethercat_controller/actions?query=branch%3Adevelop

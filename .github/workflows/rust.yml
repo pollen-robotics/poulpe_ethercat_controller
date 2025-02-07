@@ -5,6 +5,15 @@ on: [push, pull_request]
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+  
 jobs:
   fmt:
     runs-on: ubuntu-latest
