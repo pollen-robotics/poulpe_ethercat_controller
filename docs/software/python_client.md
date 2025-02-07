@@ -46,4 +46,4 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
 
 
 NOTE:
-<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/python_client)
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/python_client)

@@ -17,7 +17,7 @@ The crate is desigend to work with poulpe boards as slaves, detecting them at st
 <img src="../../images/ethercat_controller.png" width="500">
 
 NOTE:
-<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/ethercat_controller)
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/ethercat_controller)
 
 ## Main features
 

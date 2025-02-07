@@ -31,4 +31,4 @@ The full stack looks something like this:
 
 
 NOTE:
-<i class="fa fa-book fa-lg"></i>  The full software API can be found [here](../api/doc/)
+<i class="fa fa-book fa-lg"></i>  The full software API can be found [here](../api/)

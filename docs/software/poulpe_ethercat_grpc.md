@@ -77,4 +77,4 @@ The client sends the `PoulpeCommand` message to the server and receives the `Pou
 
 
 NOTE:
-<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/pouple_ethercat_grpc)
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/pouple_ethercat_grpc)

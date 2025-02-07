@@ -38,7 +38,7 @@ Additionally on every `turn_on` command for the actuators, which can be dangerou
     - If the feature `switchon_on_turnon` is enabled, the controller will try to switch on the actuator if it is in the `SwitchedOnDisabled` state.
 
 NOTE:
-<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/doc/poulpe_ethercat_controller)
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/poulpe_ethercat_controller)
 
 ## List of features
 
