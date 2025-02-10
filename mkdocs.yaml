@@ -1,6 +1,4 @@
-site_name: Poulpe EtherCAT stack  <br> 
-          <a href="https://pollen-robotics.com"><img src="https://pollen-robotics.github.io/poulpe_ethercat_controller/img/favicon.ico">Pollen Robotics</a> <br> 
-          <a href="https://github.com/pollen-robotics/poulpe_ethercat_controller"><i class="fa fa-github fa-lg"></i> GitHub repo</a>
+site_name: Poulpe EtherCAT stack
 repo_url: https://github.com/pollen-robotics/poulpe_ethercat_controller
 edit_uri: https://github.com/pollen-robotics/poulpe_ethercat_controller/blob/develop/docs/
 # repo_name: poulpe_ethercat_controller
@@ -18,6 +16,8 @@ theme:
     - terminal
     - console
   hljs_style: github
+  custom_dir: docs/custom_theme/
+  logo: img/favicon.ico
 
 not_in_nav:
    api
