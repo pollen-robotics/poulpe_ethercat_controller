@@ -45,6 +45,11 @@ impl ControlWord {
     }
 }
 
+// The mode of operation for the motor
+// - 1: ProfilePositionMode - the motor will move to a specific position
+// - 2: VelocityMode - the motor will move at a specific velocity
+// - 4: ProfileTorqueMode - the motor will move with a specific torque
+#[derive(FromPrimitive, PartialEq, Clone, Copy, Debug)]
 pub enum CiA402ModeOfOperation {
     ProfilePositionMode = 1,
     VelocityMode = 2,
@@ -56,6 +61,12 @@ pub enum CiA402ModeOfOperation {
     CyclicSynchronousVelocityMode = 9,
     CyclicSynchronousTorqueMode = 10,
     Reserved = 15,
+}
+
+impl CiA402ModeOfOperation {
+    pub fn from_u8(value: u8) -> Option<CiA402ModeOfOperation> {
+        num::FromPrimitive::from_u8(value)
+    }
 }
 
 // Error codes for the motors, we will have one error code per motor

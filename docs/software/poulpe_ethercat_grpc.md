@@ -46,6 +46,7 @@ See the and configure the features in the [Cargo.toml](https://github.com/pollen
 The server communicates with the ethercat master reading and writing the data to the poulpe boards.
 
 The client sends the `PoulpeCommand` message to the server and receives the `PoulpeState` message from the server. `PoulpeCommand` message contains 
+
 - `id` : id of the poulpe board
 - `emergency_stop` : emergency stop flag (true for emergency stop)
 - `compliancy` : activate the board (true for active)
@@ -58,6 +59,7 @@ The client sends the `PoulpeCommand` message to the server and receives the `Pou
 - `published_timestamp` : timestamp of the message (timestamp when the message was sent)
 
 `PoulpeState` message contains:
+
 - `id` : id of the poulpe board
 - `mode_of_operation` : mode of operation
 - `actual_position` : actual position
@@ -77,4 +79,4 @@ The client sends the `PoulpeCommand` message to the server and receives the `Pou
 
 
 NOTE:
-<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/pouple_ethercat_grpc)
+<i class="fa fa-book fa-lg"></i> The full software API can be found [here](../../api/poulpe_ethercat_grpc)

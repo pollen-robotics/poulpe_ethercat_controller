@@ -1,6 +1,5 @@
 from python_client import PyPoulpeRemoteClient
 import numpy as np
-from glob import glob
 import sys
 import time
 
@@ -19,7 +18,10 @@ client = PyPoulpeRemoteClient("http://127.0.0.1:50098", [slave_id], 0.001)
 
 time.sleep(1.0)
 
-print("Connected slaves to master: {}".format(client.get_connected_devices()))
-
+devices = client.get_all_slaves_in_network()
+print("Devices connected in the network: ")
+for i,name in zip(devices[0],devices[1]):
+    print("Slave {}: {}".format(i,name))
+    
 print("Slave {} compliancy is: {}".format(slave_id, client.get_torque_state(slave_id)))
 print("Slave {} current position: {}".format(slave_id, client.get_position_actual_value(slave_id)))

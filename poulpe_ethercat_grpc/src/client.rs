@@ -37,6 +37,17 @@ pub struct PoulpeRemoteClient {
 }
 
 impl PoulpeRemoteClient {
+    /// Connect to the server with the given poulpe names
+    /// - connects to the server and reads the ids of the poulpe slaves
+    /// - checks if the given poulpe names are valid
+    /// - subsrtibes to the states of the given slaves
+    ///
+    /// # Arguments
+    ///     - addr: Uri: The address of the server
+    ///     - poulpe_names: Vec<String>: The names of the poulpe slaves to connect to
+    ///     - update_period: Duration: The update period for the state stream
+    /// # Returns
+    ///     - Result<Self, std::io::Error>: The client if successful, else an error
     pub fn connect_with_name(
         addr: Uri,
         poulpe_names: Vec<String>,
@@ -58,6 +69,7 @@ impl PoulpeRemoteClient {
         // verify the names
         let mut poulpe_ids = vec![];
         for name in poulpe_names {
+            // get index of the name in the all_names
             let id = all_names.iter().position(|n| n == &name);
             match id {
                 Some(id) => poulpe_ids.push(all_ids[id]),
@@ -75,6 +87,17 @@ impl PoulpeRemoteClient {
         PoulpeRemoteClient::connect(addr, poulpe_ids, update_period)
     }
 
+    /// Connect to the server with the given poulpe ids
+    /// - connects to the server and reads the ids of the poulpe slaves
+    /// - checks if the given poulpe ids are valid
+    /// - subsrtibes to the states of the given slaves
+    ///
+    /// # Arguments
+    ///    - addr: Uri: The address of the server
+    ///    - ids: Vec<u16>: The ids of the poulpe slaves to connect to
+    ///    - update_period: Duration: The update period for the state stream
+    /// # Returns
+    ///    - Result<Self, std::io::Error>: The client if successful, else an error
     pub fn connect(
         addr: Uri,
         poulpe_ids: Vec<u16>,
@@ -102,8 +125,21 @@ impl PoulpeRemoteClient {
         match client.get_slaves() {
             Ok((available_ids, available_names)) => {
                 let mut common_ids = available_ids.clone();
-                common_ids.retain(|id| poulpe_ids.contains(id));
-                if common_ids.len() != poulpe_ids.len() {
+                let mut common_names = available_names.clone();
+                // remove the other ids and names
+                // get indexes to retain
+                let mut retain_inds = vec![];
+                for id in poulpe_ids.iter() {
+                    if let Some(ind) = available_ids.iter().position(|&x| x == *id) {
+                        retain_inds.push(ind);
+                    }
+                }
+                common_ids = retain_inds.iter().map(|&i| available_ids[i]).collect();
+                common_names = retain_inds
+                    .iter()
+                    .map(|&i| available_names[i].clone())
+                    .collect();
+                if common_ids.len() != poulpe_ids.len() || common_names.len() != poulpe_ids.len() {
                     log::error!(
                         "Invalid poulpe_ids: {:?}, available_ids: {:?}",
                         poulpe_ids,
@@ -115,10 +151,7 @@ impl PoulpeRemoteClient {
                     ));
                 }
                 // ids are good,
-                names = common_ids
-                    .iter()
-                    .map(|id| available_names[*id as usize].clone())
-                    .collect();
+                names = common_names.clone();
             }
             Err(e) => {
                 log::error!(
@@ -203,6 +236,7 @@ impl PoulpeRemoteClient {
         })
     }
 
+    /// Get all ids and names of slaves in the network
     pub fn get_poulpe_ids_sync(
         &self,
     ) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
@@ -212,6 +246,7 @@ impl PoulpeRemoteClient {
         })
     }
 
+    /// get the ids of the slaves the client is connected to
     pub fn get_poulpe_ids(&self) -> Vec<u16> {
         self.rt
             .block_on(self.state.read())
@@ -220,8 +255,10 @@ impl PoulpeRemoteClient {
             .collect()
     }
 
-    // get the state property
-    // check if the state is older than 1s
+    /// get the state property, reading stream sent by the server
+    ///  
+    /// - check if the state is older than 1s
+    /// - if older than 1s, log an error and return an error
     fn get_state_property<T, F>(&self, slave_id: u16, f: F, _default: T) -> Result<T, ()>
     where
         F: Fn(&PoulpeState) -> T,
@@ -257,24 +294,27 @@ impl PoulpeRemoteClient {
         Ok(f(state))
     }
 
-    // adding the state properties to the client
-    // for vector states make sure to use clone() to avoid borrowing issues
+    /// Get the current position of the slave [rad]
     pub fn get_position_actual_value(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.actual_position.clone(), vec![])
     }
 
+    /// Get the current velocity of the slave [rad/s]
     pub fn get_velocity_actual_value(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.actual_velocity.clone(), vec![])
     }
 
+    /// Get the current torque of the slave [mA]
     pub fn get_torque_actual_value(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.actual_torque.clone(), vec![])
     }
 
+    /// Check if the slave is on or off
     pub fn is_on(&self, slave_id: u16) -> Result<bool, ()> {
         self.get_state_property(slave_id, |state| state.compliant, false)
     }
 
+    /// Get the target position of the slave [rad]
     pub fn get_target_position(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(
             slave_id,
@@ -283,17 +323,23 @@ impl PoulpeRemoteClient {
         )
     }
 
+    /// Get the motor temperatures of the slave [°C]
     pub fn get_motor_temperatures(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.motor_temperatures.clone(), vec![])
     }
+    /// Get the driver board temperatures of the slave [°C]
     pub fn get_board_temperatures(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.board_temperatures.clone(), vec![])
     }
 
+    /// Get the mode of operation of the slave [CiA402 State]
+    /// 1: Profile Position, 3: Profile Velocity, 4: Profile Torque
+    /// (see poulpe_ethercat_controller::state_machine)
     pub fn get_mode_of_operation(&self, slave_id: u16) -> Result<u32, ()> {
         self.get_state_property(slave_id, |state| state.mode_of_operation as u32, 255)
     }
 
+    /// Get the state of the slave [BoardState] (see poulpe_ethercat_controller::register)
     pub fn get_state(&self, slave_id: u16) -> Result<u32, ()> {
         // temporaty solution trasnforming the state to board status
         match BoardStatus::from_cia402_to_board_status(
@@ -305,27 +351,32 @@ impl PoulpeRemoteClient {
         }
         // self.get_state_property(slave_id, |state| state.state, 255)
     }
-
+    /// Get the state of the slave [CiA402 State]  (see poulpe_ethercat_controller::state_machine)
     pub fn get_cia402_state(&self, slave_id: u16) -> Result<u32, ()> {
         self.get_state_property(slave_id, |state| state.state, 255)
     }
 
+    /// Get the current compliance state of the slave (the same as is_on - deprecated)
     pub fn get_torque_state(&self, slave_id: u16) -> Result<bool, ()> {
         self.get_state_property(slave_id, |state| state.compliant, false)
     }
 
+    /// Get the current axis sensor position [rad]
     pub fn get_axis_sensors(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.axis_sensors.clone(), vec![])
     }
 
+    /// Get the axis senosr absolute zeros from the firmware [rad]
     pub fn get_axis_sensor_zeros(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(slave_id, |state| state.axis_sensor_zeros.clone(), vec![])
     }
 
+    /// Get the motor and homing error codes (see poulpe_ethercat_controller::state_machine)
     pub fn get_error_codes(&self, slave_id: u16) -> Result<Vec<i32>, ()> {
         self.get_state_property(slave_id, |state| state.error_codes.clone(), vec![])
     }
 
+    /// Get current velocity limits (relative from 0 to 1)
     pub fn get_velocity_limit(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(
             slave_id,
@@ -333,6 +384,7 @@ impl PoulpeRemoteClient {
             vec![],
         )
     }
+    /// Get current torque limits (relative from 0 to 1)
     pub fn get_torque_limit(&self, slave_id: u16) -> Result<Vec<f32>, ()> {
         self.get_state_property(
             slave_id,
@@ -341,6 +393,7 @@ impl PoulpeRemoteClient {
         )
     }
 
+    /// Send the command to the server
     fn push_command(&mut self, slave_id: u16, command: Command) -> Result<(), ()> {
         self.rt
             .block_on(self.command_buff.write())
@@ -350,40 +403,53 @@ impl PoulpeRemoteClient {
         Ok(())
     }
 
+    /// Turn on the slave (compliance off)
     pub fn turn_on(&mut self, slave_id: u16) {
         self.push_command(slave_id, Command::Compliancy(false));
     }
 
+    /// Turn off the slave (compliance on)
     pub fn turn_off(&mut self, slave_id: u16) {
         self.push_command(slave_id, Command::Compliancy(true));
     }
 
+    /// Set the mode of operation of the slave [CiA402 compliant]
+    /// 1: Profile Position, 3: Profile Velocity, 4: Profile Torque
+    /// (see poulpe_ethercat_controller::state_machine)
     pub fn set_mode_of_operation(&mut self, slave_id: u16, mode: u32) {
         self.push_command(slave_id, Command::ModeOfOperation(mode));
     }
 
+    /// Set the target position of the slave [rad]
     pub fn set_target_position(&mut self, slave_id: u16, target_position: Vec<f32>) {
         self.push_command(slave_id, Command::TargetPosition(target_position));
     }
+    /// Set the target velocity of the slave [rad/s]
     pub fn set_target_velocity(&mut self, slave_id: u16, target_velocity: Vec<f32>) {
         self.push_command(slave_id, Command::TargetVelocity(target_velocity));
     }
+    /// Set the target torque of the slave [mA]
     pub fn set_target_torque(&mut self, slave_id: u16, target_torque: Vec<f32>) {
         self.push_command(slave_id, Command::TargetTorque(target_torque));
     }
 
+    /// Set the velocity limit of the slave [relative from 0 to 1]
     pub fn set_velocity_limit(&mut self, slave_id: u16, velocity_limit: Vec<f32>) {
         self.push_command(slave_id, Command::VelocityLimit(velocity_limit));
     }
+    /// Set the torque limit of the slave [relative from 0 to 1]
     pub fn set_torque_limit(&mut self, slave_id: u16, torque_limit: Vec<f32>) {
         self.push_command(slave_id, Command::TorqueLimit(torque_limit));
     }
-
+    /// Emergency stop the slave
     pub fn emergency_stop(&mut self, slave_id: u16) {
         self.push_command(slave_id, Command::EmergencyStop(true));
     }
 }
 
+/// Extract the commands from the buffer and prepare them to be sent to the server
+/// timestamp is added in the process to keep track of the time the command was sent
+/// and to discard the command if it is too old
 fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeCommands> {
     if buff.is_empty() {
         return None;
@@ -437,6 +503,7 @@ fn extract_commands(buff: &mut HashMap<u16, Vec<Command>>) -> Option<PoulpeComma
     Some(PoulpeCommands { commands })
 }
 
+/// Get the ids nad names of slaves in the EtherCAT network
 pub async fn get_poulpe_ids_async(
     client: &mut PoulpeMultiplexerClient<tonic::transport::Channel>,
 ) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
@@ -451,6 +518,11 @@ pub async fn get_poulpe_ids_async(
     Ok((ids, names))
 }
 
+/// A simple client that connects to the server and gets the ids of the slaves
+/// in the network
+///
+/// The idea is to avoid subscribing to the slave states of the server if one
+/// just wants to check which nodes are in the network
 #[derive(Debug)]
 pub struct PoulpeIdClient {
     rt: Arc<Runtime>,
@@ -462,6 +534,7 @@ impl PoulpeIdClient {
         PoulpeIdClient { rt, addr }
     }
 
+    /// Get the ids and names of the slaves in the network
     pub fn get_slaves(&self) -> Result<(Vec<u16>, Vec<String>), Box<dyn std::error::Error>> {
         self.rt.block_on(async {
             let mut client = PoulpeMultiplexerClient::connect(self.addr.to_string()).await?;

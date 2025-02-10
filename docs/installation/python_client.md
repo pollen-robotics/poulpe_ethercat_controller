@@ -59,15 +59,25 @@ client = PyPoulpeRemoteClient("http://127.0.0.1:50098", [slave_id], 0.001)
 
 time.sleep(1.0)
 
-print("Connected slaves to master: {}".format(client.get_connected_devices()))
-
+devices = client.get_all_slaves_in_network()
+print("Devices connected in the network: ")
+for i,name in zip(devices[0],devices[1]):
+    print("Slave {}: {}".format(i,name))
+    
 print("Slave {} compliancy is: {}".format(slave_id, client.get_torque_state(slave_id)))
 print("Slave {} current position: {}".format(slave_id, client.get_position_actual_value(slave_id)))
 ```
 which might output something like:
 ```shell
 Connecting on slave: 0
-Connected slaves to master: ([0], ['NeckOrbita3d'])
+Devices connected in the network: 
+Slave 1: RightWristOrbita3d
+Slave 0: RightShoulderOrbita2d
 Slave 0 compliancy is: True
 Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065196501265746e-06]
 ```
+
+
+NOTE: 
+- <i class="fa fa-book fa-lg"></i> You can find the complete list of functions in the `python_client` crate in the [python_client docs](../../api/python_client).
+- You can find mure examples of useing the python client in the `python_client/notebooks` directory. [See the notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/python_client/notebooks)
