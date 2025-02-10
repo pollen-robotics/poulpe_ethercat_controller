@@ -1,4 +1,5 @@
 site_name: Poulpe EtherCAT stack
+site_url: https://pollen-robotics.github.io/poulpe_ethercat_controller/
 repo_url: https://github.com/pollen-robotics/poulpe_ethercat_controller
 edit_uri: https://github.com/pollen-robotics/poulpe_ethercat_controller/blob/develop/docs/
 # repo_name: poulpe_ethercat_controller
