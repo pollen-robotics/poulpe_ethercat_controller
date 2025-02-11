@@ -528,7 +528,7 @@ impl PoulpeController {
                                 && (current_position
                                     .iter()
                                     .zip(target_position.iter())
-                                    .all(|(a, b)| (a - b).abs() > 0.001))
+                                    .any(|(a, b)| (a - b).abs() > 0.001))
                             {
                                 self.set_target_position(id, current_position.clone())
                                     .unwrap();
@@ -537,6 +537,7 @@ impl PoulpeController {
                                     self.get_current_target_position(id).unwrap().unwrap();
                                 tries += 1;
                             }
+                            std::thread::sleep(std::time::Duration::from_millis(5));
                             // throw error if the target position is not set correctly
                             if tries == 5 {
                                 log::error!("Error setting target position!");
