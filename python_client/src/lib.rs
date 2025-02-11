@@ -343,7 +343,6 @@ impl PyPoulpeRemoteClient {
     // Define other methods similarly...
 }
 
-
 /// Launch the server
 #[pyfunction]
 #[pyo3(signature = (file_name=None))]
