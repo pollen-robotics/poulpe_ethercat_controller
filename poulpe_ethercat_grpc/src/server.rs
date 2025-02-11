@@ -15,7 +15,7 @@ use tokio::{
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 
-use poulpe_ethercat_grpc::pb::{
+use crate::pb::{
     poulpe_multiplexer_server::{PoulpeMultiplexer, PoulpeMultiplexerServer},
     PoulpeCommands, PoulpeIds, PoulpeState, PoulpeStates, StateStreamRequest,
 };
@@ -537,33 +537,17 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+/// Launch the server with the config file
+///
+/// # Arguments
+///     * `config_file` - the path to the configuration file
+/// # Returns
+///     * Ok if the server was launched successfully
+///     * Err if the server failed to launch
+pub async fn launch_server(config_file: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let controller = PoulpeController::connect(config_file)?;
 
-    let args: Vec<_> = env::args().collect();
-    let filename = match args.len() {
-        2 => &args[1],
-        _ => {
-            println!("usage: {} ESI-FILE", env!("CARGO_PKG_NAME"));
-            return Ok(());
-        }
-    };
-
-    let controller = PoulpeController::connect(filename)?;
-
-    // for slave_id in controller.get_slave_ids() {
-    //     log::info!("Setup Slave {}...", slave_id);
-    //     match controller.setup(slave_id) {
-    //         Ok(_) => log::info!("Done!"),
-    //         Err(e) => {
-    //             log::error!("Failed to setup slave {}: {}", slave_id, e);
-    //             Err(e)?;
-    //         }
-    //     }
-    // }
-
-    log::info!("POULPE controller ready!");
+    println!("POULPE controller ready!");
 
     let addr = "[::]:50098".parse()?;
     let srv = PoulpeMultiplexerService {

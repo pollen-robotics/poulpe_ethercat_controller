@@ -4,3 +4,6 @@ pub mod pb {
 
 pub mod client;
 pub use client::PoulpeRemoteClient;
+
+pub mod server;
+pub use server::launch_server;
