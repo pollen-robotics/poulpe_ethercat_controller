@@ -348,17 +348,17 @@ impl PyPoulpeRemoteClient {
 #[pyo3(signature = (file_name=None))]
 pub fn launch_server(file_name: Option<&str>) -> () {
     let filename = match file_name {
-        Some(name) => name,
-        None => "../config/ethercat.yaml",
+        Some(name) => name.to_string(),
+        None => "../config/ethercat.yaml".to_string(),
     };
 
-    // launch the server
-    let server_future = poulpe_ethercat_grpc::server::launch_server(filename);
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        match server_future.await {
-            Ok(_) => {}
-            Err(e) => panic!("Failed to launch the server: {}", e),
-        }
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            if let Err(e) = poulpe_ethercat_grpc::server::launch_server(&filename).await {
+                eprintln!("Failed to launch the server: {}", e);
+            }
+        });
     });
     return ();
 }
