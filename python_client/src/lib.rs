@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use tonic::transport::Uri;
 
-use poulpe_ethercat_grpc::client::PoulpeRemoteClient;
+use poulpe_ethercat_grpc::client::{PoulpeIdClient, PoulpeRemoteClient};
 
 use poulpe_ethercat_controller::state_machine;
 
@@ -346,7 +346,7 @@ impl PyPoulpeRemoteClient {
 /// Launch the server
 #[pyfunction]
 #[pyo3(signature = (file_name=None))]
-pub fn launch_server(file_name: Option<&str>) -> () {
+pub fn launch_server(file_name: Option<&str>) -> String {
     let filename = match file_name {
         Some(name) => name.to_string(),
         None => "../config/ethercat.yaml".to_string(),
@@ -360,7 +360,21 @@ pub fn launch_server(file_name: Option<&str>) -> () {
             }
         });
     });
-    return ();
+    return "http://127.0.0.1:50098".to_string();
+}
+
+/// Launch the server
+#[pyfunction]
+pub fn get_all_slaves_in_network(addr: &str) -> (Vec<u16>, Vec<String>) {
+    let addr_uri = match addr.parse::<Uri>() {
+        Ok(uri) => uri,
+        Err(_) => panic!("Invalid URI format"),
+    };
+
+    match PoulpeIdClient::new(addr_uri).get_slaves() {
+        Ok(slaves) => slaves,
+        _ => panic!("Error in getting connected devices"),
+    }
 }
 
 #[pymodule]
@@ -368,5 +382,7 @@ fn python_client(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyPoulpeRemoteClient>()?;
     // add launch server method
     m.add_function(wrap_pyfunction!(launch_server, m)?)?;
+    // add get_all_slaves_in_network method
+    m.add_function(wrap_pyfunction!(get_all_slaves_in_network, m)?)?;
     Ok(())
 }

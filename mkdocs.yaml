@@ -16,6 +16,7 @@ theme:
     - python
     - terminal
     - console
+    - toml
   hljs_style: github
   custom_dir: docs/custom_theme/
   logo: img/favicon.ico

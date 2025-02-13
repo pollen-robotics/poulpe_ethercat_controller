@@ -5,8 +5,6 @@ use std::time::Duration;
 fn main() {
     env_logger::init();
 
-    let id: u16 = 0;
-
     log::info!("Creating the EtherCAT master");
     let ec = EtherCatController::open(0, Duration::from_millis(2), 1000, 500, 1000).unwrap();
 

@@ -1,4 +1,3 @@
-use core::net;
 use ethercat_controller::EtherCatController;
 use log;
 use std::env;
