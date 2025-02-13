@@ -344,6 +344,11 @@ impl PyPoulpeRemoteClient {
 }
 
 /// Launch the server
+/// 
+/// Args:
+///     file_name (str): The path to the configuration file (default: ../config/ethercat.yaml
+/// Returns:
+///     str: The URL address of the server
 #[pyfunction]
 #[pyo3(signature = (file_name=None))]
 pub fn launch_server(file_name: Option<&str>) -> String {
@@ -363,7 +368,12 @@ pub fn launch_server(file_name: Option<&str>) -> String {
     return "http://127.0.0.1:50098".to_string();
 }
 
-/// Launch the server
+/// Get all slaves connected to the master
+/// 
+/// Args:
+///    addr (str): The URL address of the master
+/// Returns:
+///   tuple: The slave ids and device names
 #[pyfunction]
 pub fn get_all_slaves_in_network(addr: &str) -> (Vec<u16>, Vec<String>) {
     let addr_uri = match addr.parse::<Uri>() {
