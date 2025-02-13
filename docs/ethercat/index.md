@@ -24,7 +24,11 @@ INFO:
 
 Cyclic PDOs are the most common way of exchanging the data over the network. The data is exchanged at a fixed frequency and the data is buffered, ensuring the continuitiy. If the data is not read in time, the data is overwritten with the new data. 
 
+<img src="../images/pdos.png" width="500">
+
 Mailbox PDOs are used to ensure that the data is read and written properly. Mailbox enables a handshake between the master and the slave, ensuring that the data is read and written properly. If the data is not written in time, the master will not read the old data but will read zeros. 
+
+<img src="../images/mailbox_pdo.png" width="450">
 
 NOTE:
 In order to ensure the continuity, mailbox PDOs are buffered in software in the `ethercat_controller` crate, with a timeout of 1s. If the data is not written in time, the master will consider the slave not operational and will fail. This procedure is enabled by default and can be disabled using the feature `verify_mailbox_pdos` in its [Cargo.toml](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/ethercat_controller/Cargo.toml) file.
@@ -42,9 +46,35 @@ INFO:
 - **FoE** - Fiile over Ethercat
 
 
-The SDO communication is used to read and write the data to the slave devices with a handshake. It is mostly used for configuring the slave devices and before starting the real-time communication. In poulpe firmware, it is supported by the `firmware_Poulpe` version 1.5.x and the boards only respond to the SDO communication if they are in the `PREOP` (pre-operational) state.
+### CoE communicaiton (SDO communication)
 
-The FoE communication is used to upload the files to the slave devices, in particular to upload the firmware to the slave devices. In poulpe firmware, it is supported by the `firmware_Poulpe` version 1.5.x and only in `PREOP` (pre-operational) state.
+The SDO communication is used to read and write the data to the slave devices with a handshake. Each time the master sends the read or write request, the slave device will respond with the confirmation. It is mostly used for configuring the slave devices and before starting the real-time communication. In poulpe firmware, it is supported by the `firmware_Poulpe` version 1.5.x and the boards only respond to the SDO communication if they are in the `PREOP` (pre-operational) state.
+
+<img src="../images/ethercat_sdo.png" width="500">
+
+SDOs are indexed with a 16-bit index and an 8-bit subindex. The index is used to identify the object dictionary entry, and the subindex is used to identify the specific value within that entry. 
+
+Example of writing the value `1234` to the SDO index `0x100` and subindex `1` of the slave with id `0`:
+```shell
+ethercat download -p0 0x100 1 -t uint32 1234
+```
+To read the value of the SDO index `0x100` and subindex `1` of the slave with id `0`:
+```shell
+ethercat upload -p0 0x100 1 -t uint32
+```
+
+
+### FoE communication
+
+The FoE communication is used to upload the files to the slave devices, in particular to upload the firmware to the slave devices. The FoE communication is based on the CoE communication and it sends the data over the network in data chunks. First chunk represents the write request and contains only the file name, while the rest of the chunks contain the data. Upon each chunk, the slave device will respond with the confirmation (acknowledgement).
+In poulpe firmware, FoE is supported by the `firmware_Poulpe` version 1.5.x and only in `PREOP` (pre-operational) state.
+
+<img src="../images/ethercat_foe.png" width="500">
+
+Example of writing the file `file.bin` to the slave with id `0`:
+```shell
+ethercat foe_write -p0 file.bin --verbose
+```
 
 ## Communication configuration
 

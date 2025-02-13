@@ -29,7 +29,7 @@ stat -c %s firmware.bin
 Then you can send the SDO request with the following command (ex. 1000 bytes):
 
 ```shell
-ethercat sdo_write -p0 0x100 1 -t uint32 1000 # it will write the value 1000 to the SDO index 0x100 and subindex 1 of the slave with id 0
+ethercat download -p0 0x100 1 -t uint32 1000 # it will write the value 1000 to the SDO index 0x100 and subindex 1 of the slave with id 0
 ```
 
 <details markdown="1"><summary><b>Read the number of bytes received by the poulpe board</b></summary>
@@ -37,7 +37,7 @@ ethercat sdo_write -p0 0x100 1 -t uint32 1000 # it will write the value 1000 to 
 You can also test how many bytes are already written to the poulpe board by reading the SDO index `0x100` and subindex `1`:
 
 ```shell
-ethercat sdo_read -p0 0x100 1 -t uint32 # it will read the value of the SDO index 0x100 and subindex 1 of the slave with id 0
+ethercat upload -p0 0x100 1 -t uint32 # it will read the value of the SDO index 0x100 and subindex 1 of the slave with id 0
 ```
 
 You should have exactly the same number of bites as the file size that you have written to the board.
