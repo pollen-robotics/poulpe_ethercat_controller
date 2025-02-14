@@ -64,17 +64,18 @@ ethercat:
 And then you can run the following python script:
 
 ```python
-from poulpe_ethercat_py import PyPoulpeRemoteClient, launch_server, get_all_slaves_in_network
+from poulpe_ethercat_py import PyPoulpeRemoteClient, PyEthercatServer
 import time
 
 # launch the server first
-address = launch_server("file_config.yaml")
+server = PyEthercatServer()
+server.launch_server("file_config.yaml")
 
 # wait for the server to start
 time.sleep(1.0)
 
 # print all slaves in the network
-devices = get_all_slaves_in_network(address)
+devices = server.get_all_slaves_in_network()
 print("Devices connected in the network: ")
 for i,name in zip(devices[0],devices[1]):
     print("Slave {}: {}".format(i,name))
@@ -86,7 +87,7 @@ no_axis = 3
 
 print('Connecting on slave: {}'.format(slave_id))
 # Create an instance of the client
-client = PyPoulpeRemoteClient(address, [slave_id], 0.001)
+client = PyPoulpeRemoteClient(server.addr, [slave_id], 0.001)
 
 time.sleep(1.0)
 
