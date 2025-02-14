@@ -59,7 +59,7 @@ If you are using the python-only version of the code you can install the code di
 Make sure to use the tag corresponding to the version of the firmware that you are using. For example, if we use the 1.5.4 tag: (see the [tags](https://github.com/pollen-robotics/poulpe_ethercat_controller/tags))
 
 ```shell
-pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=python_client
+pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=python_client --verbose
 ```
 
 NOTE:

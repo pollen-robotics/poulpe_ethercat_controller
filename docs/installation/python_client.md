@@ -11,7 +11,7 @@ The `poulpe_ethercat_controller` crate provides a GRPC server and client interfa
 The simplest way of obtaining the python client is to pip install the code directly from the git the repository, using the tag corresponding to the version of the firmware that you are using. For example, if we use the 1.5.4 tag: (see the [tags](https://github.com/pollen-robotics/poulpe_ethercat_controller/tags))
 
 ```shell
-pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=python_client
+pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=python_client --verbose
 ```
 
 NOTE:
