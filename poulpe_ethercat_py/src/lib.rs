@@ -344,18 +344,16 @@ impl PyPoulpeRemoteClient {
 }
 
 #[pyclass]
-pub struct PyEthercatServer{
+pub struct PyEthercatServer {
     #[pyo3(get, set)]
     pub addr: String,
 }
 
 #[pymethods]
-impl PyEthercatServer{
-
-
+impl PyEthercatServer {
     /// Create a new instance of the server
     #[new]
-    pub fn new( ) -> Self {
+    pub fn new() -> Self {
         PyEthercatServer {
             addr: "http://127.0.0.1:50098".to_string(),
         }
