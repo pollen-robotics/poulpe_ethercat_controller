@@ -30,7 +30,7 @@ cargo run --release ../config/file/here.yaml
 ## Simple example
 
 ```python
-from python_client import PyPoulpeRemoteClient
+from poulpe_ethercat_py import PyPoulpeRemoteClient
 import time
 
 slave_id = 0

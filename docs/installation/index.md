@@ -59,7 +59,7 @@ If you are using the python-only version of the code you can install the code di
 Make sure to use the tag corresponding to the version of the firmware that you are using. For example, if we use the 1.5.4 tag: (see the [tags](https://github.com/pollen-robotics/poulpe_ethercat_controller/tags))
 
 ```shell
-pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=python_client --verbose
+pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=poulpe_ethercat_py --verbose
 ```
 
 NOTE:
@@ -68,7 +68,7 @@ This install procedure is available from the version 1.5.4 of the `poulpe_etherc
 Once this is installed you can use the python client to communicate with the poulpe board. 
 
 ```python
-import python_client
+import poulpe_ethercat_py
 ```
 
 ## Installing from source
@@ -90,7 +90,7 @@ git checkout 1.5.x
 cargo build --release
 ```
 
-See how to [install the python bindings](python_client) from the source code.
+See how to [install the python bindings](poulpe_ethercat_py) from the source code.
 
 
 

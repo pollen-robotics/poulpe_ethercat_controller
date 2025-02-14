@@ -86,17 +86,17 @@ RUST_LOG=info cargo run --release --example client_sinus # add the slave id (ex.
 
 ### Python GRPC client
 
-- The `poulpe_ethercat_grpc` crate has a python client that can be used to connect to the GRPC server and read the states of the poulpe boards connected to the network. The python client is a wrapper around the GRPC client that is generated in the `python_client` crate. 
+- The `poulpe_ethercat_grpc` crate has a python client that can be used to connect to the GRPC server and read the states of the poulpe boards connected to the network. The python client is a wrapper around the GRPC client that is generated in the `poulpe_ethercat_py` crate. 
 - The python client uses the `maturin` package to build the python wheel.
-- See the [python_client docs](../../installation/python_client) for instructions on how to build the python client.
+- See the [poulpe_ethercat_py docs](../../installation/poulpe_ethercat_py) for instructions on how to build the python client.
 
-Once you have your python bindings you can run the examples from the `python_client/scripts` directory or notebooks from the `python_client/notebooks` directory.
+Once you have your python bindings you can run the examples from the `poulpe_ethercat_py/scripts` directory or notebooks from the `poulpe_ethercat_py/notebooks` directory.
 
 Or you can write your own python scripts to interact with the poulpe boards connected to the network. For example
 
 
 ```python
-from python_client import PyPoulpeRemoteClient
+from poulpe_ethercat_py import PyPoulpeRemoteClient
 import time
 
 slave_id = 0
@@ -127,8 +127,8 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
 ```
 
 NOTE: 
-- <i class="fa fa-book fa-lg"></i> You can find the complete list of functions in the `python_client` crate in the [python_client docs](../../api/python_client).
-- You can find mure examples of useing the python client in the `python_client/notebooks` directory. [See the notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/python_client/notebooks)
+- <i class="fa fa-book fa-lg"></i> You can find the complete list of functions in the `poulpe_ethercat_py` crate in the [poulpe_ethercat_py docs](../../api/poulpe_ethercat_py).
+- You can find mure examples of useing the python client in the `poulpe_ethercat_py/notebooks` directory. [See the notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/poulpe_ethercat_py/notebooks)
 
 ### Orbita2d and Orbita3d control clients
 

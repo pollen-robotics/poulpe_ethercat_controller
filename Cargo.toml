@@ -3,7 +3,7 @@ members = [
     "ethercat_controller",
     "poulpe_ethercat_controller",
     "poulpe_ethercat_grpc",
-    "python_client"
+    "poulpe_ethercat_py"
 ]
 default-members = [
     "ethercat_controller",

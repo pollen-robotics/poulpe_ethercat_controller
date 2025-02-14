@@ -1,5 +1,6 @@
-from python_client import PyPoulpeRemoteClient
+from poulpe_ethercat_py import PyPoulpeRemoteClient
 import numpy as np
+from glob import glob
 import sys
 import time
 
@@ -16,12 +17,13 @@ print('Connecting on slave: {}'.format(slave_id))
 # Create an instance of the client
 client = PyPoulpeRemoteClient("http://127.0.0.1:50098", [slave_id], 0.001)
 
-time.sleep(1.0)
+print("Connected slaves: {}".format(client.get_connected_devices()))
 
-devices = client.get_all_slaves_in_network()
-print("Devices connected in the network: ")
-for i,name in zip(devices[0],devices[1]):
-    print("Slave {}: {}".format(i,name))
-    
-print("Slave {} compliancy is: {}".format(slave_id, client.get_torque_state(slave_id)))
-print("Slave {} current position: {}".format(slave_id, client.get_position_actual_value(slave_id)))
+client.turn_off(slave_id);
+
+np.set_printoptions(precision=15)
+time.sleep(0.01)
+if no_axis == 3:
+    print(f"orbita3d zeros: {np.array(client.get_axis_sensors(slave_id), dtype=float)*12.0/64.0}")
+else:
+    print(f"orbita2d zeros: {client.get_axis_sensors(slave_id)}")

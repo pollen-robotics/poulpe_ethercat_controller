@@ -6,12 +6,12 @@ parent: Installation and configuration
 
 # Python GRPC client bindings
 
-The `poulpe_ethercat_controller` crate provides a GRPC server and client interface that can be accessed by multiple clients at the same time, either in Rust or Python. The GRPC server is implemented in Rust and the client bindings are generated for both Rust and Python. The python bindings are implemented in `python_client` crate.
+The `poulpe_ethercat_controller` crate provides a GRPC server and client interface that can be accessed by multiple clients at the same time, either in Rust or Python. The GRPC server is implemented in Rust and the client bindings are generated for both Rust and Python. The python bindings are implemented in `poulpe_ethercat_py` crate.
 
 The simplest way of obtaining the python client is to pip install the code directly from the git the repository, using the tag corresponding to the version of the firmware that you are using. For example, if we use the 1.5.4 tag: (see the [tags](https://github.com/pollen-robotics/poulpe_ethercat_controller/tags))
 
 ```shell
-pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=python_client --verbose
+pip install git+https://github.com/pollen-robotics/poulpe_ethercat_controller.git@1.5.4#subdirectory=poulpe_ethercat_py --verbose
 ```
 
 NOTE:
@@ -23,7 +23,7 @@ This install procedure is available from the version 1.5.4 of the `poulpe_etherc
 Provided that you already have the `poulpe_ethercat_controller` crate cloned and built, you can install the python client bindings from the source code. You can find more information on how to build the code in the <a href="../">installation and configuration</a> section.
 
 
-First place yourself in the `python_client` directory, and then you can build the python client bindings you can use the `maturin` tool.
+First place yourself in the `poulpe_ethercat_py` directory, and then you can build the python client bindings you can use the `maturin` tool.
 
 ```bash
 maturin develop --release
@@ -45,7 +45,7 @@ maturin develop --release
 ```
 
 This will install the python client in the current environment.
-And then you can open the notebooks in the `notebooks` folder and scripts in the `scripts` folder to see how to use the client. See the [notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/python_client/notebooks) for more information.
+And then you can open the notebooks in the `notebooks` folder and scripts in the `scripts` folder to see how to use the client. See the [notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/poulpe_ethercat_py/notebooks) for more information.
 
 The client is a wrapper around the GRPC client generated from the `poulpe_ethercat_grpc/src/client.rs` folder.
 
@@ -64,7 +64,7 @@ ethercat:
 And then you can run the following python script:
 
 ```python
-from python_client import PyPoulpeRemoteClient, launch_server, get_all_slaves_in_network
+from poulpe_ethercat_py import PyPoulpeRemoteClient, launch_server, get_all_slaves_in_network
 import time
 
 # launch the server first
@@ -111,5 +111,5 @@ Slave 0 current position: [-0.0011222249595448375, 3.743586057680659e-05, 6.8065
 
 
 NOTE: 
-- <i class="fa fa-book fa-lg"></i> You can find the complete list of functions in the `python_client` crate in the [python_client docs](../../api/python_client).
-- You can find mure examples of useing the python client in the `python_client/notebooks` directory. [See the notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/python_client/notebooks)
+- <i class="fa fa-book fa-lg"></i> You can find the complete list of functions in the `poulpe_ethercat_py` crate in the [poulpe_ethercat_py docs](../../api/poulpe_ethercat_py).
+- You can find mure examples of useing the python client in the `poulpe_ethercat_py/notebooks` directory. [See the notebooks](https://github.com/pollen-robotics/poulpe_ethercat_controller/tree/develop/poulpe_ethercat_py/notebooks)

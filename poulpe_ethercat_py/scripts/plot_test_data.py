@@ -1,4 +1,4 @@
-from python_client import PyPoulpeRemoteClient
+from poulpe_ethercat_py import PyPoulpeRemoteClient
 import time
 import numpy as np
 import sys
