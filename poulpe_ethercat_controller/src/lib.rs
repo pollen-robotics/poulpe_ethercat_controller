@@ -779,12 +779,26 @@ impl PoulpeController {
         self.set_register_values(id, PdoRegister::TargetVelocity, target_velocity)
     }
 
+    pub fn get_current_target_velocity(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::TargetVelocity)
+    }
+
     pub fn set_target_torque(
         &self,
         id: u32,
         target_torque: Vec<f32>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_register_values(id, PdoRegister::TargetTorque, target_torque)
+    }
+
+    pub fn get_current_target_torque(
+        &self,
+        id: u32,
+    ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+        self.get_register_values(id, PdoRegister::TargetTorque)
     }
 
     pub fn get_error_codes(&self, id: u32) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
