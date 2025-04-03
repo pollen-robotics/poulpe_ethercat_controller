@@ -21,7 +21,7 @@ sudo apt-get install -y protobuf-compiler libprotobuf-dev
     - `git clone https://gitlab.com/etherlab.org/ethercat.git`
     - `cd ethercat`
     - use the `stable-1.6` branch `git checkout stable-1.6` 
-        - if needed `stable-1.5` will work too
+        - if needed `stable-1.5` will work too (for older linex kernel <6.12)
     - `./bootstrap`
     - `./configure --enable-generic --disable-8139too`
     - `make all modules`
@@ -46,7 +46,7 @@ In order configure the `ethercat` we need to give the master the MAC address of 
 - Modify the file `/usr/local/etc/ethercat.conf`
     - `MASTER0_DEVICE` - set the mac address (ex. `d0:63:b4:05:47:37`) or the name of the port (ex. `enp8s0f2`)
     - `DEVICE_MODULES` set to `”generic”`
-- Then condifure the udev rules for `/dev/EtherCAT0`(go to the mode `0666`)
+- Then configure the udev rules for `/dev/EtherCAT0`(go to the mode `0666`)
     - create the ethercat rule: `sudo nano /etc/udev/rules.d/99-EtherCAT.rules`
     - add the following line: `KERNEL == "EtherCAT[0-9]*" , MODE ="0666", GROUP ="users"`
     - reload the rules: `sudo udevadm control --reload-rules && sudo udevadm trigger`
