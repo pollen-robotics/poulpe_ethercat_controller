@@ -94,7 +94,7 @@ pub fn verify_watchdog(
 
         // doutput the watchdog status in binary
         let counter = parse_watchdog_from_status(status_data[0].clone());
-        log::debug!(
+        log::trace!(
             "Slave {} ({})| Watchdog counter received : {} ({:08b}), sent: {} ({:08b})",
             i,
             slave_name_from_id(i as u16),
