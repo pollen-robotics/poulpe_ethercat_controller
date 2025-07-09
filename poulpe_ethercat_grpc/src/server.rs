@@ -547,15 +547,20 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 pub async fn launch_server(config_file: &str) -> Result<(), Box<dyn std::error::Error>> {
     let controller = PoulpeController::connect(config_file)?;
 
-    let ids=controller.get_slave_ids();
-    for id in ids{
-        let name=controller.get_slave_name(id as u16);
-        let orbita_type=controller.get_orbita_type(id);
-        let is_ready=controller.is_slave_ready(id as u16);
-        log::info!("Slave id: {:?} name: {:?} type: {:?} is_ready: {:?}",id,name,orbita_type,is_ready);
+    let ids = controller.get_slave_ids();
+    for id in ids {
+        let name = controller.get_slave_name(id as u16);
+        let orbita_type = controller.get_orbita_type(id);
+        let is_ready = controller.is_slave_ready(id as u16);
+        log::info!(
+            "Slave id: {:?} name: {:?} type: {:?} is_ready: {:?}",
+            id,
+            name,
+            orbita_type,
+            is_ready
+        );
     }
     log::info!("POULPE controller ready!");
-
 
     let addr = "[::]:50098".parse()?;
     let srv = PoulpeMultiplexerService {
