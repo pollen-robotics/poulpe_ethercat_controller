@@ -517,7 +517,7 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
                 let f_commands_dropped = nb_dropped as f32 / dt_debug;
                 let dt_commands_ms = (dt_debug) / (nb_commands as f32) * 1000.0;
                 let dt_command_max_ms = dt_command_max * 1000.0;
-                log::info!("GRPC EtherCAT Slave {} | commands sent {:0.2} cmd/s, commands dropped {:0.2} req/s, command time: {:0.2} (max {:0.2}) ms", 
+                log::info!("GRPC EtherCAT Slave {} | commands sent {:0.2} cmd/s, commands dropped {:0.2} req/s, command time: {:0.2} (max {:0.2}) ms",
                             slave_id,
                             f_commands,
                             f_commands_dropped,
@@ -547,7 +547,15 @@ impl PoulpeMultiplexer for PoulpeMultiplexerService {
 pub async fn launch_server(config_file: &str) -> Result<(), Box<dyn std::error::Error>> {
     let controller = PoulpeController::connect(config_file)?;
 
-    println!("POULPE controller ready!");
+    let ids=controller.get_slave_ids();
+    for id in ids{
+        let name=controller.get_slave_name(id as u16);
+        let orbita_type=controller.get_orbita_type(id);
+        let is_ready=controller.is_slave_ready(id as u16);
+        log::info!("Slave id: {:?} name: {:?} type: {:?} is_ready: {:?}",id,name,orbita_type,is_ready);
+    }
+    log::info!("POULPE controller ready!");
+
 
     let addr = "[::]:50098".parse()?;
     let srv = PoulpeMultiplexerService {
