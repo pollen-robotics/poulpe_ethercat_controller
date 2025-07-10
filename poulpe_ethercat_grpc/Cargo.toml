@@ -16,6 +16,10 @@ tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread"] }
 tokio-stream = "0.1.9"
 async-stream = "0.3.3"
 prost-types = { version = "0.12" }
+clap = { version = "4.5.40", features = ["derive"] }
+
+[dev-dependencies]
+owo-colors = "4.2.2"
 
 [build-dependencies]
 tonic-build = {version = "0.11", features = ["prost"]}
@@ -25,7 +29,7 @@ name = "server"
 path = "src/bin/launch_server.rs"
 
 [features]
-default = ["qucik_stop_on_slave_fault", "stop_client_on_server_timeout"] 
+default = ["qucik_stop_on_slave_fault", "stop_client_on_server_timeout"]
 
 stop_server_on_actuator_error = []  # If this feature is set the server will stop the operation on any error that occurs
                                     # Server will stop operation if any of the slaves is in fault state
