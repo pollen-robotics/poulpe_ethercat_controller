@@ -91,6 +91,8 @@ pub enum MotorErrorFlag {
     LowBusVoltage = 6,
     DriverFault = 7,
     TemperatureSensorMalfunctionWarning = 8,
+    AxisSensorCommunicationFail = 9,
+    DriverCommunicationFail = 10,
 }
 
 // Error codes for the homing procedure
