@@ -138,6 +138,7 @@ impl BoardStatus {
                 } else if flags.motor_error_flags.iter().any(|x| {
                     x.contains(&MotorErrorFlag::LowBusVoltage)
                         || x.contains(&MotorErrorFlag::DriverFault)
+                        || x.contains(&MotorErrorFlag::DriverCommunicationFail)
                 }) {
                     Ok(BoardStatus::BusVoltageError)
                 } else if flags
@@ -153,6 +154,10 @@ impl BoardStatus {
                 } else if flags
                     .homing_error_flags
                     .contains(&HomingErrorFlag::AxisSensorReadFail)
+                    || flags
+                        .motor_error_flags
+                        .iter()
+                        .any(|x| x.contains(&MotorErrorFlag::AxisSensorCommunicationFail))
                 {
                     Ok(BoardStatus::SensorError)
                 } else {
